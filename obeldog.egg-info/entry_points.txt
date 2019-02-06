@@ -1,0 +1,3 @@
+[console_scripts]
+obeldog = obeldog.main:main
+
