@@ -1,63 +1,28 @@
 from lxml import etree
+from itertools import groupby
 
 from obeldog.exceptions import ParameterNameNotFoundInXMLException
+from obeldog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
+from obeldog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obeldog.parsers.parameters_parser import parse_parameters_from_xml
 
-def get_content(node):
-    return ''.join(node.itertext())
-
-def get_content_if(node):
-    if node != None:
-        return ''.join(node.itertext())
-    else:
-        return None
-
-def extract_xml_value(tree, path):
-    if len(tree.xpath(path)) > 0:
-        return get_content(tree.xpath(path)[0])
-    else:
-        return None
-
-def parse_parameters_from_xml(xml_parameters):
-    parameters = {}
-    for xml_parameter in xml_parameters:
-        parameter_declname = xml_parameter.find("declname")
-        parameter_defname = xml_parameter.find("defname")
-        if parameter_declname is not None:
-            parameter_name = get_content(parameter_declname)
-        elif parameter_defname is not None:
-            parameter_name = get_content(parameter_defname)
-        else:
-            raise ParameterNameNotFoundInXMLException()
-        parameters[parameter_name] = {
-            "name": parameter_name,
-            "type": get_content(xml_parameter.find("type")),
-        }
-        if get_content_if(xml_parameter.find("defval")):
-            parameters[parameter_name]["default"] = get_content_if(xml_parameter.find("defval"))
-        parameter_description = get_content_if(xml_parameter.find("briefdescription"))
-
-        for xml_p_description in xml_parameter.xpath("detaileddescription/para/parameterlist/parameteritem"):
-            if len(xml_p_description.xpath("parameternamelist/parametername")) > 0:
-                if get_content(xml_p_description.find("parameternamelist").find("parametername")) == parameter_name:
-                    parameter_description = get_content_if(xml_p_description.find("parameterdescription"))
-        if parameter_description:
-            if parameter_description.startswith("\n"):
-                parameter_description = parameter_description.replace("\n", "", 1)
-            parameters[parameter_name]["description"] = parameter_description
-    return parameters
 
 def parse_method_from_xml(xml_method):
     #print("Parsing method", xml_method)
     #import pdb; pdb.set_trace()
     #print("Parsing method member", xml_method)
     member_name = get_content(xml_method.find("name"))
-    member_return_type = get_content(xml_method.find("type"))
+    #print("Member name", member_name)
+    if xml_method.find("type").find("ref") is not None:
+        member_return_type = doxygen_refid_to_cpp_name(xml_method.find("type").find("ref"))
+    else:
+        member_return_type = get_content(xml_method.find("type"))
     member_definition = get_content(xml_method.find("definition"))
     member_description = get_content_if(xml_method.find("briefdescription").find("para"))
-    member_parameters = parse_parameters_from_xml(xml_method.xpath("param"))
+    member_parameters = parse_parameters_from_xml(xml_method)
     return {
         "name": member_name,
-        "defintion": member_definition,
+        "definition": member_definition,
         "parameters": member_parameters,
         "description": member_description,
         "returnType": member_return_type

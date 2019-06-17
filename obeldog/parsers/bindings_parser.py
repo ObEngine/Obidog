@@ -6,7 +6,10 @@ CLASS_REGEX = re.compile(r"""
 \(\s*\*lua\s*\)\s*
 (?P<class_path>\[\".+\"\])
 \.setClass\(\s*kaguya::UserdataMetatable
-<\s*(?P<class_name>([^,>])+)\s*(,\s*.+\s*)?>
+<\s*(?P<class_name>([^,>])+)\s*
+(,\s*(?P<class_parents>([^>]\s*)+)\s*>)?
+(,\s*(?P<class_parent>.+)\s*)?
+\s*>
 \s*\(\s*\)(?P<class_body>[^;]*)\);
 """.replace("\n", ""))
 
@@ -37,6 +40,29 @@ KAGUYA_MEMBER_FUNCTION_OVERLOADS\(\s*
 \s*(?P<max_args>\d+)\s*\);
 """.replace("\n", ""))
 
+LAMBDA_REGEX = re.compile(r"""
+\(\s*\*lua\s*\)\s*
+(?P<lambda_path>\[\".+\"\])\s*
+=\s*kaguya::function
+\(\s*\[(?P<lambda_capture>[^]]*)\]\s*
+\((?P<lambda_parameters>[^)]*)\)\s*
+{\s*(?P<lambda_code>\s*.+\s*)\s*}\s*\)\s*;
+""".replace("\n", ""))
+
+FUNCTION_REGEX = re.compile(r"""
+\(\s*\*lua\s*\)\s*
+(?P<function_path>\[\".+\"\])\s*
+=\s*kaguya::function
+\(\s*(?P<function_ref>[^]});]+)
+\s*\)\s*;
+""".replace("\n", ""))
+
+VARIABLE_REGEX = re.compile(r"""
+\(\s*\*lua\s*\)\s*
+(?P<variable_path>\[\".+\"\])\s*
+=\s*(?P<variable_ref>[^]});]+);
+""".replace("\n", ""))
+
 def insert_path_to_dict(tree, path, value):
     splitted_path = path.split(".")
     for i, path_part in enumerate(splitted_path):
@@ -47,30 +73,46 @@ def insert_path_to_dict(tree, path, value):
             tree[path_part] = {}
         tree = tree[path_part]
 
-def classpath_to_lua_name(classpath):
+def path_to_lua_name(classpath):
     return classpath \
         .replace("\"][\"", ".") \
         .replace("[\"", "") \
         .replace("\"]", "")
 
-def parse_lua_variable_binding(variable_binding_src):
-    pass
+def parse_lua_variable_binding(variable_definition):
+    variable_path = variable_definition.group("variable_path")
+    lua_name = path_to_lua_name(variable_path)
+    variable_reference = variable_definition.group("variable_ref")
 
-def parse_lua_function_binding(function_binding_src):
-    pass
+    return {
+        "type": "variable",
+        "lua_name": lua_name,
+        "reference": variable_reference
+    }
+
+def parse_lua_function_binding(function_definition):
+    function_path = function_definition.group("function_path")
+    lua_name = path_to_lua_name(function_path)
+    function_reference = function_definition.group("function_ref")
+
+    return {
+        "type": "function",
+        "lua_name": lua_name,
+        "reference": function_reference
+    }
 
 def parse_lua_class_binding(class_definition):
     class_name = class_definition.group("class_name")
     class_path = class_definition.group("class_path")
-    lua_name = classpath_to_lua_name(class_path)
+    lua_name = path_to_lua_name(class_path)
     class_body = class_definition.group("class_body")
-    print("  Found class definition", class_name, class_path, lua_name)
+    #print("  Found class definition", class_name, class_path, lua_name)
     methods = {}
     properties = {}
     for method_definition in re.finditer(METHOD_REGEX, class_body):
         method_name = method_definition.group("method_name")
         method_funcptr = method_definition.group("method_funcptr")
-        print("    Found method definition", method_name, method_funcptr)
+        #print("    Found method definition", method_name, method_funcptr)
         methods[method_name] = {
             "name": method_name,
             "function_ptr": method_funcptr,
@@ -79,7 +121,7 @@ def parse_lua_class_binding(class_definition):
     for ov_method_definition in re.finditer(OVERLOADED_METHOD_REGEX, class_body):
         method_name = ov_method_definition.group("method_name")
         method_funcptrs = ov_method_definition.group("method_funcptrs")
-        print("    Found overloaded-method definition", method_name, method_funcptrs)
+        #print("    Found overloaded-method definition", method_name, method_funcptrs)
         methods[method_name] = {
             "name": method_name,
             "function_ptr": method_funcptrs,
@@ -88,11 +130,11 @@ def parse_lua_class_binding(class_definition):
     for property_definition in re.finditer(PROPERTY_REGEX, class_body):
         property_name = property_definition.group("property_name")
         property_ptr = property_definition.group("property_ptr")
-        print("    Found property definition", property_name, property_ptr)
+        #print("    Found property definition", property_name, property_ptr)
         properties[property_name] = property_ptr
     return {
         "type": "class",
-        "name": class_name,
+        "reference": class_name,
         "lua_name": lua_name,
         "methods": methods,
         "properties": properties
@@ -104,7 +146,7 @@ def parse_lua_method_wrapper(wrapper_definition):
     wrapped_method = wrapper_definition.group("wrapped_method")
     min_args = wrapper_definition.group("min_args")
     max_args = wrapper_definition.group("max_args")
-    print(f"  Found method_wrapper {wrapper_name} for {wrapped_class}::{wrapped_method} [{min_args}:{max_args}]")
+    #print(f"  Found method_wrapper {wrapper_name} for {wrapped_class}::{wrapped_method} [{min_args}:{max_args}]")
     return {
         "type": "wrapper",
         "wrapper_name": wrapper_name,
@@ -114,33 +156,61 @@ def parse_lua_method_wrapper(wrapper_definition):
         "max_args": int(max_args)
     }
 
+def parse_lua_lambda_binding(lambda_definition):
+    lambda_path = lambda_definition.group("lambda_path")
+    lua_name = path_to_lua_name(lambda_path)
+
+    return {
+        "type": "lambda",
+        "lua_name": lua_name
+    }
+
 def parse_lua_file_binding(binding_src):
     classes = []
     method_wrappers = []
+    lambdas = []
+    functions = []
+    variables = []
     for class_definition in re.finditer(CLASS_REGEX, binding_src):
         classes.append(parse_lua_class_binding(class_definition))
-    for method_wrapper_definition in re.finditer(MEMBER_FUNCTION_OVERLOADS_REGEX, binding_src):
-        method_wrappers.append(parse_lua_method_wrapper(method_wrapper_definition))
+    #for method_wrapper_definition in re.finditer(MEMBER_FUNCTION_OVERLOADS_REGEX, binding_src):
+    #    method_wrappers.append(parse_lua_method_wrapper(method_wrapper_definition))
+    #for lambda_definition in re.finditer(LAMBDA_REGEX, binding_src):
+    #    lambdas.append(parse_lua_lambda_binding(lambda_definition))
+    for function_definition in re.finditer(FUNCTION_REGEX, binding_src):
+        functions.append(parse_lua_function_binding(function_definition))
+    for variable_definition in re.finditer(VARIABLE_REGEX, binding_src):
+        variables.append(parse_lua_variable_binding(variable_definition))
     return {
         "classes": classes,
-        "method_wrappers": method_wrappers
+        "method_wrappers": method_wrappers,
+        "lambdas": lambdas,
+        "functions": functions,
+        "variables": variables
     }
         
 
-def parse_all_lua_bindings(bindings_directories):
+def parse_all_lua_bindings(bindings_directories, lua_db):
     lua_binding_tree = {}
     bindings_per_file = {}
     for bindings_directory in bindings_directories:
         for current_dir, _, files in os.walk(bindings_directory):
             for filepath in files:
                 current_file = os.path.join(current_dir, filepath)
-                print("Parsing file", current_file)
+                #print("Parsing file", current_file)
                 with open(current_file) as binding_file:
                     bindings_per_file[current_file] = parse_lua_file_binding(binding_file.read())
     for binding_file, binding_content in bindings_per_file.items():
         for class_content in binding_content["classes"]:
-            insert_path_to_dict(lua_binding_tree, class_content["lua_name"], class_content)
-    print(json.dumps(lua_binding_tree, indent=4))
+            insert_path_to_dict(lua_db.classes, class_content["lua_name"], class_content)
+        for function_content in binding_content["functions"]:
+            insert_path_to_dict(lua_db.functions, function_content["lua_name"], function_content)
+        for lambda_content in binding_content["lambdas"]:
+            insert_path_to_dict(lua_db.functions, lambda_content["lua_name"], lambda_content)
+        for variable_content in binding_content["variables"]:
+            insert_path_to_dict(lua_db.variables, variable_content["lua_name"], variable_content)
+    #print(json.dumps(lua_binding_tree, indent=4))
+    return lua_binding_tree
     """print(filepath)
     clname = ""
     for index, line in enumerate(lines):
