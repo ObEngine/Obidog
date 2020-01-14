@@ -26,7 +26,9 @@ To make the script run faster, you should export the following environment varia
 ### Introduction
 
 ÖbEngine embeds scripting languages to allow the user to create games with more flexibility and safety (it only supports Lua as of today).
+
 Embedding a scripting language inside a C++ application is not free though, as C++ lacks any kind of reflection capability, it requires the user to manually bind each function/class/enum/... to the scripting language's virtual machine.
+
 Doing such a task takes a lot of time, is error-prone and is really boring.
 That's where Obeldog comes into action ! It will Doxygen as a reflection tool (it uses Doxygen's XML output) and automatically generates all the execution gluecode.
 
@@ -72,9 +74,13 @@ It will maybe support the following flavours in the future when ÖbEngine is mat
 ### Introduction
 
 ÖbEngine C++ code is already documented using Doxygen's notation (documentation in comment).
+
 Doxygen parses these comments and generate a fully fledged documentation website from it.
+
 This is really practical from the user's point of view as any user can explore the codebase quickly, check-out which function exists, what kind of types a function takes as parameters, get more information about what a function does and get examples on how to use it.
+
 All of that is great, but there is a catch: if the user uses the scripting language, it is not C++ anymore and therefore, the user won't be able to use the C++ documentation anymore (not the same symbols / types).
+
 That's where Obeldog comes into action (again!), it will create try to generate a documentation for the target scripting language using the Doxygen XML and the generated bindings, translating symbols and types on the go to generate a coherant and nice looking documentation website.
 
 ### Usage
