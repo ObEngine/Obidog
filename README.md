@@ -15,7 +15,7 @@ Obeldog has the following requirements :
     - lxml
     - GitPython
 - Doxygen (needs to be in `PATH`)
-- Git (optional, see [below](###cloning-repository))
+- Git (optional, see [below](#cloning-repository))
 
 ### Cloning repository
 
