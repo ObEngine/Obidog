@@ -90,3 +90,7 @@ Just run `obeldog documentation` and it will generate all the ÖbEngine document
 ### Template customisation
 
 (WIP)
+
+## Extra informations
+
+*The project might be renamed to Obidog (Öbengine BIndings & DOcumentation Generator) so the logo could be a mix of Obi-wan Kenobi, an eggplant and a dog*
