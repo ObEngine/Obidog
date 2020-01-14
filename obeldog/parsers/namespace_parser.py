@@ -13,13 +13,12 @@ def parse_function_from_xml(xml_function): # TODO: Use this function for methods
         function_description = get_content_if(xml_function.find("briefdescription").find("para"))
         function_definition = get_content(xml_function.find("definition"))
         function_parameters = parse_parameters_from_xml(xml_function)
-        
         return {
             "name": function_name,
             "definition": function_definition,
             "parameters": function_parameters,
             "description": function_description,
-            "returnType": function_return_type
+            "return_type": function_return_type
         }
     else:
         return None
@@ -43,7 +42,7 @@ def parse_typedef_from_xml(xml_typedef):
     typedef_description = get_content_if(xml_typedef.find("briefdescription").find("para"))
     typedef_definition = get_content(xml_typedef.find("definition"))
     typedef_parameters = parse_parameters_from_xml(xml_typedef)
-    
+
     return {
         "name": typedef_name,
         "definition": typedef_definition,
@@ -60,10 +59,34 @@ def parse_typedefs_from_xml(namespace, tree, cpp_db):
         if typedef:
             cpp_db.typedefs["::".join((namespace, typedef["name"]))] = typedef
 
+def parse_enum_from_xml(xml_enum):
+    enum_name = get_content(xml_enum.find("name"))
+    enum_description = get_content(xml_enum.find("briefdescription"))
+    enum_values = []
+    for enum_value in xml_enum.xpath("enumvalue"):
+        enum_values.append({
+            "name": get_content(enum_value.find("name")),
+            "description": get_content(enum_value.find("briefdescription"))
+        })
+    return {
+        "name": enum_name,
+        "description": enum_description,
+        "values": enum_values
+    }
+
+def parse_enums_from_xml(namespace, tree, cpp_db):
+    enums_path = "/doxygen/compounddef/sectiondef[@kind='enum']/memberdef[@kind='enum']"
+    xml_enums = tree.xpath(enums_path)
+    for xml_enum in xml_enums:
+        enum = parse_enum_from_xml(xml_enum)
+        if enum:
+            cpp_db.enums["::".join((namespace, enum["name"]))] = enum
+
 def parse_namespace_from_xml(class_path, cpp_db):
     tree = etree.parse(class_path)
     namespace_name = extract_xml_value(tree, "/doxygen/compounddef/compoundname")
     print(f"Namespace : {namespace_name}")
     parse_functions_from_xml(namespace_name, tree, cpp_db)
     parse_typedefs_from_xml(namespace_name, tree, cpp_db)
+    parse_enums_from_xml(namespace_name, tree, cpp_db)
     print("End")

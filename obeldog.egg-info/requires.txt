@@ -1,5 +1,0 @@
-lxml
-GitPython
-
-[lint]
-flake8

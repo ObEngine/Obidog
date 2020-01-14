@@ -16,14 +16,14 @@ def build_doxygen_documentation(source_path):
         with open(os.path.join(path, "Doxyfile"), "w") as dst_doxyfile:
             dst_doxyfile.write(
                 src_doxyfile.read().replace(
-                    "{{input_directories}}", 
+                    "{{input_directories}}",
                     (" \\\n" + " " * 25).join(src_directories)
                 )
             )
     with open(os.path.join(path, "out.log"), "w") as log:
         subprocess.run(
-            ["doxygen", "Doxyfile"], 
-            cwd=path, 
+            ["doxygen", "Doxyfile"],
+            cwd=path,
             stdout=log,
             stderr=log)
     return path

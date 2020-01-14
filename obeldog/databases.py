@@ -4,6 +4,7 @@ class CppDatabase:
         self.typedefs = {}
         self.functions = {}
         self.globals = {}
+        self.enums = {}
 
 class LuaDatabase:
     def __init__(self):

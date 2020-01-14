@@ -18,7 +18,7 @@ def get_all_lua_elements(elements, element_type=["class", "function", "variable"
 def find_lua_type_from_cpp_type(lua_db, cpp_type_name):
     all_base_elements = merge_dicts(
         lua_db.functions,
-        lua_db.variables, 
+        lua_db.variables,
         lua_db.classes
     )
     elements = get_all_lua_elements(all_base_elements)

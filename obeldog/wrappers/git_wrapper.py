@@ -3,25 +3,30 @@ import tempfile
 
 import git
 
+from obeldog.config import PATH_TO_OBENGINE
 from obeldog.exceptions import InvalidObEngineGitRepositoryException
 from obeldog.logger import log
 
 OBENGINE_GIT_URL = os.environ.get(
     "OBENGINE_GIT_URL",
     "https://github.com/Sygmei/ObEngine")
+OBENGINE_GIT_SSH = os.environ.get(
+    "OBENGINE_GIT_SSH",
+    "git@github.com:Sygmei/ObEngine"
+)
 
 def check_git_directory():
-    if "OBENGINE_GIT_DIRECTORY" in os.environ:
-        path_to_obengine = os.environ["OBENGINE_GIT_DIRECTORY"]
-        log.debug(f"Found existing ÖbEngine repository in {path_to_obengine}")
+    global PATH_TO_OBENGINE
+    if PATH_TO_OBENGINE is not None:
+        log.debug(f"Found existing ÖbEngine repository in {PATH_TO_OBENGINE}")
     else:
         log.debug("Cloning ÖbEngine repository...")
-        path_to_obengine = clone_obengine_repo()
+        PATH_TO_OBENGINE = clone_obengine_repo()
     log.debug("Checking ÖbEngine repository validity...")
-    if not check_obengine_repo(path_to_obengine):
-        raise InvalidObEngineGitRepositoryException(path_to_obengine)
-    log.info(f"Using ÖbEngine repository in {path_to_obengine}")
-    return path_to_obengine
+    if not check_obengine_repo(PATH_TO_OBENGINE):
+        raise InvalidObEngineGitRepositoryException(PATH_TO_OBENGINE)
+    log.info(f"Using ÖbEngine repository in {PATH_TO_OBENGINE}")
+    return PATH_TO_OBENGINE
 
 def clone_obengine_repo():
     path = tempfile.mkdtemp()
@@ -38,4 +43,7 @@ def check_obengine_repo(git_dir):
         repo = git.Repo(git_dir)
     except:
         return False
-    return OBENGINE_GIT_URL in repo.remote().urls
+    return (
+        OBENGINE_GIT_URL in repo.remote().urls,
+        OBENGINE_GIT_SSH in repo.remote().urls
+    )

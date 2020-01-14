@@ -11,9 +11,9 @@ def doxygen_namespace_to_cpp_namespace(name):
     name = name.replace("_1_1_", "::")
     name = "::".join(
         [
-            x.capitalize() 
-            if i > 0 else x 
-            for i, x in 
+            x.capitalize()
+            if i > 0 else x
+            for i, x in
             enumerate(name.split("::"))
         ]
     )
@@ -22,8 +22,8 @@ def doxygen_namespace_to_cpp_namespace(name):
 
 def doxygen_refid_to_cpp_name(refid):
     name = refid.attrib["refid"]
-    if name.startswith("class"):
-        name = name.lstrip("class")
+    if name.startswith("class") or name.startswith("struct"):
+        name = name.lstrip("class").lstrip("struct")
         return doxygen_namespace_to_cpp_namespace(name)
     elif name.startswith("namespace"):
         name = name.lstrip("namespace")
@@ -31,8 +31,8 @@ def doxygen_refid_to_cpp_name(refid):
         name = doxygen_namespace_to_cpp_namespace(name)
         name = name.split("::")
         return "::".join(merge_and_remove_duplicates(
-            name, 
+            name,
             get_content(refid).split("::")
         ))
     else:
-        raise RuntimeError("Unexpected Return Type")
+        raise RuntimeError(f"Unexpected Return Type '{name}'")

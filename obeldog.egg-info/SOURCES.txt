@@ -1,8 +1,0 @@
-README.md
-setup.py
-obeldog.egg-info/PKG-INFO
-obeldog.egg-info/SOURCES.txt
-obeldog.egg-info/dependency_links.txt
-obeldog.egg-info/entry_points.txt
-obeldog.egg-info/requires.txt
-obeldog.egg-info/top_level.txt
