@@ -22,6 +22,7 @@ def check_git_directory():
     else:
         log.debug("Cloning ÖbEngine repository...")
         PATH_TO_OBENGINE = clone_obengine_repo()
+        os.environ["OBENGINE_GIT_DIRECTORY"] = PATH_TO_OBENGINE
     log.debug("Checking ÖbEngine repository validity...")
     if not check_obengine_repo(PATH_TO_OBENGINE):
         raise InvalidObEngineGitRepositoryException(PATH_TO_OBENGINE)

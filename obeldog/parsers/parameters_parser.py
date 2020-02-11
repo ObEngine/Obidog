@@ -28,7 +28,7 @@ def parse_parameters_from_xml(xml_function):
         if get_content_if(xml_parameter.find("defval")):
             parameter["default"] = get_content_if(xml_parameter.find("defval"))
         parameter_description = get_content_if(xml_parameter.find("briefdescription"))
-
+        # TODO: Handle templated parameters (Discard ?)
         for xml_p_description in xml_function.xpath("detaileddescription/para/parameterlist/parameteritem"):
             if len(xml_p_description.xpath("parameternamelist/parametername")) > 0:
                 if get_content(xml_p_description.find("parameternamelist").find("parametername")) == parameter_name:

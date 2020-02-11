@@ -5,42 +5,17 @@ from obeldog.config import PATH_TO_OBENGINE
 from obeldog.exceptions import ParameterNameNotFoundInXMLException
 from obeldog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
 from obeldog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
-from obeldog.parsers.parameters_parser import parse_parameters_from_xml
+from obeldog.parsers.function_parser import parse_function_from_xml
 
-
-def parse_method_from_xml(xml_method):
-    #print("Parsing method", xml_method)
-    #import pdb; pdb.set_trace()
-    #print("Parsing method member", xml_method)
-    member_name = get_content(xml_method.find("name"))
-    #print("Member name", member_name)
-    if xml_method.find("type").find("ref") is not None:
-        member_return_type = doxygen_refid_to_cpp_name(xml_method.find("type").find("ref"))
-    else:
-        member_return_type = get_content(xml_method.find("type"))
-    member_definition = get_content(xml_method.find("definition"))
-    member_description = get_content_if(xml_method.find("briefdescription").find("para"))
-    member_parameters = parse_parameters_from_xml(xml_method)
-    member_qualifiers = []
-    if xml_method.attrib["const"] == "yes":
-        member_qualifiers.append("const")
-    if "volatile" in xml_method.attrib and xml_method.attrib["volatile"] == "yes":
-        member_qualifiers.append("volatile")
-    return {
-        "__type__": "method",
-        "name": member_name,
-        "definition": member_definition,
-        "parameters": member_parameters,
-        "description": member_description,
-        "return_type": member_return_type,
-        "qualifiers": member_qualifiers
-    }
 
 def parse_class_from_xml(class_path):
     export = {}
     tree = etree.parse(class_path)
     export["__type__"] = "class"
     export["name"] = extract_xml_value(tree, "/doxygen/compounddef/compoundname")
+    base_classes = tree.xpath("/doxygen/compounddef/basecompoundref")
+    if base_classes:
+        export["bases"] = [get_content(base) for base in base_classes]
     base_location = tree.xpath("/doxygen/compounddef/location")[0].attrib["file"]
     export["location"] = os.path.relpath(
         os.path.normpath(base_location),
@@ -57,10 +32,12 @@ def parse_class_from_xml(class_path):
     if len(tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")) > 0:
         for xml_method in tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")[0]:
             #print("Parsing class", xml_method)
-            method = parse_method_from_xml(xml_method)
+            method = parse_function_from_xml(xml_method, method=True)
             #print("Method export", method)
             if method["name"] == export["name"].split("::")[-1]:
                 export["constructors"].append(method)
+            elif method["name"] == f"~{export['name'].split('::')[-1]}":
+                export["destructor"] = method
             else:
                 if method["name"] in export["methods"]:
                     overload = export["methods"][method["name"]]

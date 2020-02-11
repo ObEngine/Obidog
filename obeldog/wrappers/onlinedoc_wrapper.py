@@ -2,7 +2,7 @@ import os
 import re
 
 OBENGINE_DOCUMENTATION_URL = os.environ.get(
-    "OBENGINE_DOCUMENTATION_URL", 
+    "OBENGINE_DOCUMENTATION_URL",
     "https://obengine.io/doc/cpp")
 
 def class_name_to_doc_link(name):
@@ -11,8 +11,8 @@ def class_name_to_doc_link(name):
         #import pdb; pdb.set_trace()
         while re.search(r"([a-z]|[A-Z])[A-Z]", transformed_name):
             transformed_name = re.sub(
-                r"((?P<f>[a-z]|[A-Z])(?P<s>[A-Z]))", 
-                r"\g<f>_\g<s>", 
+                r"((?P<f>[a-z]|[A-Z])(?P<s>[A-Z]))",
+                r"\g<f>_\g<s>",
                 transformed_name)
         transformed_name = transformed_name.lower()
         transformed_name += ".html"
