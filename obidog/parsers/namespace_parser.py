@@ -77,8 +77,6 @@ def parse_enums_from_xml(namespace, tree, cpp_db):
 def parse_namespace_from_xml(class_path, cpp_db):
     tree = etree.parse(class_path)
     namespace_name = extract_xml_value(tree, "/doxygen/compounddef/compoundname")
-    print(f"Namespace : {namespace_name}")
     parse_functions_from_xml(namespace_name, tree, cpp_db)
     parse_typedefs_from_xml(namespace_name, tree, cpp_db)
     parse_enums_from_xml(namespace_name, tree, cpp_db)
-    print("End")

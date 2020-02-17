@@ -106,13 +106,11 @@ def parse_lua_class_binding(class_definition):
     class_path = class_definition.group("class_path")
     lua_name = path_to_lua_name(class_path)
     class_body = class_definition.group("class_body")
-    #print("  Found class definition", class_name, class_path, lua_name)
     methods = {}
     properties = {}
     for method_definition in re.finditer(METHOD_REGEX, class_body):
         method_name = method_definition.group("method_name")
         method_funcptr = method_definition.group("method_funcptr")
-        #print("    Found method definition", method_name, method_funcptr)
         methods[method_name] = {
             "name": method_name,
             "function_ptr": method_funcptr,
@@ -121,7 +119,6 @@ def parse_lua_class_binding(class_definition):
     for ov_method_definition in re.finditer(OVERLOADED_METHOD_REGEX, class_body):
         method_name = ov_method_definition.group("method_name")
         method_funcptrs = ov_method_definition.group("method_funcptrs")
-        #print("    Found overloaded-method definition", method_name, method_funcptrs)
         methods[method_name] = {
             "name": method_name,
             "function_ptr": method_funcptrs,
@@ -130,7 +127,6 @@ def parse_lua_class_binding(class_definition):
     for property_definition in re.finditer(PROPERTY_REGEX, class_body):
         property_name = property_definition.group("property_name")
         property_ptr = property_definition.group("property_ptr")
-        #print("    Found property definition", property_name, property_ptr)
         properties[property_name] = property_ptr
     return {
         "type": "class",
@@ -146,7 +142,6 @@ def parse_lua_method_wrapper(wrapper_definition):
     wrapped_method = wrapper_definition.group("wrapped_method")
     min_args = wrapper_definition.group("min_args")
     max_args = wrapper_definition.group("max_args")
-    #print(f"  Found method_wrapper {wrapper_name} for {wrapped_class}::{wrapped_method} [{min_args}:{max_args}]")
     return {
         "type": "wrapper",
         "wrapper_name": wrapper_name,
@@ -197,7 +192,6 @@ def parse_all_lua_bindings(bindings_directories, lua_db):
         for current_dir, _, files in os.walk(bindings_directory):
             for filepath in files:
                 current_file = os.path.join(current_dir, filepath)
-                #print("Parsing file", current_file)
                 with open(current_file) as binding_file:
                     bindings_per_file[current_file] = parse_lua_file_binding(binding_file.read())
     for binding_file, binding_content in bindings_per_file.items():
@@ -209,59 +203,4 @@ def parse_all_lua_bindings(bindings_directories, lua_db):
             insert_path_to_dict(lua_db.functions, lambda_content["lua_name"], lambda_content)
         for variable_content in binding_content["variables"]:
             insert_path_to_dict(lua_db.variables, variable_content["lua_name"], variable_content)
-    #print(json.dumps(lua_binding_tree, indent=4))
     return lua_binding_tree
-    """print(filepath)
-    clname = ""
-    for index, line in enumerate(lines):
-        line = line.replace("\n", "")
-        if ".setClass" in line:
-            tline = line.replace(" ", "")
-            luaname = tline.split(".setClass")[0].replace("(*lua)", "").replace("[\"", "").replace("\"]", ".")
-            if luaname.endswith("."):
-                luaname = luaname[:-1:]
-            if not "//" in luaname and not "/*" in luaname:
-                #print(tline.split(".setClass")[1])
-                cppname = tline.split(".setClass")[1].split(",")[0].replace("(kaguya::UserdataMetatable<", "").replace(">()", "")
-                print(luaname, cppname)
-                classes[luaname] = {}
-                classes[luaname]["luaname"] = luaname
-                classes[luaname]["cppname"] = cppname
-                clname = "obe::" + cppname
-                doclink = ""
-                if luaname in fillinks:
-                    doclink = fillinks[luaname]
-                else:
-                    print("Warning: Can't find doc link for", luaname, cppname)
-                classes[luaname]["doclink"] = doclink
-                classes[luaname]["module"] = filepath.replace("Bindings.cpp", "")
-                classes[luaname]["methods"] = {}
-                cclass = luaname
-        elif " .addFunction" in line:
-            print(index, line)
-            method = line.replace(" ", "").replace(".addFunction", "")
-            fluaname, fcppname = method.split(",")[0], method.split(",")[1]
-            fluaname = fluaname.replace("\"", "").replace("(", "")
-            fcppname = fcppname.replace("\"", "").replace(")", "").replace("&", "")
-            if fcppname.endswith("_wrapper("):
-                print("Found wrapper form, simplifying")
-                fcppname = fcppname.replace("_wrapper(", "")
-                fcppname = fcppname.split("_")[0] + "::" + fcppname
-                fcppname = fcppname.replace("_", "::")
-            #print(luaname, "=>", cppname)
-            methoddict = {}
-            if clname in allclasses and fcppname.split("::")[-1] in allclasses[clname]["methods"]:
-                methoddict = allclasses[clname]["methods"][fcppname.split("::")[-1]]
-                print("Found methoddict for", luaname)
-            else:
-                print("############ Warning, could not find methoddict for", luaname)
-            pprint(methoddict)
-            methoddict["cppname"] = fcppname
-            if cclass != "":
-                classes[cclass]["methods"][fluaname] = methoddict
-        elif "kaguya::function" in line:
-            print("KAGUYA::FUNCTION =======================================================================>", index, line)
-            fluaname = line.split("=")[0].replace("(*lua)", "")
-            fluaname = [i.replace("[", "").replace("]", "").replace("\"", "") for i in fluaname.split("][")]
-            fluaname, fromclass = ".".join(fluaname), ".".join(fluaname[0:-1])
-            print("Found LUANAME : ", fluaname, "from class", fromclass)"""

@@ -7,7 +7,7 @@ import requests
 
 from obidog.databases import CppDatabase, LuaDatabase
 from obidog.bindings.generator import generate_bindings
-from obidog.generators.cpp_lua_mixer import (
+from obidog.generators.cpp_lua_merge import (
     mix_cpp_lua_doc, transform_all_cpp_types_to_lua_types)
 from obidog.generators.doc_class_generator import generate
 from obidog.logger import log
@@ -20,7 +20,7 @@ from obidog.wrappers.git_wrapper import check_git_directory
 def main():
     parser = argparse.ArgumentParser()
     # Starting Obidog
-    log.info("ÖbEngine Lua Documentation Generator starting...")
+    log.info("Obidog starting...")
 
     # Creating databases
     cpp_db = CppDatabase()
@@ -65,7 +65,7 @@ def main():
 
         # Generating static documentation
         generate(cwd, cpp_db.classes["obe::Animation::Animation"])
-        print("Output folder", cwd)
+        log.debug("Output folder", cwd)
     elif args.mode == "bindings":
         generate_bindings(cpp_db)
 

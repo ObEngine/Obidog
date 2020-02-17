@@ -2,6 +2,7 @@ import os
 
 from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.logger import log
 
 def generate_enum_fields(enum_type, enum):
     body = []
@@ -15,7 +16,7 @@ def generate_enums_bindings(name, enums, base_path):
     bindings_functions = []
     objects = []
     for enum_name, enum in enums.items():
-        print("  Generating bindings for enum", enum_name)
+        log.info(f"  Generating bindings for enum {enum_name}")
         enum_path = strip_include(enum["location"]).replace(os.path.sep, "/")
         includes.append(f"#include <{enum_path}>")
         state_view = flavour.STATE_VIEW

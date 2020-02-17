@@ -25,7 +25,7 @@ def find_lua_type_from_cpp_type(lua_db, cpp_type_name):
     for lua_element in elements:
         if lua_element["reference"] in [cpp_type_name, cpp_type_name.lstrip("obe::")]:
             return lua_element
-    print(f"Unknown cpptype : '{cpp_type_name}'")
+    log.warning(f"Unknown cpptype : '{cpp_type_name}'")
     return None
 
 BASIC_TYPE_MATCH = {
@@ -111,7 +111,7 @@ def mix_cpp_lua_doc(cpp_db, lua_db):
                 lua_return_type = cpp_type_to_lua_type(lua_db, cpp_method["returnType"])
                 if lua_return_type is None:
                     lua_return_type = cpp_method["returnType"]
-                    print(f"WARNING: Unknown Return Type '{lua_return_type}' for {lua_class['name']}::{cpp_method_name}")
+                    log.warning(f"Unknown Return Type '{lua_return_type}' for {lua_class['name']}::{cpp_method_name}")
                 method["return_type"] = lua_return_type
                 method["parameters"] = {}
                 for cpp_method_parameter_name, cpp_method_parameter in cpp_method["parameters"].items():
@@ -119,7 +119,7 @@ def mix_cpp_lua_doc(cpp_db, lua_db):
                     lua_parameter_type = cpp_type_to_lua_type(lua_db, cpp_method_parameter["type"])
                     if lua_parameter_type is None:
                         lua_parameter_type = cpp_method_parameter["type"]
-                        print(f"WARNING: Unknown Parameter Type '{lua_parameter_type}' for {lua_class['name']}::{cpp_method_name}")
+                        log.warning(f"Unknown Parameter Type '{lua_parameter_type}' for {lua_class['name']}::{cpp_method_name}")
                     method["parameters"][cpp_method_parameter_name] = {
                         "reference": cpp_method_parameter["name"],
                         "type": lua_parameter_type,
@@ -130,7 +130,6 @@ def mix_cpp_lua_doc(cpp_db, lua_db):
 
 def transform_all_cpp_types_to_lua_types(lua_db):
     all_classes = get_all_lua_elements(lua_db.classes["obe"], ["class"])
-    print("Amount of Lua classes", len(all_classes))
     for lua_class in all_classes:
         for method in lua_class["methods"].values():
             if "return_type" in method and isinstance(method["return_type"], FutureLuaReferenceTag):
@@ -139,4 +138,4 @@ def transform_all_cpp_types_to_lua_types(lua_db):
                     method["return_type"] = lua_type
                 else:
                     method["return_type"] = method["return_type"].cpp_type
-                    log.warn(f"Can't find reference to type '{method['return_type']}' !")
+                    log.warning(f"Can't find reference to type '{method['return_type']}' !")

@@ -13,7 +13,6 @@ def parse_doxygen_files(path_to_doc, cpp_db):
                 class_filepath = os.path.join(currentDir, f)
                 log.debug(f"  Parsing class {class_filepath}")
                 class_name, class_tree = parse_class_from_xml(class_filepath)
-                print("Parsed class", class_name, "=====================<>")
                 cpp_db.classes[class_name] = class_tree
                 doc_link = class_name_to_doc_link(class_name)
                 """response = requests.get(doc_link, timeout=2)
@@ -27,4 +26,4 @@ def parse_doxygen_files(path_to_doc, cpp_db):
                 log.debug(f"  Parsing namespace {namespace_filepath}")
                 parse_namespace_from_xml(namespace_filepath, cpp_db)
             else:
-                print("Ignoring file", f)
+                log.warning(f"Ignoring file {f}")

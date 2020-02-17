@@ -31,9 +31,7 @@ def parse_class_from_xml(class_path):
     export["constructors"] = []
     if len(tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")) > 0:
         for xml_method in tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")[0]:
-            #print("Parsing class", xml_method)
             method = parse_function_from_xml(xml_method, method=True)
-            #print("Method export", method)
             if method["name"] == export["name"].split("::")[-1]:
                 export["constructors"].append(method)
             elif method["name"] == f"~{export['name'].split('::')[-1]}":

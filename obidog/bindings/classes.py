@@ -2,6 +2,7 @@ import os
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
+from obidog.logger import log
 
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
@@ -123,7 +124,7 @@ def generate_classes_bindings(classes, base_path):
     includes = []
     bindings_functions = []
     for class_name, class_value in classes.items():
-        print("  Generating bindings for class", class_name)
+        log.info(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
         objects.append(f"Class{real_class_name}")
         class_path = strip_include(class_value["location"])

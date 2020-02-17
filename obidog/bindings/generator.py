@@ -4,6 +4,7 @@ from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.utils import strip_include
 from obidog.bindings.classes import generate_classes_bindings
 from obidog.bindings.enums import generate_enums_bindings
+from obidog.logger import log
 import os
 
 
@@ -83,7 +84,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
 
 
 def generate_bindings_for_namespace(name, namespace):
-    print("Generating bindings for namespace", name)
+    log.info(f"Generating bindings for namespace {name}")
     split_name = "/".join(name.split("::")[1::]) if "::" in name else name.capitalize()
     base_path = f"Bindings/{split_name}"
     os.makedirs(os.path.join("output", "include", base_path), exist_ok=True)
@@ -104,7 +105,7 @@ def generate_bindings_for_namespace(name, namespace):
 
 
 def generate_bindings(cpp_db):
-    print("===== Generating bindings for ÖbEngine ====")
+    log.info("===== Generating bindings for ÖbEngine ====")
     namespaces = group_bindings_by_namespace(cpp_db)
     for namespace_name, namespace in namespaces.items():
         generate_bindings_for_namespace(namespace_name, namespace)
