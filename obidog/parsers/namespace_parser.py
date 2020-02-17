@@ -1,15 +1,18 @@
+import os
+
 from lxml import etree
-from obeldog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
-from obeldog.parsers.function_parser import parse_function_from_xml
-from obeldog.parsers.parameters_parser import parse_parameters_from_xml
-from obeldog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.config import PATH_TO_OBENGINE
+from obidog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
+from obidog.parsers.function_parser import parse_function_from_xml
+from obidog.parsers.parameters_parser import parse_parameters_from_xml
+from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 
 def parse_functions_from_xml(namespace, tree, cpp_db):
     functions_path = "/doxygen/compounddef/sectiondef[@kind='func']/memberdef[@kind='function']"
     xml_functions = tree.xpath(functions_path)
     for xml_function in xml_functions:
         function = parse_function_from_xml(xml_function)
-        if function["return_type"]:
+        if function and function["return_type"]:
             cpp_db.functions["::".join((namespace, function["name"]))] = function
 
 
@@ -44,6 +47,13 @@ def parse_enum_from_xml(xml_enum):
     enum_name = get_content(xml_enum.find("name"))
     enum_description = get_content(xml_enum.find("briefdescription"))
     enum_values = []
+
+    base_location = xml_enum.find("location").attrib["file"]
+    location = os.path.relpath(
+        os.path.normpath(base_location),
+        os.path.normpath(PATH_TO_OBENGINE)
+    ).replace(os.path.sep, "/")
+
     for enum_value in xml_enum.xpath("enumvalue"):
         enum_values.append({
             "name": get_content(enum_value.find("name")),
@@ -52,7 +62,8 @@ def parse_enum_from_xml(xml_enum):
     return {
         "name": enum_name,
         "description": enum_description,
-        "values": enum_values
+        "values": enum_values,
+        "location": location
     }
 
 def parse_enums_from_xml(namespace, tree, cpp_db):

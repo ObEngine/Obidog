@@ -3,9 +3,9 @@ import tempfile
 
 import git
 
-from obeldog.config import PATH_TO_OBENGINE
-from obeldog.exceptions import InvalidObEngineGitRepositoryException
-from obeldog.logger import log
+from obidog.config import PATH_TO_OBENGINE
+from obidog.exceptions import InvalidObEngineGitRepositoryException
+from obidog.logger import log
 
 OBENGINE_GIT_URL = os.environ.get(
     "OBENGINE_GIT_URL",

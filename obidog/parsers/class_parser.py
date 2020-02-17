@@ -1,11 +1,11 @@
 from lxml import etree
 import os
 
-from obeldog.config import PATH_TO_OBENGINE
-from obeldog.exceptions import ParameterNameNotFoundInXMLException
-from obeldog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
-from obeldog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
-from obeldog.parsers.function_parser import parse_function_from_xml
+from obidog.config import PATH_TO_OBENGINE
+from obidog.exceptions import ParameterNameNotFoundInXMLException
+from obidog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
+from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.parsers.function_parser import parse_function_from_xml
 
 
 def parse_class_from_xml(class_path):
@@ -21,9 +21,9 @@ def parse_class_from_xml(class_path):
         os.path.normpath(base_location),
         os.path.normpath(PATH_TO_OBENGINE)
     ).replace(os.path.sep, "/")
-    export["herits"] = []
+    export["bases"] = []
     for basecompoundref in tree.xpath("/doxygen/compounddef/basecompoundref"):
-        export["herits"].append(get_content(basecompoundref))
+        export["bases"].append(get_content(basecompoundref))
     if "obe::obe" in export["name"]: # Fixing nested namespace issue in Doxygen
         export["name"] = export["name"].replace("obe::obe::", "obe::")
     export["desc"] = extract_xml_value(tree, "/doxygen/compounddef/briefdescription/para")

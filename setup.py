@@ -9,12 +9,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 setup(
-    name='obeldog',
+    name='obidog',
     version='1.0.0',
     description="ÖbEngine's Lua Documentation Generator",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/Sygmei/Obeldog',
+    url='https://github.com/Sygmei/Obidog',
     author='Sygmei',
     author_email='sygmei@outlook.com',
     classifiers=[
@@ -33,11 +33,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'obeldog=obeldog.main:main',
+            'obidog=obidog.main:main',
         ],
     },
     project_urls={
-        'Bug Reports': 'https://github.com/Sygmei/Obeldog/issues',
-        'Source': 'https://github.com/Sygmei/Obeldog',
+        'Bug Reports': 'https://github.com/Sygmei/Obidog/issues',
+        'Source': 'https://github.com/Sygmei/Obidog',
     },
 )

@@ -1,5 +1,5 @@
-from obeldog.utils.dict_utils import merge_dicts
-from obeldog.logger import log
+from obidog.utils.dict_utils import merge_dicts
+from obidog.logger import log
 
 class FutureLuaReferenceTag:
     def __init__(self, cpp_type):

@@ -1,6 +1,6 @@
-from obeldog.exceptions import ParameterNameNotFoundInXMLException
-from obeldog.parsers.utils.xml_utils import get_content, get_content_if
-from obeldog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.exceptions import ParameterNameNotFoundInXMLException
+from obidog.parsers.utils.xml_utils import get_content, get_content_if
+from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 
 def parse_parameters_from_xml(xml_function):
     parameters = []

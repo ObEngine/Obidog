@@ -1,9 +1,9 @@
 import os
 
-from obeldog.logger import log
-from obeldog.parsers.class_parser import parse_class_from_xml
-from obeldog.parsers.namespace_parser import parse_namespace_from_xml
-from obeldog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
+from obidog.logger import log
+from obidog.parsers.class_parser import parse_class_from_xml
+from obidog.parsers.namespace_parser import parse_namespace_from_xml
+from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
 
 def parse_doxygen_files(path_to_doc, cpp_db):
     log.info("Loading classes info...")

@@ -1,4 +1,4 @@
-from obeldog.parsers.utils.xml_utils import get_content
+from obidog.parsers.utils.xml_utils import get_content
 
 def merge_and_remove_duplicates(l1, l2):
     i2 = 0

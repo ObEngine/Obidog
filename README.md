@@ -1,17 +1,17 @@
-# Obeldog
+# Obidog
 
-ÖbEngine's Lua Documentation Generator (work in progress)
+Öbengine's BIndings and DOcumentation Generator (work in progress)
 
 **[ÖbEngine repository](https://github.com/Sygmei/ObEngine)**
 
-Obeldog has two uses :
+Obidog has two uses :
 - Generating ÖbEngine bindings
 - Generating ÖbEngine documentation
 
 ## Requirements
 
-Obeldog has the following requirements :
-- Python > 3.6 (+ install the Obeldog package using `pip install -e .` if you cloned this repository)
+Obidog has the following requirements :
+- Python > 3.6 (+ install the Obidog package using `pip install -e .` if you cloned this repository)
     - lxml
     - GitPython
 - Doxygen (needs to be in `PATH`)
@@ -19,7 +19,7 @@ Obeldog has the following requirements :
 
 ### Cloning repository
 
-To make the script run faster, you should export the following environment variable : `OBENGINE_GIT_DIRECTORY`, if you don't export it though, it's fine, Obeldog will clone the repository in a temporary folder (it requires you to have `git` in `PATH`).
+To make the script run faster, you should export the following environment variable : `OBENGINE_GIT_DIRECTORY`, if you don't export it though, it's fine, Obidog will clone the repository in a temporary folder (it requires you to have `git` in `PATH`).
 
 ## Bindings generator
 
@@ -30,11 +30,11 @@ To make the script run faster, you should export the following environment varia
 Embedding a scripting language inside a C++ application is not free though, as C++ lacks any kind of reflection capability, it requires the user to manually bind each function/class/enum/... to the scripting language's virtual machine.
 
 Doing such a task takes a lot of time, is error-prone and is really boring.
-That's where Obeldog comes into action ! It will Doxygen as a reflection tool (it uses Doxygen's XML output) and automatically generates all the execution gluecode.
+That's where Obidog comes into action ! It will Doxygen as a reflection tool (it uses Doxygen's XML output) and automatically generates all the execution gluecode.
 
 ### Usage
 
-Just run `obeldog bindings` and it will generate all the ÖbEngine bindings into the `output/` folder.
+Just run `obidog bindings` and it will generate all the ÖbEngine bindings into the `output/` folder.
 The output will have the following structure :
 ```
 output/
@@ -58,11 +58,11 @@ output/
 
 ### Flavours
 
-The Obeldog bindings generator currently supports two flavours
+The Obidog bindings generator currently supports two flavours
 - sol3 (wip)
 - kaguya (deprecated)
 
-New flavours can be added easily in the `obeldog/generators/bindings_flavours` folder.
+New flavours can be added easily in the `obidog/generators/bindings_flavours` folder.
 It will maybe support the following flavours in the future when ÖbEngine is mature enough.
 - Wrenpp
 - GuraX
@@ -81,11 +81,11 @@ This is really practical from the user's point of view as any user can explore t
 
 All of that is great, but there is a catch: if the user uses the scripting language, it is not C++ anymore and therefore, the user won't be able to use the C++ documentation anymore (not the same symbols / types).
 
-That's where Obeldog comes into action (again!), it will create try to generate a documentation for the target scripting language using the Doxygen XML and the generated bindings, translating symbols and types on the go to generate a coherant and nice looking documentation website.
+That's where Obidog comes into action (again!), it will create try to generate a documentation for the target scripting language using the Doxygen XML and the generated bindings, translating symbols and types on the go to generate a coherant and nice looking documentation website.
 
 ### Usage
 
-Just run `obeldog documentation` and it will generate all the ÖbEngine documentation into the `docs/` folder.
+Just run `obidog documentation` and it will generate all the ÖbEngine documentation into the `docs/` folder.
 
 ### Template customisation
 

@@ -13,6 +13,7 @@ PROPERTY = "sol::readonly({address})"
 DEFAULT_CONSTRUCTOR = "sol::default_constructor"
 DESTRUCTOR = "sol::destructor({destructor})"
 CONSTRUCTORS = "sol::constructors<{constructors}>()"
+BASE_CLASSES = "sol::bases<{bases}>()"
 METHOD = "{address}"
 TRANSLATION_TABLE = {
     "operator+": "sol::meta_function::addition",
@@ -29,3 +30,7 @@ TRANSLATION_TABLE = {
     "operator*=": None,
     "operator/=": None,
 }
+ENUM_BODY = """
+sol::table {namespace}Namespace = state{namespace_path};
+{namespace}Namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
+""".strip("\n")

@@ -5,21 +5,21 @@ import tempfile
 
 import requests
 
-from obeldog.databases import CppDatabase, LuaDatabase
-from obeldog.generators.bindings_generator import generate_bindings
-from obeldog.generators.cpp_lua_mixer import (
+from obidog.databases import CppDatabase, LuaDatabase
+from obidog.bindings.generator import generate_bindings
+from obidog.generators.cpp_lua_mixer import (
     mix_cpp_lua_doc, transform_all_cpp_types_to_lua_types)
-from obeldog.generators.doc_class_generator import generate
-from obeldog.logger import log
-from obeldog.parsers.bindings_parser import parse_all_lua_bindings
-from obeldog.parsers.cpp_parser import parse_doxygen_files
-from obeldog.wrappers.doxygen_wrapper import build_doxygen_documentation
-from obeldog.wrappers.git_wrapper import check_git_directory
+from obidog.generators.doc_class_generator import generate
+from obidog.logger import log
+from obidog.parsers.bindings_parser import parse_all_lua_bindings
+from obidog.parsers.cpp_parser import parse_doxygen_files
+from obidog.wrappers.doxygen_wrapper import build_doxygen_documentation
+from obidog.wrappers.git_wrapper import check_git_directory
 
 
 def main():
     parser = argparse.ArgumentParser()
-    # Starting Obeldog
+    # Starting Obidog
     log.info("ÖbEngine Lua Documentation Generator starting...")
 
     # Creating databases

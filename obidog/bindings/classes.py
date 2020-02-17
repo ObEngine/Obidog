@@ -1,51 +1,12 @@
-from collections import defaultdict
-from obeldog.databases import CppDatabase
-from obeldog.generators.bindings_flavours import sol3 as flavour
 import os
 
+import obidog.bindings.flavours.sol3 as flavour
+from obidog.bindings.utils import strip_include
 
-def group_bindings_by_namespace(cpp_db):
-    group_by_namespace = defaultdict(CppDatabase)
-    for item_type in ["classes", "enums", "functions", "globals", "typedefs"]:
-        for item_name, item_value in getattr(cpp_db, item_type).items():
-            strip_template = item_name.split("<")[0]
-            last_namespace = "::".join(strip_template.split("::")[:-1:])
-            getattr(group_by_namespace[last_namespace], item_type)[
-                item_name
-            ] = item_value
-    return group_by_namespace
-
-
-CLASS_BINDINGS_INCLUDE_TEMPLATE = """
-#pragma once
-
-namespace {fd_sv_ns} {{ class {fd_sv_cl}; }};
-namespace {ns}
-{{
-{fn};
-}};
-""".strip(
-    "\n"
+METHOD_CAST_TEMPLATE = (
+    "static_cast<{return_type} ({class_name}::*)"
+    "({parameters}) {qualifiers}>({method_address})"
 )
-
-CLASS_BINDINGS_SRC_TEMPLATE = """
-#include <{binding_include}>
-#include <{class_include}>
-#include <{binding_lib}>
-
-namemspace {ns}
-{{
-{fn}
-{{
-{fn_body}
-}}
-}};
-""".strip(
-    "\n"
-)
-
-METHOD_CAST_TEMPLATE = "static_cast<{return_type} ({class_name}::*)({parameters}) {qualifiers}>({method_address})"
-
 
 def generate_constructors_definitions(constructors):
     """This method generates all possible combinations for all constructors of a class
@@ -100,7 +61,7 @@ def generate_class_bindings(class_value):
         )
     else:
         constructors_signatures_str = flavour.DEFAULT_CONSTRUCTOR
-    # TODO: Use class_value["bases"] to define sol::base_classes, sol::bases
+    # TODO: Register base class functions for sol3 on derived
     body = []
     for attribute in class_value["attributes"].values():
         attribute_name = attribute["name"]
@@ -142,6 +103,10 @@ def generate_class_bindings(class_value):
         class_definition += ", " + flavour.DESTRUCTOR.format(
             destructor="&" + class_value["destructor"]["definition"]
         )
+    if class_value["bases"]:
+        class_definition += ", " + flavour.BASE_CLASSES.format(
+            bases=", ".join(class_value["bases"])
+        )
 
     return flavour.CLASS_BODY.format(
         cpp_class=class_value["name"],
@@ -153,51 +118,30 @@ def generate_class_bindings(class_value):
     )
 
 
-def generate_bindings_for_namespace(name, namespace):
-    split_name = "/".join(name.split("::")[1::])
-    base_path = f"Bindings/{split_name}"
-    os.makedirs(os.path.join("output", "include", base_path), exist_ok=True)
-    os.makedirs(os.path.join("output", "src", base_path), exist_ok=True)
-    for class_name, class_value in namespace.classes.items():
+def generate_classes_bindings(classes, base_path):
+    objects = []
+    includes = []
+    bindings_functions = []
+    for class_name, class_value in classes.items():
+        print("  Generating bindings for class", class_name)
         real_class_name = class_name.split("::")[-1]
-        inc_out = os.path.join(
-            "output", "include", base_path, f"Class{real_class_name}.hpp"
-        )
-        state_view = flavour.STATE_VIEW
-        binding_function = f"void LoadClass{real_class_name}({state_view} state)"
-        with open(inc_out, "w") as class_binding:
-            class_binding.write(
-                CLASS_BINDINGS_INCLUDE_TEMPLATE.format(
-                    ns=f"{name}::Bindings",
-                    fn=binding_function,
-                    fd_sv_ns="::".join(state_view.split("::")[:-1:]),
-                    fd_sv_cl=state_view.split("::")[-1],
-                )
-            )
-        src_out = os.path.join(
-            "output", "src", base_path, f"Class{real_class_name}.hpp"
-        )
-        class_path = class_value["location"]
-        for strip_include in ["include/Core", "include/Dev", "include/Player"]:
-            if os.path.commonprefix([strip_include, class_path]):
-                class_path = os.path.relpath(class_path, strip_include)
+        objects.append(f"Class{real_class_name}")
+        class_path = strip_include(class_value["location"])
         class_path = class_path.replace(os.path.sep, "/")
-        with open(src_out, "w") as class_binding:
-            state_view = flavour.STATE_VIEW
-            binding_function = f"void LoadClass{real_class_name}({state_view} state)"
-            class_binding.write(
-                CLASS_BINDINGS_SRC_TEMPLATE.format(
-                    binding_include=f"{base_path}/Class{real_class_name}.hpp",
-                    binding_lib=flavour.INCLUDE_FILE,
-                    class_include=class_path,
-                    ns=f"{name}::Bindings",
-                    fn=binding_function,
-                    fn_body=generate_class_bindings(class_value),
-                )
-            )
+        class_path = f"#include <{class_path}>"
+        includes.append(class_path)
 
-
-def generate_bindings(cpp_db):
-    namespaces = group_bindings_by_namespace(cpp_db)
-    for namespace_name, namespace in namespaces.items():
-        generate_bindings_for_namespace(namespace_name, namespace)
+        state_view = flavour.STATE_VIEW
+        binding_function_signature = (
+            f"void LoadClass{real_class_name}({state_view} state)"
+        )
+        binding_function = (
+            f"{binding_function_signature}\n{{\n"
+            f"{generate_class_bindings(class_value)}\n}}"
+        )
+        bindings_functions.append(binding_function)
+    return {
+        "includes": includes,
+        "objects": objects,
+        "bindings_functions": bindings_functions
+    }
