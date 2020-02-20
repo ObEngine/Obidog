@@ -5,6 +5,7 @@ from obidog.parsers.class_parser import parse_class_from_xml
 from obidog.parsers.namespace_parser import parse_namespace_from_xml
 from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
 
+
 def parse_doxygen_files(path_to_doc, cpp_db):
     log.info("Loading classes info...")
     for currentDir, _, files in os.walk(os.path.join(path_to_doc, "docbuild/xml/")):

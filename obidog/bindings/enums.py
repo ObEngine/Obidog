@@ -11,7 +11,7 @@ def generate_enum_fields(enum_type, enum):
     return "{" + ",".join(body) + "}"
 
 
-def generate_enums_bindings(name, enums, base_path):
+def generate_enums_bindings(name, enums):
     includes = []
     bindings_functions = []
     objects = []
@@ -36,10 +36,7 @@ def generate_enums_bindings(name, enums, base_path):
         )
         objects.append(f"Enum{enum['name']}")
     return {
-        "binding_include": f"{base_path}/Namespace{name.split('::')[-1]}.hpp",
-        "binding_lib": flavour.INCLUDE_FILE,
         "includes": includes,
-        "namespace": f"{name}::Bindings",
         "bindings_functions": bindings_functions,
         "objects": objects
     }

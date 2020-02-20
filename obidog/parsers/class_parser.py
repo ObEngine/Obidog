@@ -3,7 +3,11 @@ import os
 
 from obidog.config import PATH_TO_OBENGINE
 from obidog.exceptions import ParameterNameNotFoundInXMLException
-from obidog.parsers.utils.xml_utils import get_content, get_content_if, extract_xml_value
+from obidog.parsers.utils.xml_utils import (
+    get_content,
+    get_content_if,
+    extract_xml_value,
+)
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.function_parser import parse_function_from_xml
 
@@ -18,19 +22,23 @@ def parse_class_from_xml(class_path):
         export["bases"] = [get_content(base) for base in base_classes]
     base_location = tree.xpath("/doxygen/compounddef/location")[0].attrib["file"]
     export["location"] = os.path.relpath(
-        os.path.normpath(base_location),
-        os.path.normpath(PATH_TO_OBENGINE)
+        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
     ).replace(os.path.sep, "/")
     export["bases"] = []
     for basecompoundref in tree.xpath("/doxygen/compounddef/basecompoundref"):
         export["bases"].append(get_content(basecompoundref))
-    if "obe::obe" in export["name"]: # Fixing nested namespace issue in Doxygen
+    if "obe::obe" in export["name"]:  # LATER: Check if nested namespace issue in Doxygen is fixed
         export["name"] = export["name"].replace("obe::obe::", "obe::")
-    export["desc"] = extract_xml_value(tree, "/doxygen/compounddef/briefdescription/para")
+    export["desc"] = extract_xml_value(
+        tree, "/doxygen/compounddef/briefdescription/para"
+    )
     export["methods"] = {}
+    export["static_methods"] = {}
     export["constructors"] = []
     if len(tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")) > 0:
-        for xml_method in tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")[0]:
+        for xml_method in tree.xpath(
+            "/doxygen/compounddef/sectiondef[@kind='public-func']"
+        )[0]:
             method = parse_function_from_xml(xml_method, method=True)
             if method["name"] == export["name"].split("::")[-1]:
                 export["constructors"].append(method)
@@ -39,13 +47,13 @@ def parse_class_from_xml(class_path):
             else:
                 if method["name"] in export["methods"]:
                     overload = export["methods"][method["name"]]
-                    if overload["__type__"] == "method_overload":
+                    if overload["__type__"].endswith("_overload"):
                         overload["overloads"].append(method)
                     else:
                         export["methods"][method["name"]] = {
                             "__type__": "method_overload",
                             "name": method["name"],
-                            "overloads": [overload, method]
+                            "overloads": [overload, method],
                         }
                 else:
                     export["methods"][method["name"]] = method
@@ -58,6 +66,23 @@ def parse_class_from_xml(class_path):
             "__type__": "attribute",
             "type": get_content(xml_attribute.find("type")),
             "name": attribute_name,
-            "description": get_content(xml_attribute.find("briefdescription"))
+            "description": get_content(xml_attribute.find("briefdescription")),
         }
+    for xml_attribute in tree.xpath(
+        "/doxygen/compounddef/sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
+    ):
+        static_func = parse_function_from_xml(xml_attribute, method=True)
+        if static_func["name"] in export["static_methods"]:
+            overload = export["static_methods"][static_func["name"]]
+            if overload["__type__"] == "static_method_overload":
+                overload["overloads"].append(static_func)
+            else:
+                export["static_methods"][static_func["name"]] = {
+                    "__type__": "static_method_overload",
+                    "name": static_func["name"],
+                    "overloads": [overload, static_func]
+                }
+        else:
+            export["static_methods"][static_func["name"]] = static_func
+
     return export["name"], export

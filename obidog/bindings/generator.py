@@ -4,6 +4,8 @@ from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.utils import strip_include
 from obidog.bindings.classes import generate_classes_bindings
 from obidog.bindings.enums import generate_enums_bindings
+from obidog.bindings.functions import generate_functions_bindings
+from obidog.bindings.globals import generate_globals_bindings
 from obidog.logger import log
 import os
 
@@ -19,8 +21,6 @@ namespace {namespace}
 """.strip(
     "\n"
 )
-
-# TODO: Classes on separate file is ok, add one file for enums + functions etc...
 
 BINDINGS_SRC_TEMPLATE = """
 #include <{bindings_header}>
@@ -68,7 +68,9 @@ def make_bindings_header(path, namespace, objects):
 
 def make_bindings_sources(namespace, path, bindings_header, *datasets):
     with open(path, "w") as bindings_source:
-        all_includes = set(includes for data in datasets for includes in data["includes"])
+        all_includes = set(
+            includes for data in datasets for includes in data["includes"]
+        )
         all_functions = [
             functions for data in datasets for functions in data["bindings_functions"]
         ]
@@ -89,23 +91,78 @@ def generate_bindings_for_namespace(name, namespace):
     base_path = f"Bindings/{split_name}"
     os.makedirs(os.path.join("output", "include", base_path), exist_ok=True)
     os.makedirs(os.path.join("output", "src", base_path), exist_ok=True)
-    class_bindings = generate_classes_bindings(namespace.classes, base_path)
-    enum_bindings = generate_enums_bindings(name, namespace.enums, base_path)
+    class_bindings = generate_classes_bindings(namespace.classes)
+    enum_bindings = generate_enums_bindings(name, namespace.enums)
+    functions_bindings = generate_functions_bindings(namespace.functions)
+    globals_bindings = generate_globals_bindings(name, namespace.globals)
 
-    bindings_header = os.path.join(
-        base_path,
-        f"{name.split('::')[-1]}.hpp"
-    ).replace(os.path.sep, "/")
+    bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
+        os.path.sep, "/"
+    )
+
+    generated_objects = (
+        class_bindings["objects"]
+        + enum_bindings["objects"]
+        + functions_bindings["objects"]
+        + globals_bindings["objects"]
+    )
 
     make_bindings_header(
-        bindings_header, name, class_bindings["objects"] + enum_bindings["objects"]
+        bindings_header,
+        name,
+        generated_objects
     )
     src_out = os.path.join("output", "src", base_path, f"{name.split('::')[-1]}.cpp")
-    make_bindings_sources(name, src_out, bindings_header, enum_bindings, class_bindings)
+    make_bindings_sources(
+        name,
+        src_out,
+        bindings_header,
+        enum_bindings,
+        class_bindings,
+        functions_bindings,
+        globals_bindings
+    )
+    return generated_objects
+
+# LATER: Generate bindings shorthands
+def generated_bindings_index(generated_objects):
+    print("Generating Bindings Index...")
+    body = []
+    for namespace_name, objects in generated_objects.items():
+        ns_split = namespace_name.split("::")
+        namespace_path = "".join(f"[\"{namespace_part}\"]" for namespace_part in ns_split[:-1])
+        namespace_full_path = "".join(f"[\"{namespace_part}\"]" for namespace_part in ns_split)
+        namespace_last_name = ns_split[-1]
+        body.append(f"BindTree{namespace_path}.add(\"{namespace_last_name}\", InitTreeNodeAsTable(\"{namespace_last_name}\"))")
+        print(objects)
+        body.append(f"BindTree{namespace_full_path}")
+        for generated_object in objects:
+            body.append(
+                f".add(\"{generated_object}\", &{namespace_name}::Bindings::{generated_object})"
+            )
+        body.append("\n")
+    return "\n".join(body)
 
 
+
+# LATER: Add a tag in Doxygen to allow custom name / namespace binding
+# LATER: Add a tag in Doxygen to list possible templated types
+# LATER: Add a tag in Doxygen to make fields privates
+# TODO: Add a tag in Doxygen to specify a helper script
+# OR add a way to define a list of helpers (lua scripts) to run for some namespaces
+# TODO: Check if it's possible to change a bound global value from Lua, otherwise provide a lambda setter
+# LATER: Provide a way to "patch" some namespaces / classes / functions with callbacks
+# LATER: Provide a "policy" system to manage bindings grouping etc...
+# LATER: Try to shorten function pointers / full names given the namespace we are in while binding
+# TODO: Check behaviour with std::optional, std::variant, std::any (getSegmentContainingPoint for example)
+# TODO: Check behaviour with smart pointers
+# TODO: Allow injection of "commonly used types" in templated functions using a certain flag in doc (pushParameter for example)
 def generate_bindings(cpp_db):
     log.info("===== Generating bindings for ÖbEngine ====")
     namespaces = group_bindings_by_namespace(cpp_db)
+    generated_objects = {}
     for namespace_name, namespace in namespaces.items():
-        generate_bindings_for_namespace(namespace_name, namespace)
+        generated_objects[namespace_name] = generate_bindings_for_namespace(namespace_name, namespace)
+    with open("output/src/index.cpp", "w") as bindings_index:
+        bindings_index.write(generated_bindings_index(generated_objects))
+    print("STOP")

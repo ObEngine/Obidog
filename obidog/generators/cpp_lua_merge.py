@@ -78,7 +78,7 @@ def cpp_type_to_lua_type(lua_db, cpp_type, lookup_cpp = False):
         cpp_type = cpp_type.rstrip("*")
     cpp_type = cpp_type.strip(" ")
     if "<" in cpp_type and ">" in cpp_type:
-        cpp_type = cpp_type.split("<")[0] # TODO: Add templated types
+        cpp_type = cpp_type.split("<")[0] # LATER: Add templated types
     if cpp_type in ALL_TYPES_MATCH:
         lua_type = ALL_TYPES_MATCH[cpp_type]
     else:

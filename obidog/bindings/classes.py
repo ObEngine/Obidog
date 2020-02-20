@@ -2,12 +2,14 @@ import os
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
+from obidog.utils.string_utils import clean_capitalize
 from obidog.logger import log
 
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
     "({parameters}) {qualifiers}>({method_address})"
 )
+
 
 def generate_constructors_definitions(constructors):
     """This method generates all possible combinations for all constructors of a class
@@ -41,10 +43,41 @@ def generate_constructors_definitions(constructors):
     return constructors_definitions
 
 
+def generate_method_bindings(body, full_name, lua_name, methods, fields_names):
+    for method in methods.values():
+        method_name = method["name"]
+        bind_name = method_name
+        if bind_name in flavour.TRANSLATION_TABLE:
+            bind_name = flavour.TRANSLATION_TABLE[method_name]
+            if bind_name is None:
+                continue
+        else:
+            bind_name = f'"{bind_name}"'
+        if method["__type__"] == fields_names["simple"]:
+            method_bind = flavour.METHOD.format(address=f"&{full_name}::{method_name}")
+            body.append(f"bind{lua_name}[{bind_name}] = {method_bind};")
+        elif method["__type__"] == fields_names["overload"]:
+            casts = [
+                METHOD_CAST_TEMPLATE.format(
+                    return_type=overload["return_type"],
+                    class_name=full_name,
+                    parameters=", ".join(
+                        [parameter["type"] for parameter in overload["parameters"]]
+                    ),
+                    qualifiers=" ".join(overload["qualifiers"]),
+                    method_address=f"&{full_name}::{overload['name']}",
+                )
+                for overload in method["overloads"]
+            ]
+            body.append(
+                f"bind{lua_name}[{bind_name}] = "
+                + flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
+            )
+
+
 def generate_class_bindings(class_value):
     full_name = class_value["name"]
-    namespace = class_value["name"].split("::")[0]
-    lua_name = class_value["name"].split("::")[-1]
+    namespace, lua_name = full_name.split("::")[-2::]
 
     constructors_signatures = generate_constructors_definitions(
         class_value["constructors"]
@@ -52,7 +85,7 @@ def generate_class_bindings(class_value):
     if len(constructors_signatures) > 0:
         constructors_signatures_str = ", ".join(
             [
-                f"{class_value['name']}({', '.join(ctor)})"
+                f"{full_name}({', '.join(ctor)})"
                 for constructor_signatures in constructors_signatures
                 for ctor in constructor_signatures
             ]
@@ -62,42 +95,28 @@ def generate_class_bindings(class_value):
         )
     else:
         constructors_signatures_str = flavour.DEFAULT_CONSTRUCTOR
-    # TODO: Register base class functions for sol3 on derived
+    # LATER: Register base class functions for sol3 on derived for optimization
     body = []
+    generate_method_bindings(
+        body,
+        full_name,
+        lua_name,
+        class_value["methods"],
+        {"simple": "method", "overload": "method_overload"},
+    )
+    generate_method_bindings(
+        body,
+        full_name,
+        lua_name,
+        class_value["static_methods"],
+        {"simple": "static_method", "overload": "static_method_overload"},
+    )
     for attribute in class_value["attributes"].values():
         attribute_name = attribute["name"]
         attribute_bind = flavour.PROPERTY.format(
             address=f"&{full_name}::{attribute_name}"
         )
         body.append(f'bind{lua_name}["{attribute_name}"] = {attribute_bind};')
-    for method in class_value["methods"].values():
-        method_name = method["name"]
-        bind_name = method_name
-        if bind_name in flavour.TRANSLATION_TABLE:
-            bind_name = flavour.TRANSLATION_TABLE[method_name]
-            if bind_name is None:
-                continue
-        else:
-            bind_name = f'"{bind_name}"'
-        if method["__type__"] == "method":
-            method_bind = flavour.METHOD.format(address=f"&{full_name}::{method_name}")
-            body.append(f"bind{lua_name}[{bind_name}] = {method_bind};")
-        elif method["__type__"] == "method_overload":
-            casts = [
-                METHOD_CAST_TEMPLATE.format(
-                    return_type=overload["return_type"],
-                    class_name=full_name,
-                    parameters=", ".join(
-                        [parameter["type"] for parameter in overload["parameters"]]
-                    ),
-                    qualifiers=", ".join(overload["qualifiers"]),
-                    method_address=f"&{full_name}::{overload['name']}",
-                )
-                for overload in method["overloads"]
-            ]
-            body.append(
-                f"bind{lua_name}[{bind_name}] = sol::overload({', '.join(casts)});"
-            )
 
     class_definition = constructors_signatures_str
     if "destructor" in class_value:
@@ -108,18 +127,21 @@ def generate_class_bindings(class_value):
         class_definition += ", " + flavour.BASE_CLASSES.format(
             bases=", ".join(class_value["bases"])
         )
-
+    namespace_access = "".join(
+        f'["{path_elem}"]' for path_elem in full_name.split("::")[:-1]
+    )
     return flavour.CLASS_BODY.format(
         cpp_class=class_value["name"],
         lua_short_name=lua_name,
         namespace=namespace,
+        namespace_path=namespace_access,
         class_definition=class_definition,
         body="\n".join(body),
         helpers="",
     )
 
 
-def generate_classes_bindings(classes, base_path):
+def generate_classes_bindings(classes):
     objects = []
     includes = []
     bindings_functions = []
@@ -144,5 +166,5 @@ def generate_classes_bindings(classes, base_path):
     return {
         "includes": includes,
         "objects": objects,
-        "bindings_functions": bindings_functions
+        "bindings_functions": bindings_functions,
     }

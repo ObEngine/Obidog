@@ -52,16 +52,11 @@ def main():
             lua_db
         )
 
-        # TODO: Inject lambdas to class methods when the path is the same (method patching)
-
         # Merging informations from both databases
         mix_cpp_lua_doc(cpp_db, lua_db)
 
         # Transforming all CPP non-native types (returns / parameters) into Lua types
         transform_all_cpp_types_to_lua_types(lua_db)
-
-        # TODO: Handle heritage
-        # TODO: Inject templated return type using template specialisation in bindings
 
         # Generating static documentation
         generate(cwd, cpp_db.classes["obe::Animation::Animation"])
