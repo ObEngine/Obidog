@@ -16,7 +16,7 @@ BINDINGS_INCLUDE_TEMPLATE = """
 namespace {state_view_forward_decl_ns} {{ class {state_view_forward_decl_cls}; }};
 namespace {namespace}
 {{
-{bindings_functions_signatures};
+{bindings_functions_signatures}
 }};
 """.strip(
     "\n"
@@ -24,9 +24,10 @@ namespace {namespace}
 
 BINDINGS_SRC_TEMPLATE = """
 #include <{bindings_header}>
-#include <{bindings_lib}>
 
 {includes}
+
+#include <{bindings_lib}>
 
 namespace {namespace}
 {{
@@ -36,6 +37,7 @@ namespace {namespace}
     "\n"
 )
 
+OUTPUT_DIRECTORY = os.environ["OBENGINE_BINDINGS_OUTPUT"]
 
 def group_bindings_by_namespace(cpp_db):
     group_by_namespace = defaultdict(CppDatabase)
@@ -50,7 +52,7 @@ def group_bindings_by_namespace(cpp_db):
 
 
 def make_bindings_header(path, namespace, objects):
-    inc_out = os.path.join("output", "include", path)
+    inc_out = os.path.join(OUTPUT_DIRECTORY, "include", "Core", path)
     state_view = flavour.STATE_VIEW
     bindings_functions = [
         f"void Load{object_name}({state_view} state)" for object_name in objects
@@ -59,7 +61,7 @@ def make_bindings_header(path, namespace, objects):
         class_binding.write(
             BINDINGS_INCLUDE_TEMPLATE.format(
                 namespace=f"{namespace}::Bindings",
-                bindings_functions_signatures="\n".join(bindings_functions),
+                bindings_functions_signatures="\n".join(f"{binding_function};" for binding_function in bindings_functions),
                 state_view_forward_decl_ns="::".join(state_view.split("::")[:-1:]),
                 state_view_forward_decl_cls=state_view.split("::")[-1],
             )
@@ -69,7 +71,7 @@ def make_bindings_header(path, namespace, objects):
 def make_bindings_sources(namespace, path, bindings_header, *datasets):
     with open(path, "w") as bindings_source:
         all_includes = set(
-            includes for data in datasets for includes in data["includes"]
+            includes for data in datasets for includes in data["includes"] if not includes.endswith(".cpp")
         )
         all_functions = [
             functions for data in datasets for functions in data["bindings_functions"]
@@ -89,8 +91,8 @@ def generate_bindings_for_namespace(name, namespace):
     log.info(f"Generating bindings for namespace {name}")
     split_name = "/".join(name.split("::")[1::]) if "::" in name else name.capitalize()
     base_path = f"Bindings/{split_name}"
-    os.makedirs(os.path.join("output", "include", base_path), exist_ok=True)
-    os.makedirs(os.path.join("output", "src", base_path), exist_ok=True)
+    os.makedirs(os.path.join(OUTPUT_DIRECTORY, "include", "Core", base_path), exist_ok=True)
+    os.makedirs(os.path.join(OUTPUT_DIRECTORY, "src", "Core", base_path), exist_ok=True)
     class_bindings = generate_classes_bindings(namespace.classes)
     enum_bindings = generate_enums_bindings(name, namespace.enums)
     functions_bindings = generate_functions_bindings(namespace.functions)
@@ -112,7 +114,7 @@ def generate_bindings_for_namespace(name, namespace):
         name,
         generated_objects
     )
-    src_out = os.path.join("output", "src", base_path, f"{name.split('::')[-1]}.cpp")
+    src_out = os.path.join(OUTPUT_DIRECTORY, "src", "Core", base_path, f"{name.split('::')[-1]}.cpp")
     make_bindings_sources(
         name,
         src_out,

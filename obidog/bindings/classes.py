@@ -2,6 +2,7 @@ import os
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
+from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE
 from obidog.utils.string_utils import clean_capitalize
 from obidog.logger import log
 
@@ -66,12 +67,21 @@ def generate_method_bindings(body, full_name, lua_name, methods, fields_names):
                     ),
                     qualifiers=" ".join(overload["qualifiers"]),
                     method_address=f"&{full_name}::{overload['name']}",
+                ) if not overload["static"] else
+                FUNCTION_CAST_TEMPLATE.format(
+                    return_type=overload["return_type"],
+                    parameters=", ".join(
+                        [parameter["type"] for parameter in overload["parameters"]]
+                    ),
+                    qualifiers=" ".join(overload["qualifiers"]),
+                    function_address=f"&{full_name}::{overload['name']}",
                 )
                 for overload in method["overloads"]
             ]
             body.append(
                 f"bind{lua_name}[{bind_name}] = "
                 + flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
+                + ";"
             )
 
 
@@ -119,10 +129,6 @@ def generate_class_bindings(class_value):
         body.append(f'bind{lua_name}["{attribute_name}"] = {attribute_bind};')
 
     class_definition = constructors_signatures_str
-    if "destructor" in class_value:
-        class_definition += ", " + flavour.DESTRUCTOR.format(
-            destructor="&" + class_value["destructor"]["definition"]
-        )
     if class_value["bases"]:
         class_definition += ", " + flavour.BASE_CLASSES.format(
             bases=", ".join(class_value["bases"])
