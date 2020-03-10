@@ -1,7 +1,6 @@
 STATE_VIEW = "sol::state_view"
 INCLUDE_FILE = "sol/sol.hpp"
 CLASS_BODY = """
-sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();
 sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usertype<{cpp_class}>(
 "{lua_short_name}", sol::call_constructor,
 {class_definition}
@@ -34,16 +33,16 @@ TRANSLATION_TABLE = {
 FETCH_TABLE = """
 sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();
 """.strip("\n")
-# TODO: Remove fetch table from every _BODY
 ENUM_BODY = """
-sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();
 {namespace}Namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
 """.strip("\n")
 FUNCTION_BODY = """
 {namespace}Namespace.set_function("{function_name}", {function_ptr});
-"""
-FUNCTION_OVERLOAD = "sol::overload({overloads})"
+""".strip("\n")
+FUNCTION_OVERLOAD = "sol::overload({overloads});"
 GLOBAL_BODY = """
-sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();
 {namespace}Namespace["{global_name}"] = {global_ptr};
 """.strip("\n")
+SHORTHAND = """
+state{shorthand_path} = state{namespace_path}
+"""

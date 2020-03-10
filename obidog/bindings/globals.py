@@ -3,6 +3,7 @@ import os
 from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.utils.string_utils import clean_capitalize
+from obidog.bindings.utils import fetch_table
 from obidog.logger import log
 
 def generate_globals_bindings(name, cpp_globals):
@@ -18,9 +19,9 @@ def generate_globals_bindings(name, cpp_globals):
         binding_function_signature = (
             f"void LoadGlobal{export_name}({state_view} state)"
         )
-        binding_function_body = flavour.GLOBAL_BODY.format(
+        namespace_access = fetch_table(name) + "\n"
+        binding_function_body = namespace_access + flavour.GLOBAL_BODY.format(
             namespace=name.split("::")[-1],
-            namespace_path="".join(f'["{path_elem}"]' for path_elem in name.split("::")),
             global_name=cpp_global["name"],
             global_ptr=global_name,
         )

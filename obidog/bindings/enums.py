@@ -2,6 +2,7 @@ import os
 
 from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.bindings.utils import fetch_table
 from obidog.logger import log
 
 def generate_enum_fields(enum_type, enum):
@@ -23,9 +24,9 @@ def generate_enums_bindings(name, enums):
         binding_function_signature = (
             f"void LoadEnum{enum['name']}({state_view} state)"
         )
-        binding_function_body = flavour.ENUM_BODY.format(
+        table_access = fetch_table(name) + "\n"
+        binding_function_body = table_access + flavour.ENUM_BODY.format(
             namespace=name.split("::")[-1],
-            namespace_path="".join(f'["{path_elem}"]' for path_elem in name.split("::")),
             enum_type=enum_name,
             enum_name=enum["name"],
             enum_fields=generate_enum_fields(enum_name, enum)

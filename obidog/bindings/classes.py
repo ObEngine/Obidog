@@ -3,6 +3,7 @@ import os
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
 from obidog.utils.string_utils import clean_capitalize
+from obidog.bindings.utils import fetch_table, make_shorthand
 from obidog.logger import log
 
 METHOD_CAST_TEMPLATE = (
@@ -127,18 +128,19 @@ def generate_class_bindings(class_value):
         class_definition += ", " + flavour.BASE_CLASSES.format(
             bases=", ".join(class_value["bases"])
         )
-    namespace_access = "".join(
-        f'["{path_elem}"]' for path_elem in full_name.split("::")[:-1]
-    )
-    return flavour.CLASS_BODY.format(
+    namespace_access = fetch_table("::".join(full_name.split("::")[:-1])) + "\n"
+    class_body = flavour.CLASS_BODY.format(
         cpp_class=class_value["name"],
         lua_short_name=lua_name,
         namespace=namespace,
-        namespace_path=namespace_access,
         class_definition=class_definition,
         body="\n".join(body),
         helpers="",
     )
+    shorthand = ""
+    if "bind_to" in class_value:
+        shorthand = make_shorthand(full_name, class_value["bind_to"])
+    return namespace_access + class_body + shorthand
 
 
 def generate_classes_bindings(classes):

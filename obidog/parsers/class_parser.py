@@ -10,6 +10,7 @@ from obidog.parsers.utils.xml_utils import (
 )
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.function_parser import parse_function_from_xml
+from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
 
 
 def parse_class_from_xml(class_path):
@@ -85,4 +86,10 @@ def parse_class_from_xml(class_path):
         else:
             export["static_methods"][static_func["name"]] = static_func
 
+
+    export = {
+        **export,
+        **parse_obidog_flags(tree)
+    }
+    CONFLICTS.append(export["name"], tree)
     return export["name"], export

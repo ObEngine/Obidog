@@ -53,7 +53,7 @@ def make_bindings_header(path, namespace, objects):
     inc_out = os.path.join("output", "include", path)
     state_view = flavour.STATE_VIEW
     bindings_functions = [
-        f"void Load{object_name}({state_view} state)" for object_name in objects
+        f"void Load{object_name}({state_view} state);" for object_name in objects
     ]
     with open(inc_out, "w") as class_binding:
         class_binding.write(
@@ -127,20 +127,24 @@ def generate_bindings_for_namespace(name, namespace):
 # LATER: Generate bindings shorthands
 def generated_bindings_index(generated_objects):
     print("Generating Bindings Index...")
-    body = []
+    body = [
+        f"#include <{flavour.INCLUDE_FILE}>",
+        "namespace obe::Bindings {",
+        f"void IndexAllBindings({flavour.STATE_VIEW} state)\n{{"
+    ]
     for namespace_name, objects in generated_objects.items():
         ns_split = namespace_name.split("::")
         namespace_path = "".join(f"[\"{namespace_part}\"]" for namespace_part in ns_split[:-1])
         namespace_full_path = "".join(f"[\"{namespace_part}\"]" for namespace_part in ns_split)
         namespace_last_name = ns_split[-1]
-        body.append(f"BindTree{namespace_path}.add(\"{namespace_last_name}\", InitTreeNodeAsTable(\"{namespace_last_name}\"))")
-        print(objects)
+        body.append(f"BindTree{namespace_path}.add(\"{namespace_last_name}\", InitTreeNodeAsTable(\"{namespace_last_name}\"));")
         body.append(f"BindTree{namespace_full_path}")
         for generated_object in objects:
             body.append(
                 f".add(\"{generated_object}\", &{namespace_name}::Bindings::{generated_object})"
             )
-        body.append("\n")
+        body.append(";\n")
+    body.append("}\n}")
     return "\n".join(body)
 
 
@@ -163,6 +167,13 @@ def generate_bindings(cpp_db):
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():
         generated_objects[namespace_name] = generate_bindings_for_namespace(namespace_name, namespace)
-    with open("output/src/index.cpp", "w") as bindings_index:
+    with open("output/include/Bindings/BindingsIndex.hpp", "w") as bindings_index_inc:
+        bindings_index_inc.write("#pragma once\n\n")
+        # LATER: Make it flavour independant
+        bindings_index_inc.write("namespace sol { class state_view; }\n")
+        bindings_index_inc.write("namespace obe::Bindings {\n")
+        bindings_index_inc.write(f"void IndexAllBindings({flavour.STATE_VIEW} state);\n")
+        bindings_index_inc.write("}")
+    with open("output/src/Bindings/BindingsIndex.cpp", "w") as bindings_index:
         bindings_index.write(generated_bindings_index(generated_objects))
     print("STOP")

@@ -4,6 +4,7 @@ import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
 from obidog.logger import log
 from obidog.utils.string_utils import clean_capitalize
+from obidog.bindings.utils import fetch_table
 
 FUNCTION_CAST_TEMPLATE = (
     "static_cast<{return_type} (*)" "({parameters}) {qualifiers}>({function_address})"
@@ -175,23 +176,20 @@ def generate_function_bindings(function_name, function_value):
                 all_overloads
             )
         )
-    fetch_table = flavour.FETCH_TABLE.format(
-        namespace=namespace_splitted[-1],
-        namespace_path="".join(f'["{path_elem}"]' for path_elem in namespace_splitted),
-    )
 
-    binding_body = flavour.FUNCTION_BODY.format(
+    binding_body = fetch_table("::".join(namespace_splitted)) + "\n" + flavour.FUNCTION_BODY.format(
         namespace=namespace_splitted[-1],
         function_name=function_value["name"],
         function_ptr=function_ptr,
     )
-    return f"{fetch_table}\n{binding_body}"
+    return f"{binding_body}"
 
 def get_include_file(function_value):
     include_path = strip_include(function_value["location"])
     include_path = include_path.replace(os.path.sep, "/")
     return f"#include <{include_path}>"
 
+# LATER: Catch operator function and assign them to correct classes metafunctions
 def generate_functions_bindings(functions):
     objects = []
     includes = []
@@ -216,7 +214,7 @@ def generate_functions_bindings(functions):
 
         binding_function = (
             f"{binding_function_signature}\n{{\n"
-            f"{generate_function_bindings(function_name, function_value)}\n}}"
+            f"{generate_function_bindings(function_name, function_value)}}}"
         )
         bindings_functions.append(binding_function)
     return {
