@@ -4,6 +4,7 @@ from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.utils.string_utils import clean_capitalize
 from obidog.bindings.utils import fetch_table
+from obidog.bindings.functions import get_include_file
 from obidog.logger import log
 
 def generate_globals_bindings(name, cpp_globals):
@@ -13,7 +14,7 @@ def generate_globals_bindings(name, cpp_globals):
     for global_name, cpp_global in cpp_globals.items():
         export_name = clean_capitalize(cpp_global["name"])
         log.info(f"  Generating bindings for global {global_name}")
-        includes.append(strip_include(cpp_global["location"]))
+        includes.append(get_include_file(cpp_global))
         objects.append(f"Global{export_name}")
         state_view = flavour.STATE_VIEW
         binding_function_signature = (

@@ -7,8 +7,7 @@ import tempfile
 def build_doxygen_documentation(source_path):
     path = tempfile.mkdtemp()
     src_directories = [os.path.join(source_path, directory) for directory in [
-        "include",
-        "extlibs/vili/include/vili",
+        "include"
     ]]
     with open("Doxyfile", "r") as src_doxyfile:
         with open(os.path.join(path, "Doxyfile"), "w") as dst_doxyfile:

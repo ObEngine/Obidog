@@ -6,16 +6,24 @@ from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
 
+def make_return_type(return_type):
+    full_return_type = ""
+    for return_type_part in return_type.iter():
+        if return_type_part.tag == "ref":
+            full_return_type += doxygen_refid_to_cpp_name(return_type_part)
+        elif return_type_part.text:
+            full_return_type += return_type_part.text.strip()
+        if return_type_part.tail:
+            full_return_type += return_type_part.tail.strip()
+    return full_return_type
+
 
 def parse_function_from_xml(xml_function, method=False):
     name = get_content(xml_function.find("name"))
     if "<" in name and ">" in name and "<=>" not in name:
         # LATER: Template support
         return None
-    if xml_function.find("type").find("ref") is not None:
-        return_type = doxygen_refid_to_cpp_name(xml_function.find("type").find("ref"))
-    else:
-        return_type = get_content(xml_function.find("type"))
+    return_type = make_return_type(xml_function.find("type"))
     if return_type != "" or method:
         definition = get_content(xml_function.find("definition"))
         description = get_content_if(xml_function.find("briefdescription").find("para"))
