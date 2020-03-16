@@ -20,9 +20,11 @@ def make_return_type(return_type):
 
 def parse_function_from_xml(xml_function, method=False):
     name = get_content(xml_function.find("name"))
+    templated = False
     if "<" in name and ">" in name and "<=>" not in name:
-        # LATER: Template support
-        return None
+        return
+    if xml_function.find("templateparamlist") is not None:
+        templated = True
     return_type = make_return_type(xml_function.find("type"))
     if return_type != "" or method:
         definition = get_content(xml_function.find("definition"))
@@ -42,6 +44,9 @@ def parse_function_from_xml(xml_function, method=False):
         base_location = xml_function.find("location").attrib["file"]
         if not method:
             CONFLICTS.append(name, xml_function)
+        flags = parse_obidog_flags(xml_function)
+        if "nobind" in flags:
+            return
         return {
             "__type__": ("static_" if static else "") + "function" if not method else "method",
             "name": name,
@@ -51,9 +56,10 @@ def parse_function_from_xml(xml_function, method=False):
             "return_type": return_type,
             "qualifiers": qualifiers,
             "static": static,
+            "template": templated,
             "location": os.path.relpath(
                 os.path.normpath(base_location),
                 os.path.normpath(PATH_TO_OBENGINE)
             ).replace(os.path.sep, "/"),
-            **parse_obidog_flags(xml_function)
+            **flags
         }

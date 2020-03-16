@@ -232,4 +232,10 @@ GRAPHICAL_HIERARCHY    = YES
 DIRECTORY_GRAPH        = YES
 INTERACTIVE_SVG        = YES
 MAX_GENERATE_LEGEND        = YES
-ALIASES += lua_bind{1}="\xrefitem bind \"\" \"\" <a href=\"obidog.bind:\1\"></a>"
+ALIASES += bind{1}="\xrefitem bind \"\" \"\" <a href=\"obidog.bind:\1\"></a>"
+ALIASES += nobind="\xrefitem nobind \"\" \"\" <a href=\"obidog.nobind\"></a>"
+ALIASES += thint{2}="\xrefitem template_hints \"\" \"\" <a href=\"obidog.template_hint:\1,\2\"></a>"
+ALIASES += helper{1}="\xrefitem helpers \"\" \"\" <a href=\"obidog.helper:\1\"></a>"
+ALIASES += forceabstract="\xrefitem forceabstract \"\" \"\" <a href=\"obidog.force_abstract\"></a>"
+ALIASES += additionalinclude{1}="\xrefitem additionalincludes \"\" \"\" <a href=\"obidog.additional_include:\1\"></a>"
+ALIASES += asproperty="\xrefitem asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"

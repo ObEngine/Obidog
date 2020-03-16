@@ -1,0 +1,20 @@
+Input.cpp
+    - getCombination is not bindable ?
+    - makeCombination is not bindable ?
+Script.cpp
+    - Add include Scene/Scene.hpp
+Utils.cpp
+    - replaceInPlace is not bindable ?
+System.cpp
+    - Add include Triggers/TriggerManager.hpp
+    - pollEvent is not bindable ?
+    - draw is not bindable ?
+Animator.cpp
+    - setTarget is not bindable ?
+Transform.cpp
+    - Init is not bindable ?
+    - to is not bindable ?
+Types.cpp
+    - ProtectedIdentifiable is not bindable ?
+index.cpp
+    - Reordering table creation

@@ -1,6 +1,7 @@
 import os
 
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import strip_include
 from obidog.logger import log
 from obidog.utils.string_utils import clean_capitalize
@@ -162,6 +163,31 @@ def generate_function_bindings(function_name, function_value):
     namespace_splitted = function_name.split("::")[:-1]
     function_ptr = function_name
     function_list = []
+    if function_value["__type__"] == "function" and function_value["template"]:
+        if "template_hints" in function_value:
+            full_body = ""
+            for bind_name, template_hints in function_value["template_hints"].items():
+                new_name = bind_name
+                if len(function_name.split("::")) > 1:
+                    new_name = "::".join(function_name.split("::")[:-1]) + "::" + bind_name
+                if len(template_hints) == 1:
+                    new_func = generate_template_specialization(function_value, bind_name, template_hints[0])
+                    full_body += generate_function_bindings(new_name, new_func)
+                else:
+                    overloads = [
+                        generate_template_specialization(function_value, bind_name, template_hint)
+                        for template_hint in template_hints
+                    ]
+                    funcs = {
+                        "__type__": "function_overload",
+                        "name": new_name,
+                        "overloads": overloads
+                    }
+                    full_body += generate_function_bindings(new_name, funcs)
+            return full_body
+        else:
+            print(f"[WARNING] No template hints found for function {function_name}")
+            return ""
     if function_value["__type__"].endswith("_overload"):
         function_list = function_value["overloads"]
     all_overloads = []

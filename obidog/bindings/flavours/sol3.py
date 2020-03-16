@@ -1,18 +1,20 @@
 STATE_VIEW = "sol::state_view"
 INCLUDE_FILE = "sol/sol.hpp"
+CALL_CONSTRUCTOR = "sol::call_constructor"
 CLASS_BODY = """
 sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usertype<{cpp_class}>(
-"{lua_short_name}", sol::call_constructor,
-{class_definition}
-);
+"{lua_short_name}"{class_definition});
 {body}
 {helpers}
 """.strip("\n")
-PROPERTY = "sol::readonly({address})"
+PROPERTY = "sol::property({address})"
+PROPERTY_REF = "sol::property([]({class_name}* self) -> {property_type} {{ return self->{attribute_name}; }})"
+PROPERTY_READONLY = "sol::readonly({address})"
 DEFAULT_CONSTRUCTOR = "sol::default_constructor"
 DESTRUCTOR = "sol::destructor({destructor})"
 CONSTRUCTORS = "sol::constructors<{constructors}>()"
 BASE_CLASSES = "sol::base_classes, sol::bases<{bases}>()"
+SCRIPT_FILE = "state.script_file(\"{source}\"_fs);"
 METHOD = "{address}"
 # LATER: Add missing elements, even the ones not in sol::meta_function
 TRANSLATION_TABLE = {
@@ -39,7 +41,7 @@ ENUM_BODY = """
 FUNCTION_BODY = """
 {namespace}Namespace.set_function("{function_name}", {function_ptr});
 """.strip("\n")
-FUNCTION_OVERLOAD = "sol::overload({overloads});"
+FUNCTION_OVERLOAD = "sol::overload({overloads})"
 GLOBAL_BODY = """
 {namespace}Namespace["{global_name}"] = {global_ptr};
 """.strip("\n")

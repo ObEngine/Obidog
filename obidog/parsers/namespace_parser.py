@@ -14,15 +14,15 @@ from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
 
 
-def parse_functions_from_xml(namespace, tree, cpp_db):
+def parse_functions_from_xml(namespace_name, namespace, cpp_db):
     functions_path = (
-        "/doxygen/compounddef/sectiondef[@kind='func']/memberdef[@kind='function']"
+        "sectiondef[@kind='func']/memberdef[@kind='function']"
     )
-    xml_functions = tree.xpath(functions_path)
+    xml_functions = namespace.xpath(functions_path)
     for xml_function in xml_functions:
         function = parse_function_from_xml(xml_function)
         if function and function["return_type"]:
-            real_name = "::".join((namespace, function["name"]))
+            real_name = "::".join((namespace_name, function["name"]))
             if real_name in cpp_db.functions:
                 existing_function = cpp_db.functions[real_name]
                 if "overloads" in existing_function:
@@ -37,7 +37,7 @@ def parse_functions_from_xml(namespace, tree, cpp_db):
                         ]
                     }
             else:
-                cpp_db.functions["::".join((namespace, function["name"]))] = function
+                cpp_db.functions["::".join((namespace_name, function["name"]))] = function
 
 
 def parse_typedef_from_xml(xml_typedef):
@@ -64,15 +64,15 @@ def parse_typedef_from_xml(xml_typedef):
     }
 
 
-def parse_typedefs_from_xml(namespace, tree, cpp_db):
+def parse_typedefs_from_xml(namespace_name, namespace, cpp_db):
     typedefs_path = (
-        "/doxygen/compounddef/sectiondef[@kind='typedef']/memberdef[@kind='typedef']"
+        "sectiondef[@kind='typedef']/memberdef[@kind='typedef']"
     )
-    xml_typedefs = tree.xpath(typedefs_path)
+    xml_typedefs = namespace.xpath(typedefs_path)
     for xml_typedef in xml_typedefs:
         typedef = parse_typedef_from_xml(xml_typedef)
         if typedef:
-            cpp_db.typedefs["::".join((namespace, typedef["name"]))] = typedef
+            cpp_db.typedefs["::".join((namespace_name, typedef["name"]))] = typedef
 
 
 def parse_enum_from_xml(xml_enum):
@@ -102,27 +102,32 @@ def parse_enum_from_xml(xml_enum):
     }
 
 
-def parse_enums_from_xml(namespace, tree, cpp_db):
-    enums_path = "/doxygen/compounddef/sectiondef[@kind='enum']/memberdef[@kind='enum']"
-    xml_enums = tree.xpath(enums_path)
+def parse_enums_from_xml(namespace_name, namespace, cpp_db):
+    enums_path = "sectiondef[@kind='enum']/memberdef[@kind='enum']"
+    xml_enums = namespace.xpath(enums_path)
     for xml_enum in xml_enums:
         enum = parse_enum_from_xml(xml_enum)
         if enum:
-            cpp_db.enums["::".join((namespace, enum["name"]))] = enum
+            cpp_db.enums["::".join((namespace_name, enum["name"]))] = enum
 
-def parse_globals_from_xml(namespace, tree, cpp_db):
-    globals_path = "/doxygen/compounddef/sectiondef[@kind='var']/memberdef[@kind='variable']"
-    xml_globals = tree.xpath(globals_path)
+def parse_globals_from_xml(namespace_name, namespace, cpp_db):
+    globals_path = "sectiondef[@kind='var']/memberdef[@kind='variable']"
+    xml_globals = namespace.xpath(globals_path)
     for xml_global in xml_globals:
         cpp_global = parse_global_from_xml(xml_global)
         if cpp_global:
-            cpp_db.globals["::".join((namespace, cpp_global["name"]))] = cpp_global
+            cpp_db.globals["::".join((namespace_name, cpp_global["name"]))] = cpp_global
 
 
 def parse_namespace_from_xml(class_path, cpp_db):
     tree = etree.parse(class_path)
-    namespace_name = extract_xml_value(tree, "/doxygen/compounddef/compoundname")
-    parse_functions_from_xml(namespace_name, tree, cpp_db)
-    parse_typedefs_from_xml(namespace_name, tree, cpp_db)
-    parse_enums_from_xml(namespace_name, tree, cpp_db)
-    parse_globals_from_xml(namespace_name, tree, cpp_db)
+
+    namespace = tree.xpath("/doxygen/compounddef")[0]
+    namespace_name = extract_xml_value(namespace, "compoundname")
+
+    cpp_db.namespaces[namespace_name] = parse_obidog_flags(namespace)
+
+    parse_functions_from_xml(namespace_name, namespace, cpp_db)
+    parse_typedefs_from_xml(namespace_name, namespace, cpp_db)
+    parse_enums_from_xml(namespace_name, namespace, cpp_db)
+    parse_globals_from_xml(namespace_name, namespace, cpp_db)

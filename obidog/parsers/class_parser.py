@@ -1,4 +1,3 @@
-from lxml import etree
 import os
 
 from obidog.config import PATH_TO_OBENGINE
@@ -13,83 +12,116 @@ from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
 
 
-def parse_class_from_xml(class_path):
-    export = {}
-    tree = etree.parse(class_path)
-    export["__type__"] = "class"
-    export["name"] = extract_xml_value(tree, "/doxygen/compounddef/compoundname")
-    base_classes = tree.xpath("/doxygen/compounddef/basecompoundref")
-    if base_classes:
-        export["bases"] = [get_content(base) for base in base_classes]
-    base_location = tree.xpath("/doxygen/compounddef/location")[0].attrib["file"]
-    export["location"] = os.path.relpath(
-        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
-    ).replace(os.path.sep, "/")
-    export["bases"] = []
-    for basecompoundref in tree.xpath("/doxygen/compounddef/basecompoundref"):
-        export["bases"].append(get_content(basecompoundref))
-    if "obe::obe" in export["name"]:  # LATER: Check if nested namespace issue in Doxygen is fixed
-        export["name"] = export["name"].replace("obe::obe::", "obe::")
-    export["desc"] = extract_xml_value(
-        tree, "/doxygen/compounddef/briefdescription/para"
-    )
-    export["methods"] = {}
-    export["static_methods"] = {}
-    export["constructors"] = []
-    if len(tree.xpath("/doxygen/compounddef/sectiondef[@kind='public-func']")) > 0:
-        for xml_method in tree.xpath(
-            "/doxygen/compounddef/sectiondef[@kind='public-func']"
-        )[0]:
+def parse_methods(class_name, class_value):
+    methods = {}
+    constructors = []
+    destructor = None
+    if len(class_value.xpath("sectiondef[@kind='public-func']")) > 0:
+        for xml_method in class_value.xpath("sectiondef[@kind='public-func']")[0]:
             method = parse_function_from_xml(xml_method, method=True)
-            if method["name"] == export["name"].split("::")[-1]:
-                export["constructors"].append(method)
-            elif method["name"] == f"~{export['name'].split('::')[-1]}":
-                export["destructor"] = method
-            else:
-                if method["name"] in export["methods"]:
-                    overload = export["methods"][method["name"]]
-                    if overload["__type__"].endswith("_overload"):
-                        overload["overloads"].append(method)
-                    else:
-                        export["methods"][method["name"]] = {
-                            "__type__": "method_overload",
-                            "name": method["name"],
-                            "overloads": [overload, method],
-                        }
+            if method:
+                if method["name"] == class_name.split("::")[-1]:
+                    constructors.append(method)
+                elif method["name"] == f"~{class_name.split('::')[-1]}":
+                    destructor = method
                 else:
-                    export["methods"][method["name"]] = method
-    export["attributes"] = {}
-    for xml_attribute in tree.xpath(
-        "/doxygen/compounddef/sectiondef[@kind='public-attrib']/memberdef[@kind='variable']"
+                    if method["name"] in methods:
+                        overload = methods[method["name"]]
+                        if overload["__type__"].endswith("_overload"):
+                            overload["overloads"].append(method)
+                        else:
+                            methods[method["name"]] = {
+                                "__type__": "method_overload",
+                                "name": method["name"],
+                                "overloads": [overload, method],
+                            }
+                    else:
+                        methods[method["name"]] = method
+    return {"methods": methods, "constructors": constructors, "destructor": destructor}
+
+
+def parse_attributes(class_value):
+    attributes = {}
+    for xml_attribute in class_value.xpath(
+        "sectiondef[@kind='public-attrib']/memberdef[@kind='variable']"
     ):
         attribute_name = get_content(xml_attribute.find("name"))
-        export["attributes"][attribute_name] = {
+        attributes[attribute_name] = {
             "__type__": "attribute",
             "type": get_content(xml_attribute.find("type")),
             "name": attribute_name,
             "description": get_content(xml_attribute.find("briefdescription")),
         }
-    for xml_attribute in tree.xpath(
-        "/doxygen/compounddef/sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
+    return attributes
+
+
+def parse_static_methods(class_value):
+    static_methods = {}
+    for xml_attribute in class_value.xpath(
+        "sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
     ):
         static_func = parse_function_from_xml(xml_attribute, method=True)
-        if static_func["name"] in export["static_methods"]:
-            overload = export["static_methods"][static_func["name"]]
-            if overload["__type__"] == "static_method_overload":
-                overload["overloads"].append(static_func)
+        if static_func:
+            if static_func["name"] in static_methods:
+                overload = static_methods[static_func["name"]]
+                if overload["__type__"] == "method_overload" and overload["static"]:
+                    overload["overloads"].append(static_func)
+                else:
+                    static_methods[static_func["name"]] = {
+                        "__type__": "method_overload",
+                        "name": static_func["name"],
+                        "overloads": [overload, static_func],
+                    }
             else:
-                export["static_methods"][static_func["name"]] = {
-                    "__type__": "static_method_overload",
-                    "name": static_func["name"],
-                    "overloads": [overload, static_func]
-                }
-        else:
-            export["static_methods"][static_func["name"]] = static_func
+                static_methods[static_func["name"]] = static_func
+    return static_methods
 
 
-    export = {
-        **export,
-        **parse_obidog_flags(tree)
-    }
-    CONFLICTS.append(export["name"], tree)
-    return export["name"], export
+def parse_class_from_xml(class_value):
+    class_name = extract_xml_value(class_value, "compoundname")
+    if class_value.xpath("templateparamlist"):
+        return class_name, None
+    abstract = False
+    if "abstract" in class_value.attrib and class_value.attrib["abstract"] == "yes":
+        abstract = True
+    base_classes_id = [
+        item.attrib["refid"]
+        for item in class_value.xpath(
+            'inheritancegraph/node[@id = 1]/childnode[@relation="public-inheritance"]'
+        )
+    ]
+    bases = []
+    if base_classes_id:
+        for base_class_id in base_classes_id:
+            base = class_value.xpath(f"inheritancegraph/node[@id = {base_class_id}]")[0]
+            bases.append(get_content(base).strip())
+    base_location = class_value.xpath("location")[0].attrib["file"]
+    location = os.path.relpath(
+        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
+    ).replace(os.path.sep, "/")
+    description = extract_xml_value(class_value, "briefdescription/para")
+
+    class_methods = parse_methods(class_name, class_value)
+    attributes = parse_attributes(class_value)
+    static_methods = parse_static_methods(class_value)
+    flags = parse_obidog_flags(class_value)
+
+    if "nobind" in flags:
+        return class_name, None
+
+    CONFLICTS.append(class_name, class_value)
+    return (
+        class_name,
+        {
+            "__type__": "class",
+            "name": class_name,
+            "abstract": abstract,
+            "bases": bases,
+            "location": location,
+            "description": description,
+            "attributes": attributes,
+            "static_methods": static_methods,
+            **class_methods,
+            **flags,
+        },
+    )
