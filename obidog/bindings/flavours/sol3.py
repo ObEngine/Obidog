@@ -7,6 +7,7 @@ sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usert
 {body}
 {helpers}
 """.strip("\n")
+STATIC_ATTRIB = "sol::var({name})"
 PROPERTY = "sol::property({address})"
 PROPERTY_REF = "sol::property([]({class_name}* self) -> {property_type} {{ return self->{attribute_name}; }})"
 PROPERTY_READONLY = "sol::readonly({address})"

@@ -1,9 +1,10 @@
 import os
+import copy
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import strip_include
 from obidog.bindings.template import generate_template_specialization
-from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE
+from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE, create_all_default_overloads
 from obidog.utils.string_utils import clean_capitalize
 from obidog.bindings.utils import fetch_table, make_shorthand
 from obidog.logger import log
@@ -11,6 +12,13 @@ from obidog.logger import log
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
     "({parameters}) {qualifiers}>({method_address})"
+)
+
+METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER = (
+    "[]({parameters}) -> {return_type} {{ return self->{method_call}({parameters_names}); }}"
+)
+METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY = (
+    "[]({parameters}) -> {return_type} {{ return {method_call}({parameters_names}); }}"
 )
 
 
@@ -73,11 +81,48 @@ def generate_method_bindings(full_name, method_name, method, force_cast=False):
         if force_cast:
             return cast_method(full_name, method)
         else:
-            binding = flavour.METHOD.format(address=f"&{full_name}::{method_name}")
+            address = f"&{full_name}::{method_name}"
+            if "replacement" in method:
+                address = f"&{method['replacement']}"
+            binding = flavour.METHOD.format(address=address)
             if method.get("as_property", False):
                 return flavour.PROPERTY.format(address=binding)
             else:
-                return binding
+                definitions = create_all_default_overloads(method)
+                if len(definitions) > 1:
+                    overloads = []
+                    for definition in definitions:
+                        if "replacement" in method:
+                            current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY.format(
+                                parameters=",".join(
+                                    [parameter["full"] for parameter in definition]
+                                ),
+                                return_type=method["return_type"],
+                                method_call=method["replacement"],
+                                parameters_names=",".join(
+                                    parameter["name"] for parameter in definition
+                                ),
+                            )
+                        else:
+                            current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
+                                parameters=",".join(
+                                    [f"{full_name}* self"] +
+                                    [parameter["full"] for parameter in definition]
+                                ),
+                                return_type=method["return_type"],
+                                method_call=method_name,
+                                parameters_names=",".join(
+                                    parameter["name"] for parameter in definition
+                                ),
+                            )
+                        overloads.append(current_overload)
+                    return flavour.FUNCTION_OVERLOAD.format(
+                        overloads=",".join(
+                            overloads
+                        )
+                    )
+                else:
+                    return binding
     elif method["__type__"] == "method_overload":
         casts = [cast_method(full_name, overload) for overload in method["overloads"]]
         return flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
@@ -155,6 +200,8 @@ def generate_class_bindings(class_value):
         body, full_name, lua_name, class_value["static_methods"],
     )
     for attribute in class_value["attributes"].values():
+        if attribute.get("nobind", False):
+            continue
         attribute_name = attribute["name"]
         if attribute["type"].endswith("&"):
             attribute_bind = flavour.PROPERTY_REF.format(
@@ -163,7 +210,10 @@ def generate_class_bindings(class_value):
                 property_type=attribute["type"],
             )
         else:
-            attribute_bind = f"&{full_name}::{attribute_name}"
+            if attribute["static"]:
+                attribute_bind = flavour.STATIC_ATTRIB.format(name=f"{full_name}::{attribute_name}")
+            else:
+                attribute_bind = f"&{full_name}::{attribute_name}"
         body.append(f'bind{lua_name}["{attribute_name}"] = {attribute_bind};')
 
     class_definition = constructors_signatures_str
@@ -197,6 +247,8 @@ def generate_classes_bindings(classes):
     includes = []
     bindings_functions = []
     for class_name, class_value in classes.items():
+        if class_value.get("nobind", False):
+            continue
         log.info(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
         objects.append(f"Class{real_class_name}")
@@ -221,3 +273,30 @@ def generate_classes_bindings(classes):
         "objects": objects,
         "bindings_functions": bindings_functions,
     }
+
+def copy_parent_bases_for_one_class(cpp_db, class_value):
+    inheritance_set = set()
+    for base in class_value["bases"]:
+        if base.startswith("obe::"):
+            inheritance_set.add(base)
+        base = base.split("<")[0]
+        if base in cpp_db.classes:
+            parent_bases = copy_parent_bases_for_one_class(cpp_db, cpp_db.classes[base])
+            inheritance_set |= parent_bases
+    return inheritance_set
+
+def copy_parent_bases(cpp_db, classes):
+    for class_name, class_value in classes.items():
+        class_value["bases"] = list(copy_parent_bases_for_one_class(cpp_db, class_value))
+
+def copy_parent_bindings(cpp_db, classes):
+    for class_name, class_value in classes.items():
+        if class_value.get("copy_parent_items", False):
+            for base in class_value["bases"]:
+                non_template_name = base.split("<")[0]
+                base_value = cpp_db.classes[non_template_name]
+                base_methods = copy.deepcopy(base_value["methods"])
+                base_methods.update(
+                    class_value["methods"]
+                )
+                class_value["methods"] = base_methods

@@ -1,3 +1,4 @@
+=== HARD PATCHES ===
 Input.cpp
     - getCombination is not bindable ?
     - makeCombination is not bindable ?
@@ -16,5 +17,19 @@ Transform.cpp
     - to is not bindable ?
 Types.cpp
     - ProtectedIdentifiable is not bindable ?
-index.cpp
-    - Reordering table creation
+
+=== SOFT PATCHES ===
+Shapes.cpp
+    - Remove missing methods from Text
+Transform.cpp
+    - Rebind to
+Types.cpp
+    - Add missing getId on ProtectedIdentifiable
+Engine.cpp
+    - Fix constobe to const obe
+Scene.cpp
+    - futureLoadFromFile is not correctly bound to loadFromFile ?
+Graphics.cpp
+    - Missing operator*
+GENERAL
+    - Reorder copy parents to avoid method override (Sprite:setPosition with Movable and Rect)

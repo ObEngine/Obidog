@@ -239,3 +239,5 @@ ALIASES += helper{1}="\xrefitem helpers \"\" \"\" <a href=\"obidog.helper:\1\"><
 ALIASES += forceabstract="\xrefitem forceabstract \"\" \"\" <a href=\"obidog.force_abstract\"></a>"
 ALIASES += additionalinclude{1}="\xrefitem additionalincludes \"\" \"\" <a href=\"obidog.additional_include:\1\"></a>"
 ALIASES += asproperty="\xrefitem asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"
+ALIASES += copyparentitems="\xrefitem copyparentitems \"\" \"\" <a href=\"obidog.copy_parent_items\"></a>"
+ALIASES += proxy{1}="\xrefitem proxy \"\" \"\" <a href=\"obidog.proxy:\1\"></a>"

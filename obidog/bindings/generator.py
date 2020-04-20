@@ -2,7 +2,11 @@ from collections import defaultdict
 from obidog.databases import CppDatabase
 from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.utils import strip_include
-from obidog.bindings.classes import generate_classes_bindings
+from obidog.bindings.classes import (
+    generate_classes_bindings,
+    copy_parent_bindings,
+    copy_parent_bases,
+)
 from obidog.bindings.enums import generate_enums_bindings
 from obidog.bindings.functions import generate_functions_bindings
 from obidog.bindings.globals import generate_globals_bindings
@@ -52,9 +56,10 @@ def group_bindings_by_namespace(cpp_db):
         for item_name, item_value in getattr(cpp_db, item_type).items():
             strip_template = item_name.split("<")[0]
             last_namespace = "::".join(strip_template.split("::")[:-1:])
-            getattr(group_by_namespace[last_namespace], item_type)[
-                item_name
-            ] = item_value
+            if last_namespace in cpp_db.namespaces:
+                getattr(group_by_namespace[last_namespace], item_type)[
+                    item_name
+                ] = item_value
     for namespace_name, namespace in group_by_namespace.items():
         namespace.namespaces = cpp_db.namespaces[namespace_name]
     return group_by_namespace
@@ -109,6 +114,7 @@ def generate_bindings_for_namespace(name, namespace):
         os.path.join(OUTPUT_DIRECTORY, "include", "Core", base_path), exist_ok=True
     )
     os.makedirs(os.path.join(OUTPUT_DIRECTORY, "src", "Core", base_path), exist_ok=True)
+
     class_bindings = generate_classes_bindings(namespace.classes)
     enum_bindings = generate_enums_bindings(name, namespace.enums)
     functions_bindings = generate_functions_bindings(namespace.functions)
@@ -125,27 +131,29 @@ def generate_bindings_for_namespace(name, namespace):
         + globals_bindings["objects"]
     )
 
-    make_bindings_header(bindings_header, name, generated_objects)
-    namespace_data = {
-        "includes": namespace.namespaces["additional_includes"]
-        if "additional_includes" in namespace.namespaces
-        else [],
-        "bindings_functions": [],
-    }
-    src_out = os.path.join(
-        OUTPUT_DIRECTORY, "src", "Core", base_path, f"{name.split('::')[-1]}.cpp"
-    )
-    make_bindings_sources(
-        name,
-        src_out,
-        bindings_header,
-        enum_bindings,
-        class_bindings,
-        functions_bindings,
-        globals_bindings,
-        namespace_data,
-    )
+    if True:
+        make_bindings_header(bindings_header, name, generated_objects)
+        namespace_data = {
+            "includes": namespace.namespaces["additional_includes"]
+            if "additional_includes" in namespace.namespaces
+            else [],
+            "bindings_functions": [],
+        }
+        src_out = os.path.join(
+            OUTPUT_DIRECTORY, "src", "Core", base_path, f"{name.split('::')[-1]}.cpp"
+        )
+        make_bindings_sources(
+            name,
+            src_out,
+            bindings_header,
+            enum_bindings,
+            class_bindings,
+            functions_bindings,
+            globals_bindings,
+            namespace_data,
+        )
     return generated_objects
+
 
 def fetch_sub_dict(d, path):
     if len(path) == 0:
@@ -155,22 +163,31 @@ def fetch_sub_dict(d, path):
     else:
         return d[path[0]]
 
-BINDTREE_NEWTABLE = "BindTree{fetch_table}.add(\"{last_table}\", InitTreeNodeAsTable(\"{intermediate_table}\"));"
+
+BINDTREE_NEWTABLE = 'BindTree{fetch_table}.add("{last_table}", InitTreeNodeAsTable("{intermediate_table}"));'
+
+
 def fix_index_tables(tables):
     # Pre-sort the table to fix missing intermediate tables
     tables.sort(key=lambda x: x.count("["))
     table_tree = {}
     for table in tables:
-        table_path = table.split("InitTreeNodeAsTable(\"")[1].replace("\"));", "").split(".")
+        table_path = (
+            table.split('InitTreeNodeAsTable("')[1].replace('"));', "").split(".")
+        )
         for i, elem in enumerate(table_path):
             if not elem in fetch_sub_dict(table_tree, table_path[:i]):
                 if i != len(table_path) - 1:
                     print("Add missing intermediate table")
-                    tables.append(BINDTREE_NEWTABLE.format(
-                        fetch_table="".join([f"[\"{item}\"]" for item in table_path[:i]]),
-                        last_table=table_path[i],
-                        intermediate_table=".".join(table_path[:i + 1])
-                    ))
+                    tables.append(
+                        BINDTREE_NEWTABLE.format(
+                            fetch_table="".join(
+                                [f'["{item}"]' for item in table_path[:i]]
+                            ),
+                            last_table=table_path[i],
+                            intermediate_table=".".join(table_path[: i + 1]),
+                        )
+                    )
                 fetch_sub_dict(table_tree, table_path[:i])[table_path[i]] = {}
     # Don't load a sub-table before the main one
     tables.sort(key=lambda x: x.count("["))
@@ -230,6 +247,28 @@ def generated_bindings_index(generated_objects):
     body.append("}}")
     return "\n".join(body)
 
+def apply_proxies(cpp_db, functions):
+    all_functions = {
+        **cpp_db.functions,
+        **{
+            f"{class_name}::{method_name}": method_value
+            for class_name, class_value in cpp_db.classes.items()
+            for method_name, method_value
+            in class_value["methods"].items()
+        }
+    }
+    for function_name, function_value in functions.items():
+        if "proxy" in function_value:
+            patch = all_functions[function_value["proxy"]]
+            patch.update({
+                "definition": function_value["definition"],
+                "parameters": function_value["parameters"],
+                "return_type": function_value["return_type"],
+                "location": function_value["location"],
+                "replacement": function_value["definition"].split()[1]
+            })
+            print()
+
 
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding
 # LATER: Add a tag in Doxygen to list possible templated types
@@ -248,6 +287,9 @@ def generate_bindings(cpp_db):
     namespaces = group_bindings_by_namespace(cpp_db)
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():
+        copy_parent_bindings(cpp_db, namespace.classes)
+        copy_parent_bases(cpp_db, namespace.classes)
+        apply_proxies(cpp_db, namespace.functions)
         generated_objects[namespace_name] = generate_bindings_for_namespace(
             namespace_name, namespace
         )

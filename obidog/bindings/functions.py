@@ -107,12 +107,7 @@ def get_real_function_name(function_name, function):
             raise NotImplementedError()
     return "Function", function_name
 
-
-def generate_function_definitions(function_name, function):
-    """This function generates all possible combinations of a function with default parameters
-    If a function has 2 mandatory parameters and 3 default ones, it will generate 4 function
-    wrappers
-    """
+def create_all_default_overloads(function):
     function_definitions = []
     static_part_index = 0
     for parameter in function["parameters"]:
@@ -135,6 +130,15 @@ def generate_function_definitions(function_name, function):
                 for parameter in function["parameters"][static_part_index : i + 1]
             ]
         )
+    return function_definitions
+
+def generate_function_definitions(function_name, function):
+    """This function generates all possible combinations of a function with default parameters
+    If a function has 2 mandatory parameters and 3 default ones, it will generate 4 function
+    wrappers
+    """
+    function_definitions = create_all_default_overloads(function)
+
     overloads = []
     for function_definition in function_definitions:
         overloads.append(

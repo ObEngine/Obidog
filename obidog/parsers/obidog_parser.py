@@ -127,6 +127,12 @@ def parse_obidog_flags(tree):
     as_property = find_obidog_flag(tree, "as_property", 1)
     if as_property:
         obidog_flags["as_property"] = True
+    copy_parent_items = find_obidog_flag(tree, "copy_parent_items", 1)
+    if copy_parent_items:
+        obidog_flags["copy_parent_items"] = True
+    proxy = find_obidog_flag(tree, "proxy", 1)
+    if proxy:
+        obidog_flags["proxy"] = proxy[0]
     return obidog_flags
 
 class ConflictsManager:

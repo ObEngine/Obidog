@@ -23,6 +23,8 @@ def parse_function_from_xml(xml_function, method=False):
     templated = False
     if "<" in name and ">" in name and "<=>" not in name:
         return
+    if name.startswith("operator") and not method: #TODO: Improve matching
+        return
     if xml_function.find("templateparamlist") is not None:
         templated = True
     return_type = make_return_type(xml_function.find("type"))

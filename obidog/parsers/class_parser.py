@@ -51,6 +51,20 @@ def parse_attributes(class_value):
             "type": get_content(xml_attribute.find("type")),
             "name": attribute_name,
             "description": get_content(xml_attribute.find("briefdescription")),
+            "static": False,
+            **parse_obidog_flags(xml_attribute)
+        }
+    for xml_attribute in class_value.xpath(
+        "sectiondef[@kind='public-static-attrib']/memberdef[@kind='variable']"
+    ):
+        attribute_name = get_content(xml_attribute.find("name"))
+        attributes[attribute_name] = {
+            "__type__": "attribute",
+            "type": get_content(xml_attribute.find("type")),
+            "name": attribute_name,
+            "description": get_content(xml_attribute.find("briefdescription")),
+            "static": True,
+            **parse_obidog_flags(xml_attribute)
         }
     return attributes
 
@@ -78,9 +92,11 @@ def parse_static_methods(class_value):
 
 
 def parse_class_from_xml(class_value):
+    nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
     if class_value.xpath("templateparamlist"):
-        return class_name, None
+        nobind = True
+        #return class_name, None
     abstract = False
     if "abstract" in class_value.attrib and class_value.attrib["abstract"] == "yes":
         abstract = True
@@ -106,9 +122,6 @@ def parse_class_from_xml(class_value):
     static_methods = parse_static_methods(class_value)
     flags = parse_obidog_flags(class_value)
 
-    if "nobind" in flags:
-        return class_name, None
-
     CONFLICTS.append(class_name, class_value)
     return (
         class_name,
@@ -121,6 +134,7 @@ def parse_class_from_xml(class_value):
             "description": description,
             "attributes": attributes,
             "static_methods": static_methods,
+            "nobind": nobind,
             **class_methods,
             **flags,
         },
