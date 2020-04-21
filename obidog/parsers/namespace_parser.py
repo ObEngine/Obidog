@@ -21,23 +21,32 @@ def parse_functions_from_xml(namespace_name, namespace, cpp_db):
     xml_functions = namespace.xpath(functions_path)
     for xml_function in xml_functions:
         function = parse_function_from_xml(xml_function)
-        if function and function["return_type"]:
-            real_name = "::".join((namespace_name, function["name"]))
+        real_name = "::".join((namespace_name, function["name"]))
+        if "return_type" in function:
             if real_name in cpp_db.functions:
-                existing_function = cpp_db.functions[real_name]
-                if "overloads" in existing_function:
-                    existing_function["overloads"].append(function)
+                if cpp_db.functions[real_name]["__type__"] == "function_placeholder":
+                    function["force_cast"] = True
+                    cpp_db.functions[real_name] = function
                 else:
-                    cpp_db.functions[real_name] = {
-                        "__type__": "function_overload",
-                        "name": existing_function["name"],
-                        "overloads": [
-                            existing_function,
-                            function
-                        ]
-                    }
+                    existing_function = cpp_db.functions[real_name]
+                    if "overloads" in existing_function:
+                        existing_function["overloads"].append(function)
+                    else:
+                        cpp_db.functions[real_name] = {
+                            "__type__": "function_overload",
+                            "name": existing_function["name"],
+                            "overloads": [
+                                existing_function,
+                                function
+                            ]
+                        }
             else:
                 cpp_db.functions["::".join((namespace_name, function["name"]))] = function
+        else:
+            if real_name in cpp_db.functions:
+                cpp_db.functions[real_name]["force_cast"] = True
+            else:
+                cpp_db.functions[real_name] = function
 
 
 def parse_typedef_from_xml(xml_typedef):

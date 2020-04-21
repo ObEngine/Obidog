@@ -20,21 +20,31 @@ def parse_methods(class_name, class_value):
         for xml_method in class_value.xpath("sectiondef[@kind='public-func']")[0]:
             method = parse_function_from_xml(xml_method, method=True)
             if method:
-                if method["name"] == class_name.split("::")[-1]:
+                if method["name"] == class_name.split("::")[-1] and method["__type__"] != "placeholder":
                     constructors.append(method)
-                elif method["name"] == f"~{class_name.split('::')[-1]}":
+                elif method["name"] == f"~{class_name.split('::')[-1]}" and method["__type__"] != "placeholder":
                     destructor = method
                 else:
                     if method["name"] in methods:
-                        overload = methods[method["name"]]
-                        if overload["__type__"].endswith("_overload"):
-                            overload["overloads"].append(method)
+                        if methods[method["name"]]["__type__"] == "placeholder":
+                            method["force_cast"] = True
+                            methods[method["name"]] = method
                         else:
-                            methods[method["name"]] = {
-                                "__type__": "method_overload",
-                                "name": method["name"],
-                                "overloads": [overload, method],
-                            }
+                            overload = methods[method["name"]]
+                            if overload["__type__"].endswith("_overload"):
+                                overload["overloads"].append(method)
+                                if "bind_to" in method:
+                                    overload["bind_to"] = method["bind_to"]
+                            else:
+                                methods[method["name"]] = {
+                                    "__type__": "method_overload",
+                                    "name": method["name"],
+                                    "overloads": [overload, method],
+                                }
+                                for ov in [overload, method]:
+                                    if "bind_to" in ov:
+                                        methods[ov["name"]]["bind_to"] = ov["bind_to"]
+
                     else:
                         methods[method["name"]] = method
     return {"methods": methods, "constructors": constructors, "destructor": destructor}
@@ -77,15 +87,19 @@ def parse_static_methods(class_value):
         static_func = parse_function_from_xml(xml_attribute, method=True)
         if static_func:
             if static_func["name"] in static_methods:
-                overload = static_methods[static_func["name"]]
-                if overload["__type__"] == "method_overload" and overload["static"]:
-                    overload["overloads"].append(static_func)
+                if static_methods[static_func["name"]]["__type__"] == "placeholder":
+                    static_func["force_cast"] = True
+                    static_methods[static_func["name"]] = static_func
                 else:
-                    static_methods[static_func["name"]] = {
-                        "__type__": "method_overload",
-                        "name": static_func["name"],
-                        "overloads": [overload, static_func],
-                    }
+                    overload = static_methods[static_func["name"]]
+                    if overload["__type__"] == "method_overload" and overload["static"]:
+                        overload["overloads"].append(static_func)
+                    else:
+                        static_methods[static_func["name"]] = {
+                            "__type__": "method_overload",
+                            "name": static_func["name"],
+                            "overloads": [overload, static_func],
+                        }
             else:
                 static_methods[static_func["name"]] = static_func
     return static_methods

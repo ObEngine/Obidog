@@ -158,11 +158,11 @@ def generate_methods_bindings(body, full_name, lua_name, methods):
             if bind_name in flavour.TRANSLATION_TABLE:
                 bind_name = flavour.TRANSLATION_TABLE[method_name]
                 if bind_name is None:
-                    return
+                    continue
             else:
                 bind_name = f'"{bind_name}"'
             body.append(f"bind{lua_name}[{bind_name}] = ")
-            body.append(generate_method_bindings(full_name, method_name, method))
+            body.append(generate_method_bindings(full_name, method_name, method, method.get("force_cast", False)))
             body.append(";")
 
 
@@ -275,19 +275,21 @@ def generate_classes_bindings(classes):
     }
 
 def copy_parent_bases_for_one_class(cpp_db, class_value):
-    inheritance_set = set()
+    inheritance_set = []
     for base in class_value["bases"]:
         if base.startswith("obe::"):
-            inheritance_set.add(base)
+            inheritance_set.append(base)
         base = base.split("<")[0]
         if base in cpp_db.classes:
             parent_bases = copy_parent_bases_for_one_class(cpp_db, cpp_db.classes[base])
-            inheritance_set |= parent_bases
+            inheritance_set += parent_bases
     return inheritance_set
 
 def copy_parent_bases(cpp_db, classes):
     for class_name, class_value in classes.items():
-        class_value["bases"] = list(copy_parent_bases_for_one_class(cpp_db, class_value))
+        class_value["bases"] = list(
+            dict.fromkeys(copy_parent_bases_for_one_class(cpp_db, class_value))
+        )
 
 def copy_parent_bindings(cpp_db, classes):
     for class_name, class_value in classes.items():

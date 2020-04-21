@@ -11,6 +11,7 @@ from obidog.bindings.enums import generate_enums_bindings
 from obidog.bindings.functions import generate_functions_bindings
 from obidog.bindings.globals import generate_globals_bindings
 from obidog.logger import log
+from obidog.wrappers.clangformat_wrapper import clang_format_files
 import os
 
 
@@ -105,7 +106,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
             )
         )
 
-
+FILES_TO_FORMAT = []
 def generate_bindings_for_namespace(name, namespace):
     log.info(f"Generating bindings for namespace {name}")
     split_name = "/".join(name.split("::")[1::]) if "::" in name else name.capitalize()
@@ -142,6 +143,9 @@ def generate_bindings_for_namespace(name, namespace):
         src_out = os.path.join(
             OUTPUT_DIRECTORY, "src", "Core", base_path, f"{name.split('::')[-1]}.cpp"
         )
+        FILES_TO_FORMAT.append(os.path.join("include/Core", bindings_header))
+        FILES_TO_FORMAT.append(os.path.join("src/Core", src_out))
+
         make_bindings_sources(
             name,
             src_out,
@@ -269,6 +273,23 @@ def apply_proxies(cpp_db, functions):
             })
             print()
 
+def discard_placeholders(cpp_db):
+    for class_value in cpp_db.classes.values():
+        class_value["methods"] = {
+            key: value for
+            key, value in class_value["methods"].items()
+            if not value["__type__"] == "placeholder"
+        }
+        class_value["static_methods"] = {
+            key: value for
+            key, value in class_value["static_methods"].items()
+            if not value["__type__"] == "placeholder"
+        }
+    cpp_db.functions = {
+        key: value for
+        key, value in cpp_db.functions.items()
+        if not value["__type__"] == "placeholder"
+    }
 
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding
 # LATER: Add a tag in Doxygen to list possible templated types
@@ -284,6 +305,7 @@ def apply_proxies(cpp_db, functions):
 # TODO: Allow injection of "commonly used types" in templated functions using a certain flag in doc (pushParameter for example)
 def generate_bindings(cpp_db):
     log.info("===== Generating bindings for ÖbEngine ====")
+    discard_placeholders(cpp_db)
     namespaces = group_bindings_by_namespace(cpp_db)
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():
@@ -297,4 +319,5 @@ def generate_bindings(cpp_db):
         os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
     ) as bindings_index:
         bindings_index.write(generated_bindings_index(generated_objects))
+    clang_format_files(FILES_TO_FORMAT)
     print("STOP")

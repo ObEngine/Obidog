@@ -18,18 +18,24 @@ Transform.cpp
 Types.cpp
     - ProtectedIdentifiable is not bindable ?
 
-=== SOFT PATCHES ===
-Shapes.cpp
-    - Remove missing methods from Text
+=== FIXED PATCHES ===
 Transform.cpp
     - Rebind to
-Types.cpp
-    - Add missing getId on ProtectedIdentifiable
 Engine.cpp
     - Fix constobe to const obe
 Scene.cpp
     - futureLoadFromFile is not correctly bound to loadFromFile ?
-Graphics.cpp
-    - Missing operator*
+Audio.cpp
+    - Format file or you'll get Rect.inl error
+System.cpp
+    - Format file or you'll get Rect.inl error
+Shapes.cpp
+    - Remove missing methods from Text
 GENERAL
     - Reorder copy parents to avoid method override (Sprite:setPosition with Movable and Rect)
+
+=== SOFTEST PATCHES ===
+Transform.cpp
+    - Fix bad Referential::Axis name
+Types.cpp
+    - Add missing getId on ProtectedIdentifiable

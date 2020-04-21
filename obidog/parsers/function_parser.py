@@ -14,7 +14,11 @@ def make_return_type(return_type):
         elif return_type_part.text:
             full_return_type += return_type_part.text.strip()
         if return_type_part.tail:
-            full_return_type += return_type_part.tail.strip()
+            tail = return_type_part.tail
+            if tail and tail.strip() == "":
+                full_return_type += " "
+            else:
+                full_return_type += return_type_part.tail.strip()
     return full_return_type
 
 
@@ -22,9 +26,15 @@ def parse_function_from_xml(xml_function, method=False):
     name = get_content(xml_function.find("name"))
     templated = False
     if "<" in name and ">" in name and "<=>" not in name:
-        return
+        return {
+            "__type__": "placeholder",
+            "name": name
+        }
     if name.startswith("operator") and not method: #TODO: Improve matching
-        return
+        return {
+            "__type__": "placeholder",
+            "name": name
+        }
     if xml_function.find("templateparamlist") is not None:
         templated = True
     return_type = make_return_type(xml_function.find("type"))
@@ -48,7 +58,10 @@ def parse_function_from_xml(xml_function, method=False):
             CONFLICTS.append(name, xml_function)
         flags = parse_obidog_flags(xml_function)
         if "nobind" in flags:
-            return
+            return {
+                "__type__": "placeholder",
+                "name": name
+            }
         return {
             "__type__": ("static_" if static else "") + "function" if not method else "method",
             "name": name,
