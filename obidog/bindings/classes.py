@@ -2,10 +2,11 @@ import os
 import copy
 
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.config import SOURCE_DIRECTORIES
 from obidog.bindings.utils import strip_include
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE, create_all_default_overloads
-from obidog.utils.string_utils import clean_capitalize
+from obidog.utils.string_utils import format_name
 from obidog.bindings.utils import fetch_table, make_shorthand
 from obidog.logger import log
 
@@ -251,6 +252,7 @@ def generate_classes_bindings(classes):
             continue
         log.info(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
+        real_class_name = format_name(real_class_name)
         objects.append(f"Class{real_class_name}")
         class_path = strip_include(class_value["location"])
         class_path = class_path.replace(os.path.sep, "/")
@@ -277,7 +279,7 @@ def generate_classes_bindings(classes):
 def copy_parent_bases_for_one_class(cpp_db, class_value):
     inheritance_set = []
     for base in class_value["bases"]:
-        if base.startswith("obe::"):
+        if any(base.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES):
             inheritance_set.append(base)
         base = base.split("<")[0]
         if base in cpp_db.classes:

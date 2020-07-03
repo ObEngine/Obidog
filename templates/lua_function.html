@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Bulma!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.1/js/all.min.js"
+        integrity="sha512-M+hXwltZ3+0nFQJiVke7pqXY7VdtWW2jVG31zrml+eteTP7im25FdwtLhIBTWkaHRQyPrhO2uy8glLMHZzhFog=="
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.1/css/all.min.css"
+        integrity="sha512-xA6Hp6oezhjd6LiLZynuukm80f8BoZ3OpcEYaqKoCV3HKQDrYjDE1Gu8ocxgxoXmwmSzM4iqPvCsOkQNiu41GA=="
+        crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"
+        integrity="sha512-lnOllyZZlRk/gQIyjS3+h+LUy54uyM4aGq2zbGc82KTvBlp/fodSpdh/pywPztpU9zUqHcJr+jP+a1zLa9oCJw=="
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/vs2015.min.css"
+        integrity="sha512-w8aclkBlN3Ha08SMwFKXFJqhSUx2qlvTBFLLelF8sm4xQnlg64qmGB/A6pBIKy0W8Bo51yDMDtQiPLNRq1WMcQ=="
+        crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        pre>code {
+            font-family: "Fira Code", monospace;
+        }
+    </style>
+    <script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+<body>
+    <div class="panel is-primary">
+        <p class="panel-heading title">
+            removeTag()
+        </p>
+        <div class="panel-block">
+            <pre
+                class="px-0 py-0"><code class="lua">nil obe.Collision.PolygonalCollider.removeTag(obe.Collision.ColliderTagType tagType, string tag)</code></pre>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Description</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p>Removes a Tag of the Collider. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-cube" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Parameters</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-link">obe.Collision.ColliderTagType</b> tagType</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>List you want to remove a Collider from (Tag / Accepted / Rejected) </p>
+                        </div>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b>string</b> tag</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p></p>Name of the Tag you want to remove</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-share" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Returns</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <p class="pl-4"><b class="has-text-link">nil</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-vial" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Example</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <pre class="px-0 py-0"><code class="lua">local collider = Engine.Scene:createCollider("test");
+collider:addTag(obe.Collision.ColliderTagType.Tag, "character");
+collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -8,7 +8,9 @@ import requests
 from obidog.databases import CppDatabase, LuaDatabase
 from obidog.bindings.generator import generate_bindings
 from obidog.generators.cpp_lua_merge import (
-    mix_cpp_lua_doc, transform_all_cpp_types_to_lua_types)
+    mix_cpp_lua_doc,
+    transform_all_cpp_types_to_lua_types,
+)
 from obidog.generators.doc_class_generator import generate
 from obidog.logger import log
 from obidog.parsers.bindings_parser import parse_all_lua_bindings
@@ -39,7 +41,11 @@ def main():
     cwd = tempfile.mkdtemp()
     log.info(f"Working directory : {cwd}")
 
-    parser.add_argument("mode", help="Resource you want to generate", choices=["documentation", "bindings"])
+    parser.add_argument(
+        "mode",
+        help="Resource you want to generate",
+        choices=["documentation", "bindings"],
+    )
     args = parser.parse_args()
 
     if args.mode == "documentation":
@@ -47,9 +53,9 @@ def main():
         parse_all_lua_bindings(
             [
                 os.path.join(path_to_obengine, "src", "Core", "Bindings"),
-                os.path.join(path_to_obengine, "src", "Dev", "Bindings")
+                os.path.join(path_to_obengine, "src", "Dev", "Bindings"),
             ],
-            lua_db
+            lua_db,
         )
 
         # Merging informations from both databases
@@ -63,6 +69,7 @@ def main():
         log.debug("Output folder", cwd)
     elif args.mode == "bindings":
         generate_bindings(cpp_db)
+
 
 if __name__ == "__main__":
     main()

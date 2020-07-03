@@ -3,24 +3,22 @@ import shutil
 import subprocess
 import tempfile
 
+from obidog.config import SOURCE_DIRECTORIES
+
 
 def build_doxygen_documentation(source_path):
     path = tempfile.mkdtemp()
-    src_directories = [os.path.join(source_path, directory) for directory in [
-        "include"
-    ]]
+    src_directories = [
+        os.path.join(source_path, directory)
+        for directory in [item["path"] for item in SOURCE_DIRECTORIES]
+    ]
     with open("Doxyfile", "r") as src_doxyfile:
         with open(os.path.join(path, "Doxyfile"), "w") as dst_doxyfile:
             dst_doxyfile.write(
                 src_doxyfile.read().replace(
-                    "{{input_directories}}",
-                    (" \\\n" + " " * 25).join(src_directories)
+                    "{{input_directories}}", (" \\\n" + " " * 25).join(src_directories)
                 )
             )
     with open(os.path.join(path, "out.log"), "w") as log:
-        subprocess.run(
-            ["doxygen", "Doxyfile"],
-            cwd=path,
-            stdout=log,
-            stderr=log)
+        subprocess.run(["doxygen", "Doxyfile"], cwd=path, stdout=log, stderr=log)
     return path

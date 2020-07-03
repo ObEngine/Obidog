@@ -4,7 +4,7 @@ import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import strip_include
 from obidog.logger import log
-from obidog.utils.string_utils import clean_capitalize
+from obidog.utils.string_utils import format_name
 from obidog.bindings.utils import fetch_table
 
 FUNCTION_CAST_TEMPLATE = (
@@ -229,7 +229,7 @@ def generate_functions_bindings(functions):
         func_type, short_name = get_real_function_name(
             function_name.split("::")[-1], function_value
         )
-        real_function_name = clean_capitalize(short_name)
+        real_function_name = format_name(short_name)
         objects.append(f"{func_type}{real_function_name}")
         if function_value["__type__"].endswith("_overload"):
             for overload in function_value["overloads"]:

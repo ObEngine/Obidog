@@ -1,6 +1,7 @@
 import os
 
 from lxml import etree
+from obidog.config import SOURCE_DIRECTORIES
 from obidog.logger import log
 from obidog.parsers.class_parser import parse_class_from_xml
 from obidog.parsers.namespace_parser import parse_namespace_from_xml
@@ -11,7 +12,7 @@ def parse_doxygen_files(path_to_doc, cpp_db):
     log.info("Loading classes info...")
     for currentDir, _, files in os.walk(os.path.join(path_to_doc, "docbuild/xml/")):
         for f in files:
-            if f.startswith("classobe"):
+            if any(f.startswith(f"class{item['namespace']}") for item in SOURCE_DIRECTORIES):
                 class_filepath = os.path.join(currentDir, f)
                 log.debug(f"  Parsing class {class_filepath}")
                 tree = etree.parse(class_filepath)
@@ -25,7 +26,7 @@ def parse_doxygen_files(path_to_doc, cpp_db):
                         raise RuntimeError(doc_link)
                     else:
                         cpp_db.classes[class_name]["doc_url"] = doc_link"""
-            elif f.startswith("namespaceobe"):
+            elif any(f.startswith(f"namespace{item['namespace']}") for item in SOURCE_DIRECTORIES):
                 namespace_filepath = os.path.join(currentDir, f)
                 log.debug(f"  Parsing namespace {namespace_filepath}")
                 parse_namespace_from_xml(namespace_filepath, cpp_db)

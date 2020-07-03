@@ -32,6 +32,7 @@ TRANSLATION_TABLE = {
     "operator-=": None,
     "operator*=": None,
     "operator/=": None,
+    "operator[]": "sol::meta_function::index"
 }
 FETCH_TABLE = """
 sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();

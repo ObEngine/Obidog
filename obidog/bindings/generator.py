@@ -1,4 +1,5 @@
 from collections import defaultdict
+from obidog.config import PATH_TO_OBENGINE, SOURCE_DIRECTORIES, BINDINGS_CONFIG_FILE
 from obidog.databases import CppDatabase
 from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.utils import strip_include
@@ -12,8 +13,10 @@ from obidog.bindings.functions import generate_functions_bindings
 from obidog.bindings.globals import generate_globals_bindings
 from obidog.logger import log
 from obidog.wrappers.clangformat_wrapper import clang_format_files
+from obidog.utils.string_utils import clean_capitalize
 import os
-
+import inflection
+import re
 
 BINDINGS_INCLUDE_TEMPLATE = """
 #pragma once
@@ -32,7 +35,7 @@ BINDINGS_SRC_TEMPLATE = """
 
 {includes}
 
-#include <{bindings_lib}>
+#include <{bindings_config_file}>
 
 namespace {namespace}
 {{
@@ -42,7 +45,7 @@ namespace {namespace}
     "\n"
 )
 
-OUTPUT_DIRECTORY = os.environ["OBENGINE_BINDINGS_OUTPUT"]
+OUTPUT_DIRECTORY = os.environ.get("OBENGINE_BINDINGS_OUTPUT", PATH_TO_OBENGINE)
 
 
 def group_bindings_by_namespace(cpp_db):
@@ -99,7 +102,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
         bindings_source.write(
             BINDINGS_SRC_TEMPLATE.format(
                 bindings_header=bindings_header,
-                bindings_lib=flavour.INCLUDE_FILE,
+                bindings_config_file=BINDINGS_CONFIG_FILE,
                 namespace=f"{namespace}::Bindings",
                 includes="\n".join(all_includes),
                 bindings_functions="\n".join(all_functions),
@@ -109,7 +112,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
 FILES_TO_FORMAT = []
 def generate_bindings_for_namespace(name, namespace):
     log.info(f"Generating bindings for namespace {name}")
-    split_name = "/".join(name.split("::")[1::]) if "::" in name else name.capitalize()
+    split_name = "/".join(name.split("::"))
     base_path = f"Bindings/{split_name}"
     os.makedirs(
         os.path.join(OUTPUT_DIRECTORY, "include", "Core", base_path), exist_ok=True
@@ -121,10 +124,6 @@ def generate_bindings_for_namespace(name, namespace):
     functions_bindings = generate_functions_bindings(namespace.functions)
     globals_bindings = generate_globals_bindings(name, namespace.globals)
 
-    bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
-        os.path.sep, "/"
-    )
-
     generated_objects = (
         class_bindings["objects"]
         + enum_bindings["objects"]
@@ -133,6 +132,9 @@ def generate_bindings_for_namespace(name, namespace):
     )
 
     if True:
+        bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
+            os.path.sep, "/"
+        )
         make_bindings_header(bindings_header, name, generated_objects)
         namespace_data = {
             "includes": namespace.namespaces["additional_includes"]
@@ -176,21 +178,16 @@ def fix_index_tables(tables):
     tables.sort(key=lambda x: x.count("["))
     table_tree = {}
     for table in tables:
-        table_path = (
-            table.split('InitTreeNodeAsTable("')[1].replace('"));', "").split(".")
-        )
+        table_path = re.findall(r'(?:\[\"([^"]+)\"\])', table)
         for i, elem in enumerate(table_path):
             if not elem in fetch_sub_dict(table_tree, table_path[:i]):
                 if i != len(table_path) - 1:
-                    print("Add missing intermediate table")
+                    print("Add missing intermediate table", ".".join(table_path))
+                    namespace_full_path = "".join(
+                        [f'["{item}"]' for item in table_path[:i+1]]
+                    )
                     tables.append(
-                        BINDTREE_NEWTABLE.format(
-                            fetch_table="".join(
-                                [f'["{item}"]' for item in table_path[:i]]
-                            ),
-                            last_table=table_path[i],
-                            intermediate_table=".".join(table_path[: i + 1]),
-                        )
+                        f"state{namespace_full_path}.get_or_create<sol::table>();"
                     )
                 fetch_sub_dict(table_tree, table_path[:i])[table_path[i]] = {}
     # Don't load a sub-table before the main one
@@ -218,36 +215,28 @@ def generated_bindings_index(generated_objects):
         f"#include <{flavour.INCLUDE_FILE}>",
         "namespace obe::Bindings {",
         f"void IndexAllBindings({flavour.STATE_VIEW} state)\n{{",
-        'BindingTree BindTree("ObEngine");',
-        'BindTree.add("obe", InitTreeNodeAsTable("obe"));',
     ]
+
     tables = []
     bindings = []
     for namespace_name, objects in generated_objects.items():
         ns_split = namespace_name.split("::")
-        namespace_path = "".join(
-            f'["{namespace_part}"]' for namespace_part in ns_split[:-1]
-        )
         namespace_full_path = "".join(
             f'["{namespace_part}"]' for namespace_part in ns_split
         )
-        namespace_dotted = ".".join(ns_split)
-        namespace_last_name = ns_split[-1]
         tables.append(
-            f'BindTree{namespace_path}.add("{namespace_last_name}", InitTreeNodeAsTable("{namespace_dotted}"));'
+            f"state{namespace_full_path}.get_or_create<sol::table>();"
         )
+
         print(objects)
-        bindings.append(f"BindTree{namespace_full_path}")
         for generated_object in objects:
             bindings.append(
-                f'.add("{generated_object}", &{namespace_name}::Bindings::Load{generated_object})'
+                f'{namespace_name}::Bindings::Load{generated_object}(state);'
             )
-        bindings[-1] = bindings[-1] + ";"
         bindings.append("\n")
     fix_index_tables(tables)
     body += tables
     body += bindings
-    body.append("BindTree(state);")
     body.append("}}")
     return "\n".join(body)
 
@@ -319,5 +308,6 @@ def generate_bindings(cpp_db):
         os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
     ) as bindings_index:
         bindings_index.write(generated_bindings_index(generated_objects))
+    FILES_TO_FORMAT.append("src/Core/Bindings/index.cpp")
     clang_format_files(FILES_TO_FORMAT)
     print("STOP")

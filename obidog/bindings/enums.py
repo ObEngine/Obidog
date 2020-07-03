@@ -3,6 +3,7 @@ import os
 from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import fetch_table
+from obidog.utils.string_utils import format_name
 from obidog.logger import log
 
 def generate_enum_fields(enum_type, enum):
@@ -21,8 +22,9 @@ def generate_enums_bindings(name, enums):
         enum_path = strip_include(enum["location"]).replace(os.path.sep, "/")
         includes.append(f"#include <{enum_path}>")
         state_view = flavour.STATE_VIEW
+        export_name = format_name(enum["name"])
         binding_function_signature = (
-            f"void LoadEnum{enum['name']}({state_view} state)"
+            f"void LoadEnum{export_name}({state_view} state)"
         )
         table_access = fetch_table(name) + "\n"
         binding_function_body = table_access + flavour.ENUM_BODY.format(
@@ -35,7 +37,7 @@ def generate_enums_bindings(name, enums):
             f"{binding_function_signature}\n{{\n"
             f"{binding_function_body}\n}}"
         )
-        objects.append(f"Enum{enum['name']}")
+        objects.append(f"Enum{export_name}")
     return {
         "includes": includes,
         "bindings_functions": bindings_functions,
