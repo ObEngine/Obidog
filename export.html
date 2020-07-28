@@ -20,6 +20,7 @@
         crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://jenil.github.io/bulmaswatch/darkly/bulmaswatch.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-divider@1.1.0/dist/bulma-divider.min.css" rel="stylesheet">
     <style>
         pre>code {
             font-family: "Fira Code", monospace;
@@ -57,10 +58,85 @@
     <script>hljs.initHighlightingOnLoad();</script>
 </head>
 
+
+
 <body>
     <section class="container">
-        
             
+<h1 class="title is-1"><i class="fas fa-layer-group"></i><span class="has-text-info"> class </span>PolygonalCollider</h1>
+<div class="divider is-left is-info">Info</div>
+<div class="panel">
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-cog" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">C++ name</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <p>obe::Collision::PolygonalCollider</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Lua name</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <p>obe.Collision.PolygonalCollider</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Description</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <p>Class used for all Collisions in the engine, it's a Polygon containing n points</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fab fa-hire-a-helper" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Helper</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <p>Lib/Internal/CollisionHelper.lua</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="divider is-left is-info">Methods</div>
+    
 <div class="panel">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
@@ -74,7 +150,7 @@
 <div class="column is-1">
     <span>
         <i class="fas fa-link" aria-hidden="true"></i>
-        <span class="has-text-info is-size-6"><a href="">Doxygen</a></span>
+        <span class="has-text-info is-size-6"><a href="https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8">Doxygen</a></span>
     </span>
 </div>
 
@@ -82,7 +158,7 @@
 <div class="column is-1">
     <span>
         <i class="fas fa-link" aria-hidden="true"></i>
-        <span class="has-text-info is-size-6"><a href="">Code</a></span>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170">Code</a></span>
     </span>
 </div>
 
@@ -90,7 +166,7 @@
 <div class="column is-1">
     <span>
         <i class="fas fa-link" aria-hidden="true"></i>
-        <span class="has-text-info is-size-6"><a href="">Bindings</a></span>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71">Bindings</a></span>
     </span>
 </div>
 
@@ -194,6 +270,547 @@ collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
         </div>
     </div>
 </div>
+
+    
+<div class="panel">
+    <div class="panel-heading transparent header-padding">
+        <div class="columns">
+            <div class="column is-4 eggplant-header">
+                <span>
+                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <span class="title">removeTag</span>
+                </span>
+            </div>
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8">Doxygen</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170">Code</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71">Bindings</a></span>
+    </span>
+</div>
+
+        </div>
+    </div>
+    <div class="eggplant-outline">
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-code" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Signature</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <pre
+                class="px-0 py-0"><code class="lua">nil obe.Collision.PolygonalCollider.removeTag(obe.Collision.ColliderTagType tagType, string tag)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Description</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p>Removes a Tag of the Collider.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-cube" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Parameters</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">obe.Collision.ColliderTagType</b> tagType</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>List you want to remove a Collider from (Tag / Accepted / Rejected)</p>
+                        </div>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">string</b> tag</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>Name of the Tag you want to remove</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-share" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Returns</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <p class="pl-4"><b class="has-text-info">nil</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-vial" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Example</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <pre class="px-0 py-0"><code class="lua">local collider = Engine.Scene:createCollider("test");
+collider:addTag(obe.Collision.ColliderTagType.Tag, "character");
+collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<div class="panel">
+    <div class="panel-heading transparent header-padding">
+        <div class="columns">
+            <div class="column is-4 eggplant-header">
+                <span>
+                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <span class="title">removeTag</span>
+                </span>
+            </div>
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8">Doxygen</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170">Code</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71">Bindings</a></span>
+    </span>
+</div>
+
+        </div>
+    </div>
+    <div class="eggplant-outline">
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-code" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Signature</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <pre
+                class="px-0 py-0"><code class="lua">nil obe.Collision.PolygonalCollider.removeTag(obe.Collision.ColliderTagType tagType, string tag)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Description</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p>Removes a Tag of the Collider.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-cube" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Parameters</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">obe.Collision.ColliderTagType</b> tagType</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>List you want to remove a Collider from (Tag / Accepted / Rejected)</p>
+                        </div>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">string</b> tag</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>Name of the Tag you want to remove</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-share" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Returns</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <p class="pl-4"><b class="has-text-info">nil</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-vial" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Example</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <pre class="px-0 py-0"><code class="lua">local collider = Engine.Scene:createCollider("test");
+collider:addTag(obe.Collision.ColliderTagType.Tag, "character");
+collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<div class="panel">
+    <div class="panel-heading transparent header-padding">
+        <div class="columns">
+            <div class="column is-4 eggplant-header">
+                <span>
+                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <span class="title">removeTag</span>
+                </span>
+            </div>
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8">Doxygen</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170">Code</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71">Bindings</a></span>
+    </span>
+</div>
+
+        </div>
+    </div>
+    <div class="eggplant-outline">
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-code" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Signature</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <pre
+                class="px-0 py-0"><code class="lua">nil obe.Collision.PolygonalCollider.removeTag(obe.Collision.ColliderTagType tagType, string tag)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Description</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p>Removes a Tag of the Collider.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-cube" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Parameters</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">obe.Collision.ColliderTagType</b> tagType</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>List you want to remove a Collider from (Tag / Accepted / Rejected)</p>
+                        </div>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">string</b> tag</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>Name of the Tag you want to remove</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-share" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Returns</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <p class="pl-4"><b class="has-text-info">nil</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-vial" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Example</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <pre class="px-0 py-0"><code class="lua">local collider = Engine.Scene:createCollider("test");
+collider:addTag(obe.Collision.ColliderTagType.Tag, "character");
+collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<div class="panel">
+    <div class="panel-heading transparent header-padding">
+        <div class="columns">
+            <div class="column is-4 eggplant-header">
+                <span>
+                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <span class="title">removeTag</span>
+                </span>
+            </div>
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8">Doxygen</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170">Code</a></span>
+    </span>
+</div>
+
+            
+<div class="column is-1">
+    <span>
+        <i class="fas fa-link" aria-hidden="true"></i>
+        <span class="has-text-info is-size-6"><a href="https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71">Bindings</a></span>
+    </span>
+</div>
+
+        </div>
+    </div>
+    <div class="eggplant-outline">
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-code" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Signature</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <pre
+                class="px-0 py-0"><code class="lua">nil obe.Collision.PolygonalCollider.removeTag(obe.Collision.ColliderTagType tagType, string tag)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Description</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p>Removes a Tag of the Collider.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-cube" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Parameters</h5>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">obe.Collision.ColliderTagType</b> tagType</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>List you want to remove a Collider from (Tag / Accepted / Rejected)</p>
+                        </div>
+                    </div>
+                    <div class="tile pl-4 is-vertical">
+                        <div class="tile pl-4">
+                            <p><b class="has-text-info">string</b> tag</p>
+                        </div>
+                        <div class="tile pl-6">
+                            <p>Name of the Tag you want to remove</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-share" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Returns</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <p class="pl-4"><b class="has-text-info">nil</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-block">
+            <div class="tile is-ancestor pl-4 py-2">
+                <div class="tile is-vertical">
+                    <div class="tile">
+                        <span>
+                            <i class="fas fa-vial" aria-hidden="true"></i>
+                        </span>
+                        <h5 class="title is-5 pl-2">Example</h5>
+                    </div>
+                    <div class="tile pl-4">
+                        <pre class="px-0 py-0"><code class="lua">local collider = Engine.Scene:createCollider("test");
+collider:addTag(obe.Collision.ColliderTagType.Tag, "character");
+collider:removeTag(obe.Collision.ColliderTagType.Tag, "character");</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     </section>
 </body>

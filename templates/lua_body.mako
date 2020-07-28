@@ -20,6 +20,7 @@
         crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://jenil.github.io/bulmaswatch/darkly/bulmaswatch.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-divider@1.1.0/dist/bulma-divider.min.css" rel="stylesheet">
     <style>
         pre>code {
             font-family: "Fira Code", monospace;
@@ -57,12 +58,15 @@
     <script>hljs.initHighlightingOnLoad();</script>
 </head>
 
+<%namespace name="class_template" file="lua_class.mako"/>
+<%namespace name="function_template" file="lua_function.mako"/>
 <body>
     <section class="container">
-        <%namespace name="function_template" file="lua_function.mako"/>
-        % for function in klass.functions:
-            ${function_template.lua_function(function)}
-        % endfor
+        % if target.type == "class":
+            ${class_template.lua_class(target)}
+        % elif target.type == "function":
+            ${function_template.lua_function(target)}
+        % endif
     </section>
 </body>
 

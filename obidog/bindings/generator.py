@@ -18,6 +18,7 @@ import os
 import inflection
 import re
 
+GENERATE_BINDINGS = False
 BINDINGS_INCLUDE_TEMPLATE = """
 #pragma once
 
@@ -131,7 +132,7 @@ def generate_bindings_for_namespace(name, namespace):
         + globals_bindings["objects"]
     )
 
-    if True:
+    if GENERATE_BINDINGS:
         bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
             os.path.sep, "/"
         )
@@ -304,10 +305,10 @@ def generate_bindings(cpp_db):
         generated_objects[namespace_name] = generate_bindings_for_namespace(
             namespace_name, namespace
         )
-    with open(
+    """with open(
         os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
     ) as bindings_index:
-        bindings_index.write(generated_bindings_index(generated_objects))
+        bindings_index.write(generated_bindings_index(generated_objects))"""
     FILES_TO_FORMAT.append("src/Core/Bindings/index.cpp")
     clang_format_files(FILES_TO_FORMAT)
     print("STOP")

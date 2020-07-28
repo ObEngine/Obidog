@@ -27,7 +27,7 @@ setup(
     ],
     keywords='obengine lua documentation generator',
     packages=find_packages(),
-    install_requires=["lxml", "GitPython", "requests", "mako"],
+    install_requires=["lxml", "GitPython", "requests", "mako", "inflection"],
     extras_require={
         'lint': ['flake8'],
     },
