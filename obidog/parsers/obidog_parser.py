@@ -1,5 +1,7 @@
 from itertools import product
 
+from obidog.models.flags import ObidogFlagsModel
+
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
         "std::vector<int>",
@@ -84,16 +86,13 @@ def find_obidog_flag(tree, flag_name, amount=None):
     return flags
 
 def parse_obidog_flags(tree):
-    obidog_flags = {}
+    flags = ObidogFlagsModel()
     bind_to = find_obidog_flag(tree, "bind", 1)
     if bind_to:
-        obidog_flags["bind_to"] = bind_to[0]
+        flags.bind_to = bind_to[0]
     helpers = find_obidog_flag(tree, "helper")
     if helpers:
-        obidog_flags["helpers"] = helpers
-    private = find_obidog_flag(tree, "private", 1)
-    if private and private[0] == "true":
-        obidog_flags["private"] = True
+        flags.helpers = helpers
     template_hints = find_obidog_flag(tree, "template_hint")
     if template_hints:
         thints = {}
@@ -111,29 +110,29 @@ def parse_obidog_flags(tree):
                     for template_association
                     in template_combination
                 })
-        obidog_flags["template_hints"] = thints
+        flags.template_hints = thints
     force_abstract = find_obidog_flag(tree, "force_abstract", 1)
     if force_abstract:
-        obidog_flags["abstract"] = True
+        flags.abstract = True
     nobind = find_obidog_flag(tree, "nobind", 1)
     if nobind:
-        obidog_flags["nobind"] = True
+        flags.nobind = True
     additional_includes = find_obidog_flag(tree, "additional_include")
     if additional_includes:
-        obidog_flags["additional_includes"] = [
+        flags.additional_includes = [
             f"#include <{additional_include}>"
             for additional_include in additional_includes
         ]
     as_property = find_obidog_flag(tree, "as_property", 1)
     if as_property:
-        obidog_flags["as_property"] = True
+        flags.as_property = True
     copy_parent_items = find_obidog_flag(tree, "copy_parent_items", 1)
     if copy_parent_items:
-        obidog_flags["copy_parent_items"] = True
+        flags.copy_parent_items = True
     proxy = find_obidog_flag(tree, "proxy", 1)
     if proxy:
-        obidog_flags["proxy"] = proxy[0]
-    return obidog_flags
+        flags.proxy = proxy[0]
+    return flags
 
 class ConflictsManager:
     def __init__(self):
