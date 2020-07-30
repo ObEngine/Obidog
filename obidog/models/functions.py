@@ -2,6 +2,7 @@ from typing import List
 
 from obidog.models.base import BaseModel
 from obidog.models.flags import ObidogFlagsModel
+from obidog.models.qualifiers import QualifiersModel
 
 
 class ParameterModel(BaseModel):
@@ -10,18 +11,14 @@ class ParameterModel(BaseModel):
         self.type = type
 
 
-class FunctionQualifiersModel(BaseModel):
-    def __init__(
-        self, const: bool = False, static: bool = False, volatile: bool = False
-    ):
-        self.const = const
-        self.static = static
-        self.volatile = volatile
-
-
 class FunctionBaseModel(BaseModel):
     def __init__(self, name: str):
         self.name = name
+
+
+class PlaceholderFunctionModel(FunctionBaseModel):
+    def __init__(self, name: str):
+        super().__init__(name)
 
 
 class FunctionModel(FunctionBaseModel):
@@ -32,10 +29,11 @@ class FunctionModel(FunctionBaseModel):
         parameters: List[ParameterModel],
         return_type: str,
         template: bool = False,
-        qualifiers: FunctionQualifiersModel = FunctionQualifiersModel(),
+        qualifiers: QualifiersModel = QualifiersModel(),
         flags: ObidogFlagsModel = ObidogFlagsModel(),
+        force_cast: bool = False,
         description: str = "",
-        location: location = "",
+        location: str = "",
     ):
         super().__init__(name)
         self.definition = definition
@@ -45,11 +43,13 @@ class FunctionModel(FunctionBaseModel):
         self.template = template
         self.qualifiers = qualifiers
         self.flags = flags
+        self.force_cast = force_cast
         self.description = description
         self.location = location
 
 
 class FunctionOverloadModel(FunctionBaseModel):
-    def __init__(self, name: str, overloads: List[FunctionModel]):
+    def __init__(self, name: str, overloads: List[FunctionModel], flags: ObidogFlagsModel = ObidogFlagsModel()):
         super().__init__(name)
         self.overloads = overloads
+        self.flags = flags

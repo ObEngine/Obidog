@@ -5,11 +5,8 @@ from obidog.parsers.utils.xml_utils import get_content, get_content_if
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
-from obidog.models.functions import (
-    FunctionBaseModel,
-    FunctionModel,
-    FunctionQualifiersModel,
-)
+from obidog.models.functions import PlaceholderFunctionModel, FunctionModel
+from obidog.models.qualifiers import QualifiersModel
 
 
 def make_return_type(return_type):
@@ -34,21 +31,21 @@ def parse_function_from_xml(xml_function, method=False):
     if (
         "<" in name and ">" in name and "<=>" not in name
     ):  # Template specialisation is ignored
-        return FunctionBaseModel(name)
+        return PlaceholderFunctionModel(name)
     if name.startswith("operator") and not method:  # TODO: Improve matching
-        return FunctionBaseModel(name)
+        return PlaceholderFunctionModel(name)
     return_type = make_return_type(xml_function.find("type"))
     if not return_type and not method:
-        return FunctionBaseModel(name)
+        return PlaceholderFunctionModel(name)
     flags = parse_obidog_flags(xml_function)
     if flags.nobind:
-        return FunctionBaseModel(name)
+        return PlaceholderFunctionModel(name)
     if xml_function.find("templateparamlist") is not None:
         templated = True
     definition = get_content(xml_function.find("definition"))
     description = get_content_if(xml_function.find("briefdescription").find("para"))
     parameters = parse_parameters_from_xml(xml_function)
-    qualifiers = FunctionQualifiersModel()
+    qualifiers = QualifiersModel()
     if xml_function.attrib["const"] == "yes":
         qualifiers.const = True
     if "volatile" in xml_function.attrib and xml_function.attrib["volatile"] == "yes":

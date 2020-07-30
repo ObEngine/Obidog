@@ -14,6 +14,7 @@ from obidog.bindings.globals import generate_globals_bindings
 from obidog.logger import log
 from obidog.wrappers.clangformat_wrapper import clang_format_files
 from obidog.utils.string_utils import clean_capitalize
+from obidog.models.functions import PlaceholderFunctionModel
 import os
 import inflection
 import re
@@ -248,37 +249,29 @@ def apply_proxies(cpp_db, functions):
             f"{class_name}::{method_name}": method_value
             for class_name, class_value in cpp_db.classes.items()
             for method_name, method_value
-            in class_value["methods"].items()
+            in class_value.methods.items()
         }
     }
-    for function_name, function_value in functions.items():
-        if "proxy" in function_value:
-            patch = all_functions[function_value["proxy"]]
-            patch.update({
-                "definition": function_value["definition"],
-                "parameters": function_value["parameters"],
-                "return_type": function_value["return_type"],
-                "location": function_value["location"],
-                "replacement": function_value["definition"].split()[1]
-            })
-            print()
+    for function_value in functions.values():
+        if function_value.flags.proxy:
+            patch = all_functions[function_value.flags.proxy]
+            patch.definition = function_value.definition
+            patch.parameters = function_value.parameters
+            patch.return_type = function_value.return_type
+            patch.location = function_value.location
+            patch.replacement = function_value.definition.split()[1]
 
 def discard_placeholders(cpp_db):
     for class_value in cpp_db.classes.values():
-        class_value["methods"] = {
-            key: value for
-            key, value in class_value["methods"].items()
-            if not value["__type__"] == "placeholder"
-        }
-        class_value["static_methods"] = {
-            key: value for
-            key, value in class_value["static_methods"].items()
-            if not value["__type__"] == "placeholder"
+        class_value.methods = {
+            method_name: method for
+            method_name, method in class_value.methods.items()
+            if not isinstance(method, PlaceholderFunctionModel)
         }
     cpp_db.functions = {
-        key: value for
-        key, value in cpp_db.functions.items()
-        if not value["__type__"] == "placeholder"
+        function_name: function for
+        function_name, function in cpp_db.functions.items()
+        if not isinstance(function, PlaceholderFunctionModel)
     }
 
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding

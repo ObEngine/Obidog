@@ -9,6 +9,7 @@ from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE, create_all_default
 from obidog.utils.string_utils import format_name
 from obidog.bindings.utils import fetch_table, make_shorthand
 from obidog.logger import log
+from obidog.models.functions import FunctionModel
 
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
@@ -131,10 +132,10 @@ def generate_method_bindings(full_name, method_name, method, force_cast=False):
 
 
 def generate_methods_bindings(body, full_name, lua_name, methods):
-    for method in methods.values():
-        if method["__type__"] == "method" and method["template"]:
-            if "template_hints" in method:
-                for bind_name, template_hint in method["template_hints"].items():
+    for method in methods.values():   
+        if isinstance(method, FunctionModel) and method.template:
+            if method.flags.template_hints:
+                for bind_name, template_hint in method.flags.template_hints.items():
                     if len(template_hint) > 1:
                         raise NotImplementedError()
                     else:
@@ -154,8 +155,8 @@ def generate_methods_bindings(body, full_name, lua_name, methods):
                     f"[WARNING] Template hints not implemented for {full_name} -> {method['name']}"
                 )
         else:
-            method_name = method["name"]
-            bind_name = method["bind_to"] if "bind_to" in method else method_name
+            method_name = method.name
+            bind_name = method.flags.bind_to or method_name
             if bind_name in flavour.TRANSLATION_TABLE:
                 bind_name = flavour.TRANSLATION_TABLE[method_name]
                 if bind_name is None:
@@ -168,13 +169,13 @@ def generate_methods_bindings(body, full_name, lua_name, methods):
 
 
 def generate_class_bindings(class_value):
-    full_name = class_value["name"]
+    full_name = class_value.name
     namespace, lua_name = full_name.split("::")[-2::]
 
     constructors_signatures_str = ""
-    if not class_value["abstract"]:
+    if not class_value.abstract:
         constructors_signatures = generate_constructors_definitions(
-            class_value["constructors"]
+            class_value.constructors
         )
         if len(constructors_signatures) > 0:
             constructors_signatures_str = ", ".join(
@@ -195,23 +196,20 @@ def generate_class_bindings(class_value):
     # LATER: Register base class functions for sol3 on derived for optimization
     body = []
     generate_methods_bindings(
-        body, full_name, lua_name, class_value["methods"],
+        body, full_name, lua_name, class_value.methods,
     )
-    generate_methods_bindings(
-        body, full_name, lua_name, class_value["static_methods"],
-    )
-    for attribute in class_value["attributes"].values():
-        if attribute.get("nobind", False):
+    for attribute in class_value.attributes.values():
+        if attribute.flags.nobind:
             continue
-        attribute_name = attribute["name"]
-        if attribute["type"].endswith("&"):
+        attribute_name = attribute.name
+        if attribute.type.endswith("&"):
             attribute_bind = flavour.PROPERTY_REF.format(
                 class_name=full_name,
                 attribute_name=attribute_name,
-                property_type=attribute["type"],
+                property_type=attribute.type,
             )
         else:
-            if attribute["static"]:
+            if attribute.qualifiers.static:
                 attribute_bind = flavour.STATIC_ATTRIB.format(name=f"{full_name}::{attribute_name}")
             else:
                 attribute_bind = f"&{full_name}::{attribute_name}"
@@ -224,7 +222,7 @@ def generate_class_bindings(class_value):
         )
     namespace_access = fetch_table("::".join(full_name.split("::")[:-1])) + "\n"
     class_body = flavour.CLASS_BODY.format(
-        cpp_class=class_value["name"],
+        cpp_class=class_value.name,
         lua_short_name=lua_name,
         namespace=namespace,
         class_definition=class_definition,
@@ -248,13 +246,13 @@ def generate_classes_bindings(classes):
     includes = []
     bindings_functions = []
     for class_name, class_value in classes.items():
-        if class_value.get("nobind", False):
+        if class_value.flags.nobind:
             continue
         log.info(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
         real_class_name = format_name(real_class_name)
         objects.append(f"Class{real_class_name}")
-        class_path = strip_include(class_value["location"])
+        class_path = strip_include(class_value.location)
         class_path = class_path.replace(os.path.sep, "/")
         class_path = f"#include <{class_path}>"
         includes.append(class_path)
@@ -278,29 +276,29 @@ def generate_classes_bindings(classes):
 
 def copy_parent_bases_for_one_class(cpp_db, class_value):
     inheritance_set = []
-    for base in class_value["bases"]:
-        if any(base.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES):
+    for base in class_value.bases:
+        if any(base.name.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES):
             inheritance_set.append(base)
-        base = base.split("<")[0]
-        if base in cpp_db.classes:
-            parent_bases = copy_parent_bases_for_one_class(cpp_db, cpp_db.classes[base])
+        base_name = base.name.split("<")[0]
+        if base_name in cpp_db.classes:
+            parent_bases = copy_parent_bases_for_one_class(cpp_db, cpp_db.classes[base_name])
             inheritance_set += parent_bases
     return inheritance_set
 
 def copy_parent_bases(cpp_db, classes):
-    for class_name, class_value in classes.items():
-        class_value["bases"] = list(
+    for class_value in classes.values():
+        class_value.bases = list(
             dict.fromkeys(copy_parent_bases_for_one_class(cpp_db, class_value))
         )
 
 def copy_parent_bindings(cpp_db, classes):
-    for class_name, class_value in classes.items():
-        if class_value.get("copy_parent_items", False):
-            for base in class_value["bases"]:
-                non_template_name = base.split("<")[0]
+    for class_value in classes.values():
+        if class_value.flags.copy_parent_items:
+            for base in class_value.bases:
+                non_template_name = base.name.split("<")[0]
                 base_value = cpp_db.classes[non_template_name]
-                base_methods = copy.deepcopy(base_value["methods"])
+                base_methods = copy.deepcopy(base_value.methods)
                 base_methods.update(
-                    class_value["methods"]
+                    class_value.methods
                 )
-                class_value["methods"] = base_methods
+                class_value.methods = base_methods
