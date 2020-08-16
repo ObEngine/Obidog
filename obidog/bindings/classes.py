@@ -6,6 +6,7 @@ import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions import (
     FUNCTION_CAST_TEMPLATE,
     create_all_default_overloads,
+    get_real_function_name,
 )
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, make_shorthand, strip_include

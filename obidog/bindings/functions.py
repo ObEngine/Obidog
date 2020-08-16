@@ -82,28 +82,30 @@ OPERATOR_TABLE = {
 }
 
 
-def get_real_function_name(function_name, function):
+def get_real_function_name(
+    function_name, function: Union[FunctionModel, FunctionOverloadModel]
+):
     if function_name.startswith("operator"):
         short_operator = function_name.split("operator")[1]
         if isinstance(OPERATOR_TABLE[short_operator], str):
-            if function["__type__"] == "function_overload":
-                function = function["overloads"][0]
+            if isinstance(function, FunctionOverloadModel):
+                function = function.overloads[0]
             type_before = clean_capitalize(
-                normalize_cpp_type(function["parameters"][0]["type"])
+                normalize_cpp_type(function.parameters[0].type)
             )
             operator_name = "".join(
                 clean_capitalize(name_part)
                 for name_part in OPERATOR_TABLE[short_operator].split("_")
             )
             type_after = ""
-            if len(function["parameters"]) > 1:
+            if len(function.parameters) > 1:
                 type_after = clean_capitalize(
-                    normalize_cpp_type(function["parameters"][1]["type"])
+                    normalize_cpp_type(function.parameters[1].type)
                 )
             return "Operator", f"{type_before}{operator_name}{type_after}"
         else:
-            if function["__type__"] == "function_overload":
-                function = function["overloads"][0]
+            if isinstance(function, FunctionOverloadModel):
+                function = function.overloads[0]
             raise NotImplementedError()
     return "Function", function_name
 
