@@ -1,30 +1,36 @@
-import os
 import copy
+import os
+from typing import List, Union, Dict
 
 import obidog.bindings.flavours.sol3 as flavour
-from obidog.config import SOURCE_DIRECTORIES
-from obidog.bindings.utils import strip_include
+from obidog.bindings.functions import (
+    FUNCTION_CAST_TEMPLATE,
+    create_all_default_overloads,
+)
 from obidog.bindings.template import generate_template_specialization
-from obidog.bindings.functions import FUNCTION_CAST_TEMPLATE, create_all_default_overloads
-from obidog.utils.string_utils import format_name
-from obidog.bindings.utils import fetch_table, make_shorthand
+from obidog.bindings.utils import fetch_table, make_shorthand, strip_include
+from obidog.config import SOURCE_DIRECTORIES
 from obidog.logger import log
-from obidog.models.functions import FunctionModel
+from obidog.models.classses import ClassModel
+from obidog.models.functions import (
+    FunctionModel,
+    FunctionOverloadModel,
+    FunctionPatchModel,
+)
+from obidog.utils.string_utils import format_name
 
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
     "({parameters}) {qualifiers}>({method_address})"
 )
 
-METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER = (
-    "[]({parameters}) -> {return_type} {{ return self->{method_call}({parameters_names}); }}"
-)
+METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER = "[]({parameters}) -> {return_type} {{ return self->{method_call}({parameters_names}); }}"
 METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY = (
     "[]({parameters}) -> {return_type} {{ return {method_call}({parameters_names}); }}"
 )
 
 
-def generate_constructors_definitions(constructors):
+def generate_constructors_definitions(constructors: List[FunctionModel]):
     """This method generates all possible combinations for all constructors of a class
     If a function has 2 mandatory parameters and 3 default ones, it will generate 4 constructor
     definitions
@@ -33,106 +39,113 @@ def generate_constructors_definitions(constructors):
     for constructor in constructors:
         constructor_definitions = []
         static_part_index = 0
-        for parameter in constructor["parameters"]:
-            if "default" in parameter:
+        for parameter in constructor.parameters:
+            if parameter.default:
                 break
             static_part_index += 1
         static_part = [
-            parameter["type"]
-            for parameter in constructor["parameters"][0:static_part_index]
+            parameter.type for parameter in constructor.parameters[0:static_part_index]
         ]
         constructor_definitions.append(static_part)
-        for i in range(static_part_index, len(constructor["parameters"])):
+        for i in range(static_part_index, len(constructor.parameters)):
             constructor_definitions.append(
                 static_part
                 + [
-                    parameter["type"]
-                    for parameter in constructor["parameters"][
-                        static_part_index : i + 1
-                    ]
+                    parameter.type
+                    for parameter in constructor.parameters[static_part_index : i + 1]
                 ]
             )
         constructors_definitions.append(constructor_definitions)
     return constructors_definitions
 
 
-def cast_method(full_name, function):
-    if function["static"]:
+def cast_method(full_name: str, function: FunctionModel):
+    if function.qualifiers.static:
         return FUNCTION_CAST_TEMPLATE.format(
-            return_type=function["return_type"],
-            parameters=", ".join(
-                [parameter["type"] for parameter in function["parameters"]]
+            return_type=function.return_type,
+            parameters=", ".join([parameter.type for parameter in function.parameters]),
+            qualifiers=" ".join(
+                [
+                    "const" if function.qualifiers.const else "",
+                    "volatile" if function.qualifiers.volatile else "",
+                ]
             ),
-            qualifiers=" ".join(function["qualifiers"]),
-            function_address=f"&{full_name}::{function['name']}",
+            function_address=f"&{full_name}::{function.name}",
         )
     else:
         return METHOD_CAST_TEMPLATE.format(
-            return_type=function["return_type"],
+            return_type=function.return_type,
             class_name=full_name,
-            parameters=", ".join(
-                [parameter["type"] for parameter in function["parameters"]]
+            parameters=", ".join([parameter.type for parameter in function.parameters]),
+            qualifiers=" ".join(
+                [
+                    "const" if function.qualifiers.const else "",
+                    "volatile" if function.qualifiers.volatile else "",
+                ]
             ),
-            qualifiers=" ".join(function["qualifiers"]),
-            method_address=f"&{full_name}::{function['name']}",
+            method_address=f"&{full_name}::{function.name}",
         )
 
 
-def generate_method_bindings(full_name, method_name, method, force_cast=False):
-    if method["__type__"] == "method":
+def generate_method_bindings(
+    full_name: str,
+    method_name: str,
+    method: Union[FunctionModel, FunctionOverloadModel, FunctionPatchModel],
+    force_cast: bool = False,
+):
+    if isinstance(method, (FunctionModel, FunctionPatchModel)):
         if force_cast:
             return cast_method(full_name, method)
         else:
             address = f"&{full_name}::{method_name}"
-            if "replacement" in method:
-                address = f"&{method['replacement']}"
+            if isinstance(method, FunctionPatchModel):
+                address = f"&{method.replacement}"
             binding = flavour.METHOD.format(address=address)
-            if method.get("as_property", False):
+            if method.flags.as_property:
                 return flavour.PROPERTY.format(address=binding)
             else:
                 definitions = create_all_default_overloads(method)
                 if len(definitions) > 1:
                     overloads = []
                     for definition in definitions:
-                        if "replacement" in method:
+                        if isinstance(method, FunctionPatchModel):
                             current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY.format(
                                 parameters=",".join(
-                                    [parameter["full"] for parameter in definition]
+                                    [parameter.definition for parameter in definition]
                                 ),
-                                return_type=method["return_type"],
-                                method_call=method["replacement"],
+                                return_type=method.return_type,
+                                method_call=method.replacement,
                                 parameters_names=",".join(
-                                    parameter["name"] for parameter in definition
+                                    parameter.name for parameter in definition
                                 ),
                             )
                         else:
                             current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
                                 parameters=",".join(
-                                    [f"{full_name}* self"] +
-                                    [parameter["full"] for parameter in definition]
+                                    [f"{full_name}* self"]
+                                    + [parameter.definition for parameter in definition]
                                 ),
-                                return_type=method["return_type"],
+                                return_type=method.return_type,
                                 method_call=method_name,
                                 parameters_names=",".join(
-                                    parameter["name"] for parameter in definition
+                                    parameter.name for parameter in definition
                                 ),
                             )
                         overloads.append(current_overload)
                     return flavour.FUNCTION_OVERLOAD.format(
-                        overloads=",".join(
-                            overloads
-                        )
+                        overloads=",".join(overloads)
                     )
                 else:
                     return binding
-    elif method["__type__"] == "method_overload":
-        casts = [cast_method(full_name, overload) for overload in method["overloads"]]
+    elif isinstance(method, FunctionOverloadModel):
+        casts = [cast_method(full_name, overload) for overload in method.overloads]
         return flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
-    print()
 
 
-def generate_methods_bindings(body, full_name, lua_name, methods):
-    for method in methods.values():   
+def generate_methods_bindings(
+    body: List[str], full_name: str, lua_name: str, methods: Dict[str, FunctionModel]
+):
+    for method in methods.values():
         if isinstance(method, FunctionModel) and method.template:
             if method.flags.template_hints:
                 for bind_name, template_hint in method.flags.template_hints.items():
@@ -152,7 +165,7 @@ def generate_methods_bindings(body, full_name, lua_name, methods):
 
             else:
                 print(
-                    f"[WARNING] Template hints not implemented for {full_name} -> {method['name']}"
+                    f"[WARNING] Template hints not implemented for {full_name} -> {method.name}"
                 )
         else:
             method_name = method.name
@@ -164,11 +177,15 @@ def generate_methods_bindings(body, full_name, lua_name, methods):
             else:
                 bind_name = f'"{bind_name}"'
             body.append(f"bind{lua_name}[{bind_name}] = ")
-            body.append(generate_method_bindings(full_name, method_name, method, method.get("force_cast", False)))
+            body.append(
+                generate_method_bindings(
+                    full_name, method_name, method, method.force_cast
+                )
+            )
             body.append(";")
 
 
-def generate_class_bindings(class_value):
+def generate_class_bindings(class_value: ClassModel):
     full_name = class_value.name
     namespace, lua_name = full_name.split("::")[-2::]
 
@@ -210,15 +227,17 @@ def generate_class_bindings(class_value):
             )
         else:
             if attribute.qualifiers.static:
-                attribute_bind = flavour.STATIC_ATTRIB.format(name=f"{full_name}::{attribute_name}")
+                attribute_bind = flavour.STATIC_ATTRIB.format(
+                    name=f"{full_name}::{attribute_name}"
+                )
             else:
                 attribute_bind = f"&{full_name}::{attribute_name}"
         body.append(f'bind{lua_name}["{attribute_name}"] = {attribute_bind};')
 
     class_definition = constructors_signatures_str
-    if class_value["bases"]:
+    if class_value.bases:
         class_definition += ", " + flavour.BASE_CLASSES.format(
-            bases=", ".join(class_value["bases"])
+            bases=", ".join(class_value.bases)
         )
     namespace_access = fetch_table("::".join(full_name.split("::")[:-1])) + "\n"
     class_body = flavour.CLASS_BODY.format(
@@ -230,14 +249,14 @@ def generate_class_bindings(class_value):
         helpers="\n".join(
             [
                 flavour.SCRIPT_FILE.format(source=source)
-                for source in class_value.get("helpers", [])
+                for source in class_value.flags.helpers
             ]
         ),
     )
     # TODO: Add shorthand
     shorthand = ""
-    if "bind_to" in class_value:
-        shorthand = make_shorthand(full_name, class_value["bind_to"])
+    if class_value.flags.bind_to:
+        shorthand = make_shorthand(full_name, class_value.flags.bind_to)
     return namespace_access + class_body
 
 
@@ -274,16 +293,20 @@ def generate_classes_bindings(classes):
         "bindings_functions": bindings_functions,
     }
 
+
 def copy_parent_bases_for_one_class(cpp_db, class_value):
     inheritance_set = []
     for base in class_value.bases:
-        if any(base.name.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES):
+        if any(base.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES):
             inheritance_set.append(base)
-        base_name = base.name.split("<")[0]
+        base_name = base.split("<")[0]
         if base_name in cpp_db.classes:
-            parent_bases = copy_parent_bases_for_one_class(cpp_db, cpp_db.classes[base_name])
+            parent_bases = copy_parent_bases_for_one_class(
+                cpp_db, cpp_db.classes[base_name]
+            )
             inheritance_set += parent_bases
     return inheritance_set
+
 
 def copy_parent_bases(cpp_db, classes):
     for class_value in classes.values():
@@ -291,14 +314,13 @@ def copy_parent_bases(cpp_db, classes):
             dict.fromkeys(copy_parent_bases_for_one_class(cpp_db, class_value))
         )
 
+
 def copy_parent_bindings(cpp_db, classes):
     for class_value in classes.values():
         if class_value.flags.copy_parent_items:
             for base in class_value.bases:
-                non_template_name = base.name.split("<")[0]
+                non_template_name = base.split("<")[0]
                 base_value = cpp_db.classes[non_template_name]
                 base_methods = copy.deepcopy(base_value.methods)
-                base_methods.update(
-                    class_value.methods
-                )
+                base_methods.update(class_value.methods)
                 class_value.methods = base_methods

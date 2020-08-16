@@ -118,7 +118,7 @@ def parse_class_from_xml(class_value):
     if base_classes_id:
         for base_class_id in base_classes_id:
             base = class_value.xpath(f"inheritancegraph/node[@id = {base_class_id}]")[0]
-            bases.append(ClassBaseModel(name=get_content(base).strip()))
+            bases.append(get_content(base).strip())
 
     # Fetching location
     base_location = class_value.xpath("location")[0].attrib["file"]

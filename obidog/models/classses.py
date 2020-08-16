@@ -1,57 +1,39 @@
-from typing import List
+from dataclasses import dataclass
+from typing import List, Dict
 
 from obidog.models.base import BaseModel
 from obidog.models.flags import ObidogFlagsModel
-from obidog.models.functions import FunctionBaseModel
+from obidog.models.functions import FunctionModel
 from obidog.models.qualifiers import QualifiersModel
 
 
+@dataclass
 class AttributeModel(BaseModel):
-    def __init__(
-        self,
-        name: str,
-        type: str,
-        qualifiers: QualifiersModel = QualifiersModel(),
-        description: str = "",
-        flags: ObidogFlagsModel = ObidogFlagsModel()
-    ):
-        self.name = name
-        self.type = type
-        self.qualifiers = qualifiers
-        self.description = description
+    name: str
+    type: str
+    qualifiers: QualifiersModel = QualifiersModel()
+    description: str = ""
+    flags: ObidogFlagsModel = ObidogFlagsModel()
 
 
+@dataclass
 class ClassBaseModel(BaseModel):
-    def __init__(self, name: str):
-        self.name = name
+    name: str
 
 
+@dataclass
 class PlaceholderClassModel(ClassBaseModel):
-    def __init__(self, name: str):
-        super().__init__(name)
+    pass
 
 
+@dataclass
 class ClassModel(ClassBaseModel):
-    def __init__(
-        self,
-        name: str,
-        abstract: bool = False,
-        bases: List[ClassBaseModel] = None,
-        attributes: List[AttributeModel] = None,
-        constructors: List[FunctionBaseModel] = None,
-        destructor: FunctionBaseModel = None,
-        methods: List[FunctionBaseModel] = None,
-        flags: ObidogFlagsModel = ObidogFlagsModel(),
-        description: str = "",
-        location: str = "",
-    ):
-        super().__init__(name)
-        self.abstract = abstract
-        self.bases = bases if bases is not None else []
-        self.attributes = attributes if attributes is not None else []
-        self.constructors = constructors if constructors is not None else []
-        self.destructor = destructor
-        self.methods = methods if methods is not None else []
-        self.flags = flags
-        self.description = description
-        self.location = location
+    abstract: bool = False
+    bases: List[str] = None
+    attributes: Dict[str, AttributeModel] = None
+    constructors: List[FunctionModel] = None
+    destructor: FunctionModel = None
+    methods: Dict[str, FunctionModel] = None
+    flags: ObidogFlagsModel = ObidogFlagsModel()
+    description: str = ""
+    location: str = ""

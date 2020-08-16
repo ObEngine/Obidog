@@ -1,10 +1,10 @@
+from dataclasses import dataclass
+
 from obidog.models.base import BaseModel
 
 
+@dataclass
 class QualifiersModel(BaseModel):
-    def __init__(
-        self, const: bool = False, static: bool = False, volatile: bool = False
-    ):
-        self.const = const
-        self.static = static
-        self.volatile = volatile
+    const: bool = False
+    static: bool = False
+    volatile: bool = False

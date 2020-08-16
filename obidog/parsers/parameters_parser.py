@@ -1,6 +1,7 @@
 from obidog.exceptions import ParameterNameNotFoundInXMLException
 from obidog.parsers.utils.xml_utils import get_content, get_content_if
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.models.functions import ParameterModel
 
 
 def parse_parameters_from_xml(xml_function):
@@ -25,12 +26,9 @@ def parse_parameters_from_xml(xml_function):
             )
         else:
             parameter_return_type = get_content(xml_parameter.find("type"))
-        parameter = {
-            "name": parameter_name,
-            "type": parameter_return_type,
-        }
+        parameter = ParameterModel(parameter_name, parameter_return_type)
         if get_content_if(xml_parameter.find("defval")):
-            parameter["default"] = get_content_if(xml_parameter.find("defval"))
+            parameter.default = get_content_if(xml_parameter.find("defval"))
         parameter_description = get_content_if(xml_parameter.find("briefdescription"))
         # LATER: Handle templated parameters (Discard ?)
         for xml_p_description in xml_function.xpath(
@@ -51,6 +49,6 @@ def parse_parameters_from_xml(xml_function):
         if parameter_description:
             if parameter_description.startswith("\n"):
                 parameter_description = parameter_description.replace("\n", "", 1)
-            parameter["description"] = parameter_description
+            parameter.description = parameter_description
         parameters.append(parameter)
     return parameters

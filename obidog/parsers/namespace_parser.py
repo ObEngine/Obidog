@@ -127,7 +127,7 @@ def parse_globals_from_xml(namespace_name, namespace, cpp_db):
     for xml_global in xml_globals:
         cpp_global = parse_global_from_xml(xml_global)
         if cpp_global:
-            cpp_db.globals["::".join((namespace_name, cpp_global["name"]))] = cpp_global
+            cpp_db.globals["::".join((namespace_name, cpp_global.name))] = cpp_global
 
 
 def parse_namespace_from_xml(class_path, cpp_db):
