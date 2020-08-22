@@ -1,6 +1,9 @@
+from obidog.models.base import LocalizableModel
+
 import os
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.config import SOURCE_DIRECTORIES
+
 
 def strip_include(path):
 
@@ -9,12 +12,14 @@ def strip_include(path):
             path = os.path.relpath(path, strip_path)
     return path
 
+
 def fetch_table(full_namespace):
     namespace_splitted = full_namespace.split("::")
     return flavour.FETCH_TABLE.format(
         namespace=namespace_splitted[-1],
         namespace_path="".join(f'["{path_elem}"]' for path_elem in namespace_splitted),
     )
+
 
 # TODO: Support for metatable shorthand
 # TODO: Support for table / metatable deps, if a shorthand requires a table, check that it's not created elsewhere
@@ -23,5 +28,11 @@ def make_shorthand(full_name, shorthand):
     shorthand_splitted = shorthand.split(".")
     return flavour.SHORTHAND.format(
         namespace_path="".join(f'["{path_elem}"]' for path_elem in namespace_splitted),
-        shorthand_path="".join(f'["{path_elem}"]' for path_elem in shorthand_splitted)
+        shorthand_path="".join(f'["{path_elem}"]' for path_elem in shorthand_splitted),
     )
+
+
+def get_include_file(item: LocalizableModel):
+    include_path = strip_include(item.location)
+    include_path = include_path.replace(os.path.sep, "/")
+    return f"#include <{include_path}>"

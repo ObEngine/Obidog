@@ -10,110 +10,104 @@ from obidog.parsers.utils.xml_utils import (
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
+from obidog.models.functions import (
+    FunctionModel,
+    PlaceholderFunctionModel,
+    FunctionOverloadModel,
+)
+from obidog.models.qualifiers import QualifiersModel
+from obidog.models.flags import ObidogFlagsModel
+from obidog.models.classses import AttributeModel, ClassModel, ClassBaseModel
 
 
 def parse_methods(class_name, class_value):
     methods = {}
     constructors = []
     destructor = None
-    if len(class_value.xpath("sectiondef[@kind='public-func']")) > 0:
-        for xml_method in class_value.xpath("sectiondef[@kind='public-func']")[0]:
-            method = parse_function_from_xml(xml_method, method=True)
-            if method:
-                if method["name"] == class_name.split("::")[-1] and method["__type__"] != "placeholder":
-                    constructors.append(method)
-                elif method["name"] == f"~{class_name.split('::')[-1]}" and method["__type__"] != "placeholder":
-                    destructor = method
-                else:
-                    if method["name"] in methods:
-                        if methods[method["name"]]["__type__"] == "placeholder":
-                            method["force_cast"] = True
-                            methods[method["name"]] = method
-                        else:
-                            overload = methods[method["name"]]
-                            if overload["__type__"].endswith("_overload"):
-                                overload["overloads"].append(method)
-                                if "bind_to" in method:
-                                    overload["bind_to"] = method["bind_to"]
-                            else:
-                                methods[method["name"]] = {
-                                    "__type__": "method_overload",
-                                    "name": method["name"],
-                                    "overloads": [overload, method],
-                                }
-                                for ov in [overload, method]:
-                                    if "bind_to" in ov:
-                                        methods[ov["name"]]["bind_to"] = ov["bind_to"]
+    all_methods = class_value.xpath(
+        "sectiondef[@kind='public-func']/memberdef[@kind='function']"
+    ) + class_value.xpath(
+        "sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
+    )
 
-                    else:
-                        methods[method["name"]] = method
-    return {"methods": methods, "constructors": constructors, "destructor": destructor}
+    if not all_methods:
+        return methods, constructors, destructor
+    for xml_method in all_methods:
+        method = parse_function_from_xml(xml_method, method=True)
+        # Method has class name => Constructor
+        if method.name == class_name and isinstance(method, FunctionModel):
+            constructors.append(method)
+            continue
+        # Method has ~class name => Destructor
+        elif method.name == f"~{class_name}" and isinstance(method, FunctionModel):
+            destructor = method
+            continue
+        # Method not already in methods dict
+        if not method.name in methods:
+            methods[method.name] = method
+        else:
+            # Replace unusable method with usable overload and force casting
+            if isinstance(methods[method.name], PlaceholderFunctionModel):
+                method.force_cast = True
+                methods[method.name] = method
+            # Create a function overload
+            else:
+                overload = methods[method.name]
+                if isinstance(overload, FunctionOverloadModel):
+                    overload.overloads.append(method)
+                    if method.flags.bind_to:
+                        overload.flags.bind_to = method.bind_to
+                else:
+                    methods[method.name] = FunctionOverloadModel(
+                        name=method.name,
+                        overloads=[overload, method],
+                        flags=ObidogFlagsModel(
+                            bind_to=overload.flags.bind_to or method.flags.bind_to
+                        ),
+                    )
+
+    return methods, constructors, destructor
 
 
 def parse_attributes(class_value):
     attributes = {}
-    for xml_attribute in class_value.xpath(
-        "sectiondef[@kind='public-attrib']/memberdef[@kind='variable']"
-    ):
-        attribute_name = get_content(xml_attribute.find("name"))
-        attributes[attribute_name] = {
-            "__type__": "attribute",
-            "type": get_content(xml_attribute.find("type")),
-            "name": attribute_name,
-            "description": get_content(xml_attribute.find("briefdescription")),
-            "static": False,
-            **parse_obidog_flags(xml_attribute)
-        }
-    for xml_attribute in class_value.xpath(
-        "sectiondef[@kind='public-static-attrib']/memberdef[@kind='variable']"
-    ):
-        attribute_name = get_content(xml_attribute.find("name"))
-        attributes[attribute_name] = {
-            "__type__": "attribute",
-            "type": get_content(xml_attribute.find("type")),
-            "name": attribute_name,
-            "description": get_content(xml_attribute.find("briefdescription")),
-            "static": True,
-            **parse_obidog_flags(xml_attribute)
-        }
+    all_xml_attributes = {
+        False: class_value.xpath(
+            "sectiondef[@kind='public-attrib']/memberdef[@kind='variable']"
+        ),
+        True: class_value.xpath(
+            "sectiondef[@kind='public-static-attrib']/memberdef[@kind='variable']"
+        ),
+    }
+    for is_static, xml_attributes in all_xml_attributes.items():
+        for xml_attribute in xml_attributes:
+            attribute_name = get_content(xml_attribute.find("name"))
+            attribute_type = get_content(xml_attribute.find("type"))
+            attribute_desc = get_content(xml_attribute.find("briefdescription"))
+            qualifiers = QualifiersModel(static=is_static)
+            flags = parse_obidog_flags(xml_attribute)
+            attributes[attribute_name] = AttributeModel(
+                name=attribute_name,
+                type=attribute_type,
+                qualifiers=qualifiers,
+                description=attribute_desc,
+                flags=flags,
+            )
+
     return attributes
-
-
-def parse_static_methods(class_value):
-    static_methods = {}
-    for xml_attribute in class_value.xpath(
-        "sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
-    ):
-        static_func = parse_function_from_xml(xml_attribute, method=True)
-        if static_func:
-            if static_func["name"] in static_methods:
-                if static_methods[static_func["name"]]["__type__"] == "placeholder":
-                    static_func["force_cast"] = True
-                    static_methods[static_func["name"]] = static_func
-                else:
-                    overload = static_methods[static_func["name"]]
-                    if overload["__type__"] == "method_overload" and overload["static"]:
-                        overload["overloads"].append(static_func)
-                    else:
-                        static_methods[static_func["name"]] = {
-                            "__type__": "method_overload",
-                            "name": static_func["name"],
-                            "overloads": [overload, static_func],
-                        }
-            else:
-                static_methods[static_func["name"]] = static_func
-    return static_methods
 
 
 def parse_class_from_xml(class_value):
     nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
+    # Ignore template classes
     if class_value.xpath("templateparamlist"):
         nobind = True
-        #return class_name, None
     abstract = False
     if "abstract" in class_value.attrib and class_value.attrib["abstract"] == "yes":
         abstract = True
+
+    # Fetching parents
     base_classes_id = [
         item.attrib["refid"]
         for item in class_value.xpath(
@@ -125,31 +119,32 @@ def parse_class_from_xml(class_value):
         for base_class_id in base_classes_id:
             base = class_value.xpath(f"inheritancegraph/node[@id = {base_class_id}]")[0]
             bases.append(get_content(base).strip())
+
+    # Fetching location
     base_location = class_value.xpath("location")[0].attrib["file"]
     location = os.path.relpath(
         os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
     ).replace(os.path.sep, "/")
+
     description = extract_xml_value(class_value, "briefdescription/para")
 
-    class_methods = parse_methods(class_name, class_value)
+    methods, constructors, destructor = parse_methods(
+        class_name.split("::")[-1], class_value
+    )
     attributes = parse_attributes(class_value)
-    static_methods = parse_static_methods(class_value)
     flags = parse_obidog_flags(class_value)
+    flags.nobind = flags.nobind or nobind
 
     CONFLICTS.append(class_name, class_value)
-    return (
-        class_name,
-        {
-            "__type__": "class",
-            "name": class_name,
-            "abstract": abstract,
-            "bases": bases,
-            "location": location,
-            "description": description,
-            "attributes": attributes,
-            "static_methods": static_methods,
-            "nobind": nobind,
-            **class_methods,
-            **flags,
-        },
+    return ClassModel(
+        name=class_name,
+        abstract=abstract,
+        bases=bases,
+        attributes=attributes,
+        constructors=constructors,
+        destructor=destructor,
+        methods=methods,
+        flags=flags,
+        description=description,
+        location=location,
     )
