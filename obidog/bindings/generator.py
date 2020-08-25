@@ -111,7 +111,10 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
             )
         )
 
+
 FILES_TO_FORMAT = []
+
+
 def generate_bindings_for_namespace(name, namespace):
     log.info(f"Generating bindings for namespace {name}")
     split_name = "/".join(name.split("::"))
@@ -134,13 +137,13 @@ def generate_bindings_for_namespace(name, namespace):
     )
 
     if GENERATE_BINDINGS:
-        bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
-            os.path.sep, "/"
-        )
+        bindings_header = os.path.join(
+            base_path, f"{name.split('::')[-1]}.hpp"
+        ).replace(os.path.sep, "/")
         make_bindings_header(bindings_header, name, generated_objects)
         namespace_data = {
-            "includes": namespace.namespaces["additional_includes"]
-            if "additional_includes" in namespace.namespaces
+            "includes": namespace.namespaces.additional_includes
+            if namespace.namespaces.additional_includes
             else [],
             "bindings_functions": [],
         }
@@ -186,7 +189,7 @@ def fix_index_tables(tables):
                 if i != len(table_path) - 1:
                     print("Add missing intermediate table", ".".join(table_path))
                     namespace_full_path = "".join(
-                        [f'["{item}"]' for item in table_path[:i+1]]
+                        [f'["{item}"]' for item in table_path[: i + 1]]
                     )
                     tables.append(
                         f"state{namespace_full_path}.get_or_create<sol::table>();"
@@ -226,14 +229,12 @@ def generated_bindings_index(generated_objects):
         namespace_full_path = "".join(
             f'["{namespace_part}"]' for namespace_part in ns_split
         )
-        tables.append(
-            f"state{namespace_full_path}.get_or_create<sol::table>();"
-        )
+        tables.append(f"state{namespace_full_path}.get_or_create<sol::table>();")
 
         print(objects)
         for generated_object in objects:
             bindings.append(
-                f'{namespace_name}::Bindings::Load{generated_object}(state);'
+                f"{namespace_name}::Bindings::Load{generated_object}(state);"
             )
         bindings.append("\n")
     fix_index_tables(tables)
@@ -242,15 +243,15 @@ def generated_bindings_index(generated_objects):
     body.append("}}")
     return "\n".join(body)
 
+
 def apply_proxies(cpp_db, functions):
     all_functions = {
         **cpp_db.functions,
         **{
             f"{class_name}::{method_name}": method_value
             for class_name, class_value in cpp_db.classes.items()
-            for method_name, method_value
-            in class_value.methods.items()
-        }
+            for method_name, method_value in class_value.methods.items()
+        },
     }
     for function_value in functions.values():
         if function_value.flags.proxy:
@@ -261,18 +262,20 @@ def apply_proxies(cpp_db, functions):
             patch.location = function_value.location
             patch.replacement = function_value.definition.split()[1]
 
+
 def discard_placeholders(cpp_db):
     for class_value in cpp_db.classes.values():
         class_value.methods = {
-            method_name: method for
-            method_name, method in class_value.methods.items()
+            method_name: method
+            for method_name, method in class_value.methods.items()
             if not isinstance(method, PlaceholderFunctionModel)
         }
     cpp_db.functions = {
-        function_name: function for
-        function_name, function in cpp_db.functions.items()
+        function_name: function
+        for function_name, function in cpp_db.functions.items()
         if not isinstance(function, PlaceholderFunctionModel)
     }
+
 
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding
 # LATER: Add a tag in Doxygen to list possible templated types
@@ -286,7 +289,9 @@ def discard_placeholders(cpp_db):
 # TODO: Check behaviour with std::optional, std::variant, std::any (getSegmentContainingPoint for example)
 # TODO: Check behaviour with smart pointers
 # TODO: Allow injection of "commonly used types" in templated functions using a certain flag in doc (pushParameter for example)
-def generate_bindings(cpp_db):
+def generate_bindings(cpp_db, write_files: bool = True):
+    global GENERATE_BINDINGS
+    GENERATE_BINDINGS = write_files
     log.info("===== Generating bindings for ÖbEngine ====")
     discard_placeholders(cpp_db)
     namespaces = group_bindings_by_namespace(cpp_db)
@@ -298,10 +303,12 @@ def generate_bindings(cpp_db):
         generated_objects[namespace_name] = generate_bindings_for_namespace(
             namespace_name, namespace
         )
-    """with open(
-        os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
-    ) as bindings_index:
-        bindings_index.write(generated_bindings_index(generated_objects))"""
+    if GENERATE_BINDINGS:
+        with open(
+            os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
+        ) as bindings_index:
+            bindings_index.write(generated_bindings_index(generated_objects))
     FILES_TO_FORMAT.append("src/Core/Bindings/index.cpp")
-    clang_format_files(FILES_TO_FORMAT)
+    if GENERATE_BINDINGS:
+        clang_format_files(FILES_TO_FORMAT)
     print("STOP")

@@ -17,7 +17,7 @@ from obidog.models.functions import (
 )
 from obidog.models.qualifiers import QualifiersModel
 from obidog.models.flags import ObidogFlagsModel
-from obidog.models.classses import AttributeModel, ClassModel, ClassBaseModel
+from obidog.models.classes import AttributeModel, ClassModel, ClassBaseModel
 
 
 def parse_methods(class_name, class_value):
@@ -100,6 +100,10 @@ def parse_attributes(class_value):
 def parse_class_from_xml(class_value):
     nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
+    namespace_name, class_name = (
+        "::".join(class_name.split("::")[:-1:]),
+        class_name.split("::")[-1],
+    )
     # Ignore template classes
     if class_value.xpath("templateparamlist"):
         nobind = True
@@ -138,6 +142,7 @@ def parse_class_from_xml(class_value):
     CONFLICTS.append(class_name, class_value)
     return ClassModel(
         name=class_name,
+        namespace=namespace_name,
         abstract=abstract,
         bases=bases,
         attributes=attributes,

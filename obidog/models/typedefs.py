@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
 from obidog.models.base import BaseModel
+from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
+from obidog.models.urls import URLs
 
 
 @dataclass
@@ -12,3 +14,6 @@ class TypedefModel(BaseModel):
     flags: ObidogFlagsModel = ObidogFlagsModel()
     description: str = ""
     location: str = ""
+    namespace: str = ""
+    export: Export = Export()
+    urls: URLs = URLs()

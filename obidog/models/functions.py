@@ -2,8 +2,10 @@ from dataclasses import dataclass
 from typing import List, Dict, Any
 
 from obidog.models.base import BaseModel
+from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.qualifiers import QualifiersModel
+from obidog.models.urls import URLs
 
 
 @dataclass
@@ -12,6 +14,7 @@ class ParameterModel(BaseModel):
     type: str
     description: str = ""
     default: Any = None
+    export: Export = Export()
 
 
 @dataclass
@@ -26,6 +29,7 @@ class PlaceholderFunctionModel(FunctionBaseModel):
 
 @dataclass
 class FunctionModel(FunctionBaseModel):
+    namespace: str
     definition: str
     parameters: List[ParameterModel]
     return_type: str
@@ -35,6 +39,9 @@ class FunctionModel(FunctionBaseModel):
     force_cast: bool = False
     description: str = ""
     location: str = ""
+    export: Export = Export()
+    type: str = "function"
+    urls: URLs = URLs()
 
 
 @dataclass
@@ -42,6 +49,8 @@ class FunctionOverloadModel(FunctionBaseModel):
     overloads: List[FunctionModel]
     flags: ObidogFlagsModel = ObidogFlagsModel()
     force_cast: bool = False
+    export: Export = Export()
+    type: str = "overload"
 
 
 @dataclass
@@ -51,3 +60,4 @@ class FunctionPatchModel(FunctionBaseModel):
     return_type: str
     replacement: str
     location: str = ""
+    export: Export = Export()

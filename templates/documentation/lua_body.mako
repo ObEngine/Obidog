@@ -32,6 +32,25 @@
             border-top-right-radius: 2em;
         }
 
+        
+        .crimson-header {
+            background-color: #6A0009;
+            color: white;
+            border-top-right-radius: 2em;
+        }
+
+        .gold-header {
+            background-color: #7d6343;
+            color: white;
+            border-top-right-radius: 2em;
+        }
+
+        .ocean-header {
+            background-color: #224382;
+            color: white;
+            border-top-right-radius: 2em;
+        }
+
         .dark-panel {
             background-color: #222;
             color: white;
@@ -43,6 +62,24 @@
 
         .eggplant-outline {
             border-color: #640080;
+            border-radius: 4px;
+            border-style: solid;
+        }
+
+        .crimson-outline {
+            border-color: #6A0009;
+            border-radius: 4px;
+            border-style: solid;
+        }
+
+        .gold-outline {
+            border-color: #7d6343;
+            border-radius: 4px;
+            border-style: solid;
+        }
+
+        .ocean-outline {
+            border-color: #224382;
             border-radius: 4px;
             border-style: solid;
         }
@@ -60,12 +97,15 @@
 
 <%namespace name="class_template" file="lua_class.mako"/>
 <%namespace name="function_template" file="lua_function.mako"/>
+<%namespace name="namespace_template" file="lua_namespace.mako"/>
 <body>
     <section class="container">
         % if target.type == "class":
             ${class_template.lua_class(target)}
         % elif target.type == "function":
             ${function_template.lua_function(target)}
+        %elif target.type == "namespace":
+            ${namespace_template.lua_namespace(target)}
         % endif
     </section>
 </body>

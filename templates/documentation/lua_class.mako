@@ -14,7 +14,7 @@
                 </div>
                 <div class="tile pl-4 is-vertical">
                     <div class="tile pl-4">
-                        <p>${klass.cpp_name}</p>
+                        <p>${klass.namespace}::${klass.name}</p>
                     </div>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div class="tile pl-4 is-vertical">
                     <div class="tile pl-4">
-                        <p>${klass.lua_name}</p>
+                        <p>${".".join(klass.namespace.split("::"))}.${klass.name}</p>
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@
             </div>
         </div>
     </div>
-    % if klass.helper:
+    % if klass.flags.helpers:
     <div class="panel-block">
         <div class="tile is-ancestor pl-4 py-2">
             <div class="tile is-vertical">
@@ -64,11 +64,13 @@
                     </span>
                     <h5 class="title is-5 pl-2">Helper</h5>
                 </div>
+                % for helper in klass.flags.helpers:
                 <div class="tile pl-4 is-vertical">
                     <div class="tile pl-4">
-                        <p>${klass.helper}</p>
+                        <p>${helper}</p>
                     </div>
                 </div>
+                % endfor
             </div>
         </div>
     </div>
@@ -79,8 +81,16 @@
 % endif
 % if klass.methods:
 <div class="divider is-left is-info">Methods</div>
-% for method in klass.methods:
-    ${function_template.lua_function(method)}
+% for method in klass.methods.values():
+    % if method.type == "overload":
+        <div class="divider is-left is-info">${method.name}</div>
+        % for overload in method.overloads:
+            ${function_template.lua_function(overload)}
+        % endfor
+        <div class="divider is-left is-info"></div>
+    % else:
+        ${function_template.lua_function(method)}
+    % endif
 % endfor
 % endif
 </%def>

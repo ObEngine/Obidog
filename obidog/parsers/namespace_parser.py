@@ -82,7 +82,9 @@ def parse_typedefs_from_xml(namespace_name, namespace, cpp_db):
     xml_typedefs = namespace.xpath(typedefs_path)
     for xml_typedef in xml_typedefs:
         typedef = parse_typedef_from_xml(xml_typedef)
-        cpp_db.typedefs["::".join((namespace_name, typedef.name))] = typedef
+        full_name = "::".join((namespace_name, typedef.name))
+        cpp_db.typedefs[full_name] = typedef
+        cpp_db.typedefs[full_name].namespace = namespace_name
 
 
 def parse_enum_from_xml(xml_enum):
@@ -118,7 +120,9 @@ def parse_enums_from_xml(namespace_name, namespace, cpp_db):
     xml_enums = namespace.xpath(enums_path)
     for xml_enum in xml_enums:
         enum = parse_enum_from_xml(xml_enum)
-        cpp_db.enums["::".join((namespace_name, enum.name))] = enum
+        full_name = "::".join((namespace_name, enum.name))
+        cpp_db.enums[full_name] = enum
+        cpp_db.enums[full_name].namespace = namespace_name
 
 
 def parse_globals_from_xml(namespace_name, namespace, cpp_db):
@@ -127,7 +131,9 @@ def parse_globals_from_xml(namespace_name, namespace, cpp_db):
     for xml_global in xml_globals:
         cpp_global = parse_global_from_xml(xml_global)
         if cpp_global:
-            cpp_db.globals["::".join((namespace_name, cpp_global.name))] = cpp_global
+            full_name = "::".join((namespace_name, cpp_global.name))
+            cpp_db.globals[full_name] = cpp_global
+            cpp_db.globals[full_name].namespace = namespace_name
 
 
 def parse_namespace_from_xml(class_path, cpp_db):
@@ -135,6 +141,8 @@ def parse_namespace_from_xml(class_path, cpp_db):
 
     namespace = tree.xpath("/doxygen/compounddef")[0]
     namespace_name = extract_xml_value(namespace, "compoundname")
+
+    # TODO: Parse namespace description
 
     cpp_db.namespaces[namespace_name] = parse_obidog_flags(namespace)
 

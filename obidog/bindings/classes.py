@@ -12,7 +12,7 @@ from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, make_shorthand, strip_include
 from obidog.config import SOURCE_DIRECTORIES
 from obidog.logger import log
-from obidog.models.classses import ClassModel
+from obidog.models.classes import ClassModel
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
@@ -99,7 +99,7 @@ def generate_method_bindings(
             return cast_method(full_name, method)
         else:
             address = f"&{full_name}::{method_name}"
-            if isinstance(method, FunctionPatchModel):
+            if hasattr(method, "replacement"):
                 address = f"&{method.replacement}"
             binding = flavour.METHOD.format(address=address)
             if method.flags.as_property:
@@ -109,7 +109,7 @@ def generate_method_bindings(
                 if len(definitions) > 1:
                     overloads = []
                     for definition in definitions:
-                        if isinstance(method, FunctionPatchModel):
+                        if hasattr(method, "replacement"):
                             current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY.format(
                                 parameters=",".join(
                                     [parameter.definition for parameter in definition]
@@ -187,8 +187,9 @@ def generate_methods_bindings(
 
 
 def generate_class_bindings(class_value: ClassModel):
-    full_name = class_value.name
+    full_name = "::".join([class_value.namespace, class_value.name])
     namespace, lua_name = full_name.split("::")[-2::]
+    class_value.lua_name = ".".join(full_name.split("::"))
 
     constructors_signatures_str = ""
     if not class_value.abstract:
@@ -242,7 +243,7 @@ def generate_class_bindings(class_value: ClassModel):
         )
     namespace_access = fetch_table("::".join(full_name.split("::")[:-1])) + "\n"
     class_body = flavour.CLASS_BODY.format(
-        cpp_class=class_value.name,
+        cpp_class=f"{class_value.namespace}::{class_value.name}",
         lua_short_name=lua_name,
         namespace=namespace,
         class_definition=class_definition,

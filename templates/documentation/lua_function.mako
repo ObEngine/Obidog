@@ -17,9 +17,15 @@
                     <span class="title">${function.name}</span>
                 </span>
             </div>
-            ${link_with_icon(text="Doxygen", url=function.doxygen_url, icon="fas fa-link")}
-            ${link_with_icon(text="Code", url=function.source_url, icon="fas fa-link")}
-            ${link_with_icon(text="Bindings", url=function.bindings_url, icon="fas fa-link")}
+            % if function.urls.doxygen:
+                ${link_with_icon(text="Doxygen", url=function.urls.doxygen, icon="fas fa-link")}
+            % endif
+            % if function.urls.source:
+                ${link_with_icon(text="Source", url=function.urls.source, icon="fas fa-link")}
+            % endif
+            % if function.urls.bindings:
+                ${link_with_icon(text="Bindings", url=function.urls.bindings, icon="fas fa-link")}
+            % endif
         </div>
     </div>
     <div class="eggplant-outline">
@@ -35,7 +41,7 @@
                     <div class="tile pl-4 is-vertical">
                         <div class="tile pl-4">
                             <pre
-                class="px-0 py-0"><code class="lua">${function.signature}</code></pre>
+                class="px-0 py-0"><code class="lua">${function.definition}</code></pre>
                         </div>
                     </div>
                 </div>
@@ -58,6 +64,7 @@
                 </div>
             </div>
         </div>
+        % if function.parameters:
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -80,6 +87,7 @@
                 </div>
             </div>
         </div>
+        % endif
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -95,6 +103,7 @@
                 </div>
             </div>
         </div>
+        % if function.urls.example:
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -110,6 +119,7 @@
                 </div>
             </div>
         </div>
+        % endif
     </div>
 </div>
 </%def>

@@ -134,3 +134,4 @@ dmypy.json
 
 # Ignore obidog output
 output/
+export/

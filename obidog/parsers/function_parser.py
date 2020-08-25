@@ -59,8 +59,20 @@ def parse_function_from_xml(xml_function, method=False):
     location = os.path.relpath(
         os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
     ).replace(os.path.sep, "/")
+
+    if method:
+        if " " in definition:
+            namespace = "::".join(definition.split(" ")[1].split("::")[:-2:])
+        else:
+            namespace = "::".join(definition.split("::")[:-2:])  # Constructors
+    elif " " in definition:
+        namespace = "::".join(definition.split(" ")[1].split("::")[:-1:])
+    else:
+        raise NotImplementedError("Invalid case")
+
     return FunctionModel(
         name=name,
+        namespace=namespace,
         definition=definition,
         parameters=parameters,
         return_type=return_type,
