@@ -142,8 +142,8 @@ def generate_bindings_for_namespace(name, namespace):
         ).replace(os.path.sep, "/")
         make_bindings_header(bindings_header, name, generated_objects)
         namespace_data = {
-            "includes": namespace.namespaces.additional_includes
-            if namespace.namespaces.additional_includes
+            "includes": namespace.namespaces.flags.additional_includes
+            if namespace.namespaces.flags.additional_includes
             else [],
             "bindings_functions": [],
         }

@@ -1,10 +1,10 @@
 <%def name="lua_enum(enum)">
-<div class="panel">
+<div class="panel" id="doc_${enum.name}">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
             <div class="column is-4 ocean-header">
                 <span>
-                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <i class="fas fa-list-ol" aria-hidden="true"></i>
                     <span class="title">${enum.name}</span>
                 </span>
             </div>

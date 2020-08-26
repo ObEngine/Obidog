@@ -8,12 +8,12 @@
 </%def>
 
 <%def name="lua_function(function)">
-<div class="panel">
+<div class="panel" id="doc_${function.name}">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
             <div class="column is-4 eggplant-header">
                 <span>
-                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <i class="fas fa-code" aria-hidden="true"></i>
                     <span class="title">${function.name}</span>
                 </span>
             </div>

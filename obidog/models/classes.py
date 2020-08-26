@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict
 
 from obidog.models.base import BaseModel
@@ -17,7 +17,7 @@ class AttributeModel(BaseModel):
     description: str = ""
     flags: ObidogFlagsModel = ObidogFlagsModel()
     export: Export = Export()
-    type: str = "attribute"
+    _type: str = "attribute"
     urls: URLs = URLs()
 
 
@@ -44,5 +44,5 @@ class ClassModel(ClassBaseModel):
     description: str = ""
     location: str = ""
     export: Export = Export()
-    type: str = "class"
-    urls: URLs = URLs()
+    _type: str = "class"
+    urls: URLs = field(default_factory=lambda: URLs())

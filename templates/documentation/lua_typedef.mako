@@ -1,10 +1,10 @@
 <%def name="lua_typedef(typedef)">
-<div class="panel">
+<div class="panel" id="doc_${typedef.name}">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
             <div class="column is-4 gold-header">
                 <span>
-                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <i class="fas fa-flask" aria-hidden="true"></i>
                     <span class="title">${typedef.name}</span>
                 </span>
             </div>

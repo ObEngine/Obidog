@@ -1,10 +1,10 @@
 <%def name="lua_global(glob)">
-<div class="panel">
+<div class="panel" id="doc_${glob.name}">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
             <div class="column is-4 crimson-header">
                 <span>
-                    <i class="fas fa-chevron-circle-right" aria-hidden="true"></i>
+                    <i class="fas fa-thermometer-half" aria-hidden="true"></i>
                     <span class="title">${glob.name}</span>
                 </span>
             </div>

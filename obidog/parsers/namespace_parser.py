@@ -19,6 +19,7 @@ from obidog.models.functions import (
 )
 from obidog.models.enums import EnumModel, EnumValueModel
 from obidog.models.typedefs import TypedefModel
+from obidog.models.namespace import Namespace
 
 
 def parse_functions_from_xml(namespace_name, namespace, cpp_db):
@@ -141,12 +142,44 @@ def parse_namespace_from_xml(class_path, cpp_db):
 
     namespace = tree.xpath("/doxygen/compounddef")[0]
     namespace_name = extract_xml_value(namespace, "compoundname")
-
+    namespace_description = extract_xml_value(namespace, "briefdescription")
     # TODO: Parse namespace description
 
-    cpp_db.namespaces[namespace_name] = parse_obidog_flags(namespace)
+    cpp_db.namespaces[namespace_name] = Namespace(
+        name=namespace_name.split("::")[-1],
+        path=namespace_name,
+        description=namespace_description,
+        flags=parse_obidog_flags(namespace),
+    )
 
     parse_functions_from_xml(namespace_name, namespace, cpp_db)
     parse_typedefs_from_xml(namespace_name, namespace, cpp_db)
     parse_enums_from_xml(namespace_name, namespace, cpp_db)
     parse_globals_from_xml(namespace_name, namespace, cpp_db)
+
+    cpp_db.namespaces[namespace_name].functions = {
+        function_name: function
+        for function_name, function in cpp_db.functions.items()
+        if (
+            isinstance(function, FunctionModel) and function.namespace == namespace_name
+        )
+        or (
+            isinstance(function, FunctionOverloadModel)
+            and function.overloads[0].namespace == namespace_name
+        )
+    }
+    cpp_db.namespaces[namespace_name].typedefs = {
+        typedef_name: typedef
+        for typedef_name, typedef in cpp_db.typedefs.items()
+        if typedef.namespace == namespace_name
+    }
+    cpp_db.namespaces[namespace_name].enums = {
+        enum_name: enum
+        for enum_name, enum in cpp_db.enums.items()
+        if enum.namespace == namespace_name
+    }
+    cpp_db.namespaces[namespace_name].globals = {
+        global_name: glob
+        for global_name, glob in cpp_db.globals.items()
+        if glob.namespace == namespace_name
+    }

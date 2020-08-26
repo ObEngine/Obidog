@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict, Any
 
 from obidog.models.base import BaseModel
@@ -15,6 +15,7 @@ class ParameterModel(BaseModel):
     description: str = ""
     default: Any = None
     export: Export = Export()
+    _type: str = "parameter"
 
 
 @dataclass
@@ -40,8 +41,8 @@ class FunctionModel(FunctionBaseModel):
     description: str = ""
     location: str = ""
     export: Export = Export()
-    type: str = "function"
-    urls: URLs = URLs()
+    _type: str = "function"
+    urls: URLs = field(default_factory=lambda: URLs())
 
 
 @dataclass
@@ -50,7 +51,7 @@ class FunctionOverloadModel(FunctionBaseModel):
     flags: ObidogFlagsModel = ObidogFlagsModel()
     force_cast: bool = False
     export: Export = Export()
-    type: str = "overload"
+    _type: str = "overload"
 
 
 @dataclass

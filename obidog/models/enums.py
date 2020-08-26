@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from obidog.models.base import BaseModel
@@ -12,7 +12,7 @@ class EnumValueModel(BaseModel):
     name: str
     description: str
     export: Export = Export()
-    type: str = "enum_value"
+    _type: str = "enum_value"
 
 
 @dataclass
@@ -24,5 +24,5 @@ class EnumModel(BaseModel):
     description: str = ""
     location: str = ""
     export: Export = Export()
-    type: str = "enum"
-    urls: URLs = URLs()
+    _type: str = "enum"
+    urls: URLs = field(default_factory=lambda: URLs())

@@ -5,7 +5,7 @@
 <%def name="lua_namespace(namespace)">
 <h1 class="title is-1"><i class="fas fa-folder-open"></i><span class="has-text-info"> namespace </span>${namespace.name}</h1>
 <div class="divider is-left is-info">Info</div>
-<div class="panel">
+<div class="panel" id="doc_${namespace.name}">
     <div class="panel-block">
         <div class="tile is-ancestor pl-4 py-2">
             <div class="tile is-vertical">
@@ -98,7 +98,7 @@
 % if namespace.functions:
 <div class="divider is-left is-info">Functions</div>
 % for function in namespace.functions.values():
-    % if function.type == "overload":
+    % if function._type == "overload":
         <div class="divider is-left is-info">${function.name}</div>
         % for overload in function.overloads:
             ${function_template.lua_function(overload)}

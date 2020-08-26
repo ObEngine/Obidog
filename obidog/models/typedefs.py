@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from obidog.models.base import BaseModel
 from obidog.models.bindings import Export
@@ -16,4 +16,5 @@ class TypedefModel(BaseModel):
     location: str = ""
     namespace: str = ""
     export: Export = Export()
-    urls: URLs = URLs()
+    urls: URLs = field(default_factory=lambda: URLs())
+    _type: str = "typedef"

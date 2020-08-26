@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"
         integrity="sha512-lnOllyZZlRk/gQIyjS3+h+LUy54uyM4aGq2zbGc82KTvBlp/fodSpdh/pywPztpU9zUqHcJr+jP+a1zLa9oCJw=="
         crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/vs2015.min.css"
         integrity="sha512-w8aclkBlN3Ha08SMwFKXFJqhSUx2qlvTBFLLelF8sm4xQnlg64qmGB/A6pBIKy0W8Bo51yDMDtQiPLNRq1WMcQ=="
         crossorigin="anonymous" />
@@ -91,20 +92,65 @@
             padding-top: 1em;
             padding-bottom: 0.5em;
         }
+
+        .container
+        {
+            padding-top: 1em;
+            padding-bottom: 1em;
+        }
+
+        .navbar
+        {
+            background-color: #640080;
+        }
+
+        .panel-block {
+            padding: 0.8em 0.8em;
+        }
+
+        @font-face
+        {
+            font-family: "cyberfunk";
+            src: url("https://obengine.io/Cyberfunk.ttf");
+        }
+
+        .brand-title
+        {
+            font-family: "cyberfunk";
+        }
     </style>
     <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+        let search_db;
+        let fuse;
+        fetch("https://${DB_LOCATION}").then(
+            (resp) => resp.json()
+        ).then(
+            function(data) { search_db = data;}
+        ).then(
+            function() {
+                fuse = new Fuse(search_db, {
+                    keys: ['name'],
+                    threshold: 0.3,
+                    includeScore: true
+                });
+            }
+        )
+        </script>
 </head>
 
+<%namespace name="header_template" file="header.mako"/>
 <%namespace name="class_template" file="lua_class.mako"/>
 <%namespace name="function_template" file="lua_function.mako"/>
 <%namespace name="namespace_template" file="lua_namespace.mako"/>
 <body>
+    ${header_template.header(CURRENT_VERSION)}
     <section class="container">
-        % if target.type == "class":
+        % if target._type == "class":
             ${class_template.lua_class(target)}
-        % elif target.type == "function":
+        % elif target._type == "function":
             ${function_template.lua_function(target)}
-        %elif target.type == "namespace":
+        %elif target._type == "namespace":
             ${namespace_template.lua_namespace(target)}
         % endif
     </section>

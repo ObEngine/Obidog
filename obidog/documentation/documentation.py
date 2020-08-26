@@ -5,6 +5,10 @@ from mako.lookup import TemplateLookup
 from mako import exceptions
 
 from obidog.models.classes import ClassModel
+from obidog.documentation.config import WEBSITE_URL, DOC_PATH
+
+DB_FILENAME = "search.json"
+CURRENT_VERSION = "0.5"  # TODO: Fetch version from ObEngine repo
 
 
 class LuaClass:
@@ -102,7 +106,11 @@ def document_class(class_value: ClassModel):
         ) as tpl:
             try:
                 export.write(
-                    Template(tpl.read(), lookup=lookup).render(target=class_value)
+                    Template(tpl.read(), lookup=lookup).render(
+                        target=class_value,
+                        DB_LOCATION=f"{WEBSITE_URL}/{DOC_PATH}/{DB_FILENAME}",
+                        CURRENT_VERSION=CURRENT_VERSION,
+                    )
                 )
             except Exception as e:
                 export.write(exceptions.html_error_template().render().decode("utf-8"))
@@ -117,7 +125,11 @@ def document_namespace(namespace):
         ) as tpl:
             try:
                 export.write(
-                    Template(tpl.read(), lookup=lookup).render(target=namespace)
+                    Template(tpl.read(), lookup=lookup).render(
+                        target=namespace,
+                        DB_LOCATION=f"{WEBSITE_URL}/{DOC_PATH}/{DB_FILENAME}",
+                        CURRENT_VERSION=CURRENT_VERSION,
+                    )
                 )
             except Exception as e:
                 export.write(exceptions.html_error_template().render().decode("utf-8"))
