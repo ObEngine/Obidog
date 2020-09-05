@@ -7,6 +7,18 @@
 </div>
 </%def>
 
+<%def name="doc_link(type)">
+% if type.startswith("obe") or type.startswith("vili"):
+https://obengine.io/doc/lua/${'/'.join(type.split('.'))}.html
+% elif type == "table":
+https://www.lua.org/manual/5.4/manual.html#6.6
+% elif type == "string":
+https://www.lua.org/manual/5.4/manual.html#6.4
+% else:
+#
+% endif
+</%def>
+
 <%def name="lua_function(function)">
 <div class="panel" id="doc_${function.name}">
     <div class="panel-heading transparent header-padding">
@@ -77,7 +89,7 @@
                     % for parameter in function.parameters:
                     <div class="tile pl-4 is-vertical">
                         <div class="tile pl-4">
-                            <p><b class="has-text-info">${parameter.type}</b> ${parameter.name}</p>
+                            <p><a href="${doc_link(parameter.type.type)}" class="has-text-info">${parameter.type}</a> ${parameter.name}</p>
                         </div>
                         <div class="tile pl-6">
                             <p>${parameter.description}</p>
@@ -98,7 +110,7 @@
                         <h5 class="title is-5 pl-2">Returns</h5>
                     </div>
                     <div class="tile pl-4">
-                        <p class="pl-4"><b class="has-text-info">${function.return_type}</b></p>
+                        <a href="${doc_link(function.return_type.type)}" class="pl-4"><b class="has-text-info">${function.return_type}</b></a>
                     </div>
                 </div>
             </div>

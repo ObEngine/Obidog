@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Union
 
 from obidog.databases import CppDatabase
@@ -42,11 +43,23 @@ def fetch_symbol(cpp_db: CppDatabase, symbol: str):
     return symbols[symbol]
 
 
+@dataclass
+class LuaType:
+    prefix: str
+    type: str
+    suffix: str
+
+    def __str__(self):
+        return f"{self.prefix} {self.type} {self.suffix}".strip(" ")
+
+
 def cpp_type_to_lua_type(cpp_db, cpp_type, lookup_cpp=False):
+    if isinstance(cpp_type, LuaType):
+        cpp_type = str(cpp_type)
     if "," in cpp_type and not ("<" in cpp_type and ">" in cpp_type):
         return ",".join(
             [
-                cpp_type_to_lua_type(cpp_db, sub_type, True)
+                str(cpp_type_to_lua_type(cpp_db, sub_type, True))
                 for sub_type in cpp_type.split(",")
             ]
         )
@@ -81,7 +94,9 @@ def cpp_type_to_lua_type(cpp_db, cpp_type, lookup_cpp=False):
                 return None
         else:
             return FutureLuaReferenceTag(cpp_type_backup)"""
-    return f"{' '.join(type_prefix)} {lua_type} {' '.join(type_suffix)}".strip(" ")
+    return LuaType(" ".join(type_prefix), lua_type, " ".join(type_suffix))
+    # return f"{lua_type} {' '.join(type_suffix)}".strip(" ")
+    # return f"{' '.join(type_prefix)} {lua_type} {' '.join(type_suffix)}".strip(" ")
 
 
 def convert_function_types(

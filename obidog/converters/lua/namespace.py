@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from obidog.databases import CppDatabase
 
-from obidog.models.namespace import Namespace
+from obidog.models.namespace import NamespaceModel
 
 
 def group_bindings_by_namespace(cpp_db: CppDatabase):
-    group_by_namespace = defaultdict(Namespace)
+    group_by_namespace = defaultdict(NamespaceModel)
     for item_type in [
         "classes",
         "enums",
@@ -34,7 +34,7 @@ def group_bindings_by_namespace(cpp_db: CppDatabase):
         for sub_namespace_name, sub_namespace in group_by_namespace.items()
         if not "::" in sub_namespace_name
     }
-    group_by_namespace[""] = Namespace(
+    group_by_namespace[""] = NamespaceModel(
         name="ÖbEngine",
         path="",
         description="ÖbEngine documentation",

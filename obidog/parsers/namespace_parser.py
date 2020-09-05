@@ -19,7 +19,7 @@ from obidog.models.functions import (
 )
 from obidog.models.enums import EnumModel, EnumValueModel
 from obidog.models.typedefs import TypedefModel
-from obidog.models.namespace import Namespace
+from obidog.models.namespace import NamespaceModel
 
 
 def parse_functions_from_xml(namespace_name, namespace, cpp_db):
@@ -145,7 +145,7 @@ def parse_namespace_from_xml(class_path, cpp_db):
     namespace_description = extract_xml_value(namespace, "briefdescription")
     # TODO: Parse namespace description
 
-    cpp_db.namespaces[namespace_name] = Namespace(
+    cpp_db.namespaces[namespace_name] = NamespaceModel(
         name=namespace_name.split("::")[-1],
         path=namespace_name,
         description=namespace_description,

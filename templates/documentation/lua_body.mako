@@ -22,121 +22,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <link href="https://jenil.github.io/bulmaswatch/darkly/bulmaswatch.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-divider@1.1.0/dist/bulma-divider.min.css" rel="stylesheet">
-    <style>
-        pre>code {
-            font-family: "Fira Code", monospace;
-        }
-
-        .eggplant-header {
-            background-color: #640080;
-            color: white;
-            border-top-right-radius: 2em;
-        }
-
-        
-        .crimson-header {
-            background-color: #6A0009;
-            color: white;
-            border-top-right-radius: 2em;
-        }
-
-        .gold-header {
-            background-color: #7d6343;
-            color: white;
-            border-top-right-radius: 2em;
-        }
-
-        .ocean-header {
-            background-color: #224382;
-            color: white;
-            border-top-right-radius: 2em;
-        }
-
-        .dark-panel {
-            background-color: #222;
-            color: white;
-        }
-
-        .transparent {
-            background-color: transparent;
-        }
-
-        .eggplant-outline {
-            border-color: #640080;
-            border-radius: 4px;
-            border-style: solid;
-        }
-
-        .crimson-outline {
-            border-color: #6A0009;
-            border-radius: 4px;
-            border-style: solid;
-        }
-
-        .gold-outline {
-            border-color: #7d6343;
-            border-radius: 4px;
-            border-style: solid;
-        }
-
-        .ocean-outline {
-            border-color: #224382;
-            border-radius: 4px;
-            border-style: solid;
-        }
-
-        .header-padding
-        {
-            padding-left: 0.6em;
-            padding-right: 0px;
-            padding-top: 1em;
-            padding-bottom: 0.5em;
-        }
-
-        .container
-        {
-            padding-top: 1em;
-            padding-bottom: 1em;
-        }
-
-        .navbar
-        {
-            background-color: #640080;
-        }
-
-        .panel-block {
-            padding: 0.8em 0.8em;
-        }
-
-        @font-face
-        {
-            font-family: "cyberfunk";
-            src: url("https://obengine.io/Cyberfunk.ttf");
-        }
-
-        .brand-title
-        {
-            font-family: "cyberfunk";
-        }
-    </style>
+    <link href="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/css/style.css" rel="stylesheet">
     <script>hljs.initHighlightingOnLoad();</script>
-    <script>
-        let search_db;
-        let fuse;
-        fetch("https://${DB_LOCATION}").then(
-            (resp) => resp.json()
-        ).then(
-            function(data) { search_db = data;}
-        ).then(
-            function() {
-                fuse = new Fuse(search_db, {
-                    keys: ['name'],
-                    threshold: 0.3,
-                    includeScore: true
-                });
-            }
-        )
-        </script>
 </head>
 
 <%namespace name="header_template" file="header.mako"/>
@@ -144,7 +31,7 @@
 <%namespace name="function_template" file="lua_function.mako"/>
 <%namespace name="namespace_template" file="lua_namespace.mako"/>
 <body>
-    ${header_template.header(CURRENT_VERSION)}
+    ${header_template.header(WEBSITE_LOCATION, DOCUMENTATION_PATH, DB_LOCATION, CURRENT_VERSION)}
     <section class="container">
         % if target._type == "class":
             ${class_template.lua_class(target)}
