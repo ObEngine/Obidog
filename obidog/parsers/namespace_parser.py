@@ -148,6 +148,7 @@ def parse_namespace_from_xml(class_path, cpp_db):
     cpp_db.namespaces[namespace_name] = Namespace(
         name=namespace_name.split("::")[-1],
         path=namespace_name,
+        namespace="::".join(namespace_name.split("::")[:-1:]),
         description=namespace_description,
         flags=parse_obidog_flags(namespace),
     )

@@ -132,7 +132,8 @@
                 fuse = new Fuse(search_db, {
                     keys: ['name'],
                     threshold: 0.3,
-                    includeScore: true
+                    includeScore: true,
+                    useExtendedSearch: true,
                 });
             }
         )

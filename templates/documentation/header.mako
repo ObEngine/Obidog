@@ -181,9 +181,9 @@
         }
     });
 
-    search_input.onkeypress = (event) => {
+    search_input.onkeydown = (event) => {
         search_results.innerHTML = "";
-        let results = fuse.search(search_input.value, {"limit": 12});
+        let results = fuse.search(search_input.value, {"limit": 20});
         for (result of results) {
             addSuggestion(result.item);
         }

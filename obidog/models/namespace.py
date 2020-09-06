@@ -15,6 +15,7 @@ from obidog.models.urls import URLs
 class Namespace(BaseModel):
     name: str = ""
     path: str = ""
+    namespace: str = ""
     description: str = ""
     classes: Dict[str, ClassModel] = field(default_factory=lambda: {})
     functions: Dict[str, Union[FunctionModel, FunctionOverloadModel]] = field(
