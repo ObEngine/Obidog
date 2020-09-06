@@ -75,7 +75,8 @@ def make_bindings_header(path, namespace, objects):
     inc_out = os.path.join(OUTPUT_DIRECTORY, "include", "Core", path)
     state_view = flavour.STATE_VIEW
     bindings_functions = [
-        f"void Load{object_name}({state_view} state);" for object_name in objects
+        f"void Load{object_name['bindings']}({state_view} state);"
+        for object_name in objects
     ]
     with open(inc_out, "w") as class_binding:
         class_binding.write(
@@ -91,7 +92,8 @@ def make_bindings_header(path, namespace, objects):
 
 
 def make_bindings_sources(namespace, path, bindings_header, *datasets):
-    with open(path, "w") as bindings_source:
+    src_out = os.path.join(OUTPUT_DIRECTORY, "src", "Core", path)
+    with open(src_out, "w") as bindings_source:
         all_includes = set(
             includes
             for data in datasets
@@ -136,26 +138,26 @@ def generate_bindings_for_namespace(name, namespace):
         + globals_bindings["objects"]
     )
 
+    bindings_header = os.path.join(base_path, f"{name.split('::')[-1]}.hpp").replace(
+        os.path.sep, "/"
+    )
     if GENERATE_BINDINGS:
-        bindings_header = os.path.join(
-            base_path, f"{name.split('::')[-1]}.hpp"
-        ).replace(os.path.sep, "/")
         make_bindings_header(bindings_header, name, generated_objects)
-        namespace_data = {
-            "includes": namespace.namespaces.flags.additional_includes
-            if namespace.namespaces.flags.additional_includes
-            else [],
-            "bindings_functions": [],
-        }
-        src_out = os.path.join(
-            OUTPUT_DIRECTORY, "src", "Core", base_path, f"{name.split('::')[-1]}.cpp"
-        )
-        FILES_TO_FORMAT.append(os.path.join("include/Core", bindings_header))
-        FILES_TO_FORMAT.append(os.path.join("src/Core", src_out))
-
+    namespace_data = {
+        "includes": namespace.namespaces.flags.additional_includes
+        if namespace.namespaces.flags.additional_includes
+        else [],
+        "bindings_functions": [],
+    }
+    bindings_source = os.path.join(base_path, f"{name.split('::')[-1]}.cpp").replace(
+        os.path.sep, "/"
+    )
+    FILES_TO_FORMAT.append(os.path.join("include/Core", bindings_header))
+    FILES_TO_FORMAT.append(os.path.join("src/Core", bindings_source))
+    if GENERATE_BINDINGS:
         make_bindings_sources(
             name,
-            src_out,
+            bindings_source,
             bindings_header,
             enum_bindings,
             class_bindings,
@@ -163,7 +165,7 @@ def generate_bindings_for_namespace(name, namespace):
             globals_bindings,
             namespace_data,
         )
-    return generated_objects
+    return generated_objects, bindings_header, bindings_source
 
 
 def fetch_sub_dict(d, path):
@@ -232,7 +234,7 @@ def generated_bindings_index(generated_objects):
         tables.append(f"state{namespace_full_path}.get_or_create<sol::table>();")
 
         print(objects)
-        for generated_object in objects:
+        for generated_object in objects["objects"]:
             bindings.append(
                 f"{namespace_name}::Bindings::Load{generated_object}(state);"
             )
@@ -300,9 +302,12 @@ def generate_bindings(cpp_db, write_files: bool = True):
         copy_parent_bindings(cpp_db, namespace.classes)
         copy_parent_bases(cpp_db, namespace.classes)
         apply_proxies(cpp_db, namespace.functions)
-        generated_objects[namespace_name] = generate_bindings_for_namespace(
-            namespace_name, namespace
-        )
+        generation_results = generate_bindings_for_namespace(namespace_name, namespace)
+        generated_objects[namespace_name] = {
+            "objects": generation_results[0],
+            "header": generation_results[1],
+            "source": generation_results[2],
+        }
     if GENERATE_BINDINGS:
         with open(
             os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
@@ -311,4 +316,4 @@ def generate_bindings(cpp_db, write_files: bool = True):
     FILES_TO_FORMAT.append("src/Core/Bindings/index.cpp")
     if GENERATE_BINDINGS:
         clang_format_files(FILES_TO_FORMAT)
-    print("STOP")
+    return generated_objects

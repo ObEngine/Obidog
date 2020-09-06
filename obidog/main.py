@@ -5,11 +5,13 @@ import tempfile
 
 import requests
 
-from obidog.converters.lua.types import convert_all_types
+from obidog.bindings.generator import generate_bindings
 from obidog.converters.lua.namespace import group_bindings_by_namespace
+from obidog.converters.lua.types import convert_all_types
 from obidog.converters.lua.urls import fill_element_urls
 from obidog.databases import CppDatabase, LuaDatabase
-from obidog.bindings.generator import generate_bindings
+from obidog.documentation.documentation import document_item
+from obidog.documentation.search import DefaultEncoder, generate_search_db
 from obidog.generators.cpp_lua_merge import (
     mix_cpp_lua_doc,
     transform_all_cpp_types_to_lua_types,
@@ -18,10 +20,9 @@ from obidog.generators.doc_class_generator import generate
 from obidog.logger import log
 from obidog.parsers.bindings_parser import parse_all_lua_bindings
 from obidog.parsers.cpp_parser import parse_doxygen_files
+from obidog.parsers.doxygen_index_parser import parse_doxygen_index
 from obidog.wrappers.doxygen_wrapper import build_doxygen_documentation
 from obidog.wrappers.git_wrapper import check_git_directory
-from obidog.documentation.documentation import document_item
-from obidog.documentation.search import generate_search_db, DefaultEncoder
 
 
 def main():
@@ -54,8 +55,13 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "documentation":
+        doxygen_index = parse_doxygen_index(
+            os.path.join(path_to_doc, "docbuild", "xml", "index.xml")
+        )
         log.info("Preparing database")
-        generate_bindings(cpp_db, True)
+        bindings_results = generate_bindings(
+            cpp_db, True
+        )  # TODO: Don't forget to put this to false !
 
         log.info("Converting all types")
         convert_all_types(cpp_db)
@@ -65,27 +71,21 @@ def main():
             for item_type in cpp_db.__dict__.keys()
             for item in getattr(cpp_db, item_type).values()
         ]
+        for class_value in cpp_db.classes.values():
+            for method in class_value.methods.values():
+                method.from_class = class_value.name
+                all_elements.append(method)
         log.info("Retrieving urls for all elements")
         for element in all_elements:
-            fill_element_urls(element)
+            fill_element_urls(
+                element, doxygen_index=doxygen_index, bindings_results=bindings_results
+            )
 
         log.info("Grouping namespace")
         namespaces = group_bindings_by_namespace(cpp_db)
         log.info("Generate namespaces documentation")
         for namespace_value in namespaces.values():
             document_item(namespace_value)
-
-        doxygen_url = "https://obengine.io/doc/cpp/classobe_1_1_collision_1_1_polygonal_collider.html#a972819e978772fbcf1ec3b25ddb124a8"
-        source_url = "https://github.com/Sygmei/ObEngine/blob/master/src/Core/Collision/PolygonalCollider.cpp#L170"
-        bindings_url = "https://github.com/Sygmei/ObEngine/blob/master/src/Core/Bindings/obe/Collision/Collision.cpp#L71"
-        urls = (
-            cpp_db.classes["obe::Collision::PolygonalCollider"]
-            .methods["removeTag"]
-            .urls
-        )
-        urls.doxygen = doxygen_url
-        urls.source = source_url
-        urls.bindings = bindings_url
 
         log.info("Generate classes documentation")
         for class_value in cpp_db.classes.values():

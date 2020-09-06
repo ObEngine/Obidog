@@ -10,6 +10,7 @@ from obidog.parsers.utils.xml_utils import (
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.globals_parser import parse_global_from_xml
+from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
 from obidog.models.functions import (
@@ -64,7 +65,6 @@ def parse_typedef_from_xml(xml_typedef):
     typedef_description = get_content_if(
         xml_typedef.find("briefdescription").find("para")
     )
-    typedef_location = get_content(xml_typedef.find("location"))
     typedef_definition = get_content(xml_typedef.find("definition"))
     CONFLICTS.append(typedef_name, xml_typedef)
 
@@ -74,7 +74,7 @@ def parse_typedef_from_xml(xml_typedef):
         type=typedef_type,
         flags=parse_obidog_flags(xml_typedef),
         description=typedef_description,
-        location=typedef_location,
+        location=parse_doxygen_location(xml_typedef),
     )
 
 
@@ -91,12 +91,6 @@ def parse_typedefs_from_xml(namespace_name, namespace, cpp_db):
 def parse_enum_from_xml(xml_enum):
     enum_name = get_content(xml_enum.find("name"))
     enum_description = get_content(xml_enum.find("briefdescription"))
-    enum_values = []
-
-    base_location = xml_enum.find("location").attrib["file"]
-    location = os.path.relpath(
-        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
-    ).replace(os.path.sep, "/")
 
     enum_values = []
     for enum_value in xml_enum.xpath("enumvalue"):
@@ -112,7 +106,7 @@ def parse_enum_from_xml(xml_enum):
         values=enum_values,
         flags=parse_obidog_flags(xml_enum),
         description=enum_description,
-        location=location,
+        location=parse_doxygen_location(xml_enum),
     )
 
 
@@ -137,8 +131,8 @@ def parse_globals_from_xml(namespace_name, namespace, cpp_db):
             cpp_db.globals[full_name].namespace = namespace_name
 
 
-def parse_namespace_from_xml(class_path, cpp_db):
-    tree = etree.parse(class_path)
+def parse_namespace_from_xml(xml_path, cpp_db):
+    tree = etree.parse(xml_path)
 
     namespace = tree.xpath("/doxygen/compounddef")[0]
     namespace_name = extract_xml_value(namespace, "compoundname")

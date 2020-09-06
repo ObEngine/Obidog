@@ -33,6 +33,6 @@ def make_shorthand(full_name, shorthand):
 
 
 def get_include_file(item: LocalizableModel):
-    include_path = strip_include(item.location)
+    include_path = strip_include(item.location.file)
     include_path = include_path.replace(os.path.sep, "/")
     return f"#include <{include_path}>"

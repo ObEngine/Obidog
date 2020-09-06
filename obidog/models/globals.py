@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from obidog.models.base import BaseModel
 from obidog.models.bindings import Export
+from obidog.models.location import Location
 from obidog.models.urls import URLs
 
 
@@ -12,7 +13,7 @@ class GlobalModel(BaseModel):
     type: str
     namespace: str = ""
     initializer: str = ""
-    location: str = ""
+    location: Location = field(default_factory=lambda: Location())
     description: str = ""
     export: Export = Export()
     urls: URLs = field(default_factory=lambda: URLs())
