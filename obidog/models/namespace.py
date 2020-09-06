@@ -12,7 +12,7 @@ from obidog.models.urls import URLs
 
 
 @dataclass
-class Namespace(BaseModel):
+class NamespaceModel(BaseModel):
     name: str = ""
     path: str = ""
     namespace: str = ""
@@ -23,7 +23,7 @@ class Namespace(BaseModel):
     )
     enums: Dict[str, EnumModel] = field(default_factory=lambda: {})
     globals: Dict[str, GlobalModel] = field(default_factory=lambda: {})
-    namespaces: Dict[str, "Namespace"] = field(default_factory=lambda: {})
+    namespaces: Dict[str, "NamespaceModel"] = field(default_factory=lambda: {})
     typedefs: Dict[str, TypedefModel] = field(default_factory=lambda: {})
     flags: ObidogFlagsModel = ObidogFlagsModel()
     _type: str = "namespace"

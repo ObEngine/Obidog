@@ -1,12 +1,14 @@
 import os
 
 from obidog.config import PATH_TO_OBENGINE
-from obidog.parsers.utils.xml_utils import get_content, get_content_if
+from obidog.models.functions import FunctionModel, PlaceholderFunctionModel
+from obidog.models.location import Location
+from obidog.models.qualifiers import QualifiersModel
+from obidog.parsers.location_parser import parse_doxygen_location
+from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
-from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
-from obidog.models.functions import PlaceholderFunctionModel, FunctionModel
-from obidog.models.qualifiers import QualifiersModel
+from obidog.parsers.utils.xml_utils import get_content, get_content_if
 
 
 def make_return_type(return_type):
@@ -52,13 +54,9 @@ def parse_function_from_xml(xml_function, method=False):
         qualifiers.volatile = True
     if xml_function.attrib["static"] == "yes":
         qualifiers.static = True
-    base_location = xml_function.find("location").attrib["file"]
+
     if not method:
         CONFLICTS.append(name, xml_function)
-
-    location = os.path.relpath(
-        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
-    ).replace(os.path.sep, "/")
 
     if method:
         if " " in definition:
@@ -80,5 +78,5 @@ def parse_function_from_xml(xml_function, method=False):
         qualifiers=qualifiers,
         flags=flags,
         description=description,
-        location=location,
+        location=parse_doxygen_location(xml_function),
     )

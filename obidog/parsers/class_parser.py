@@ -2,22 +2,23 @@ import os
 
 from obidog.config import PATH_TO_OBENGINE
 from obidog.exceptions import ParameterNameNotFoundInXMLException
-from obidog.parsers.utils.xml_utils import (
-    get_content,
-    get_content_if,
-    extract_xml_value,
-)
-from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
-from obidog.parsers.function_parser import parse_function_from_xml
-from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
+from obidog.models.classes import AttributeModel, ClassBaseModel, ClassModel
+from obidog.models.flags import ObidogFlagsModel
 from obidog.models.functions import (
     FunctionModel,
-    PlaceholderFunctionModel,
     FunctionOverloadModel,
+    PlaceholderFunctionModel,
 )
 from obidog.models.qualifiers import QualifiersModel
-from obidog.models.flags import ObidogFlagsModel
-from obidog.models.classes import AttributeModel, ClassModel, ClassBaseModel
+from obidog.parsers.function_parser import parse_function_from_xml
+from obidog.parsers.location_parser import parse_doxygen_location
+from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
+from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.parsers.utils.xml_utils import (
+    extract_xml_value,
+    get_content,
+    get_content_if,
+)
 
 
 def parse_methods(class_name, class_value):
@@ -124,12 +125,6 @@ def parse_class_from_xml(class_value):
             base = class_value.xpath(f"inheritancegraph/node[@id = {base_class_id}]")[0]
             bases.append(get_content(base).strip())
 
-    # Fetching location
-    base_location = class_value.xpath("location")[0].attrib["file"]
-    location = os.path.relpath(
-        os.path.normpath(base_location), os.path.normpath(PATH_TO_OBENGINE)
-    ).replace(os.path.sep, "/")
-
     description = extract_xml_value(class_value, "briefdescription/para")
 
     methods, constructors, destructor = parse_methods(
@@ -151,5 +146,5 @@ def parse_class_from_xml(class_value):
         methods=methods,
         flags=flags,
         description=description,
-        location=location,
+        location=parse_doxygen_location(class_value),
     )

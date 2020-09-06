@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from obidog.models.base import BaseModel
 from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
+from obidog.models.location import Location
 from obidog.models.qualifiers import QualifiersModel
 from obidog.models.urls import URLs
 
@@ -39,7 +40,7 @@ class FunctionModel(FunctionBaseModel):
     flags: ObidogFlagsModel = ObidogFlagsModel()
     force_cast: bool = False
     description: str = ""
-    location: str = ""
+    location: Location = field(default_factory=lambda: Location())
     export: Export = Export()
     _type: str = "function"
     urls: URLs = field(default_factory=lambda: URLs())
@@ -60,5 +61,5 @@ class FunctionPatchModel(FunctionBaseModel):
     parameters: List[ParameterModel]
     return_type: str
     replacement: str
-    location: str = ""
+    location: Location = field(default_factory=lambda: Location())
     export: Export = Export()

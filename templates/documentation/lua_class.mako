@@ -54,6 +54,28 @@
             </div>
         </div>
     </div>
+    % if klass.urls.doxygen:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-link" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Doxygen</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${klass.urls.doxygen}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to Doxygen (${klass.namespace}::${klass.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
     % if klass.flags.helpers:
     <div class="panel-block">
         <div class="tile is-ancestor pl-4 py-2">

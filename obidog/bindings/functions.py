@@ -255,7 +255,19 @@ def generate_functions_bindings(functions):
             function_name.split("::")[-1], function_value
         )
         real_function_name = format_name(short_name)
-        objects.append(f"{func_type}{real_function_name}")
+        if isinstance(function_value, FunctionOverloadModel):
+            identifier = (
+                f"{function_value.overloads[0].namespace}::{function_value.name}"
+            )
+        else:
+            identifier = f"{function_value.namespace}::{function_value.name}"
+
+        objects.append(
+            {
+                "bindings": f"{func_type}{real_function_name}",
+                "identifier": identifier,
+            }
+        )
         if isinstance(function_value, FunctionOverloadModel):
             for overload in function_value.overloads:
                 includes.append(get_include_file(overload))

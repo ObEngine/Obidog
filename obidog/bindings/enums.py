@@ -21,7 +21,7 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
     objects = []
     for enum_name, enum in enums.items():
         log.info(f"  Generating bindings for enum {enum_name}")
-        enum_path = strip_include(enum.location).replace(os.path.sep, "/")
+        enum_path = strip_include(enum.location.file).replace(os.path.sep, "/")
         includes.append(f"#include <{enum_path}>")
         state_view = flavour.STATE_VIEW
         export_name = format_name(enum.name)
@@ -36,7 +36,12 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
         bindings_functions.append(
             f"{binding_function_signature}\n{{\n" f"{binding_function_body}\n}}"
         )
-        objects.append(f"Enum{export_name}")
+        objects.append(
+            {
+                "bindings": f"Enum{export_name}",
+                "identifier": f"{enum.namespace}::{enum.name}",
+            }
+        )
     return {
         "includes": includes,
         "bindings_functions": bindings_functions,

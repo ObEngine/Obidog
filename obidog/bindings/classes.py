@@ -121,16 +121,21 @@ def generate_method_bindings(
                                 ),
                             )
                         else:
-                            current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
-                                parameters=",".join(
-                                    [f"{full_name}* self"]
-                                    + [parameter.definition for parameter in definition]
-                                ),
-                                return_type=method.return_type,
-                                method_call=method_name,
-                                parameters_names=",".join(
-                                    parameter.name for parameter in definition
-                                ),
+                            current_overload = (
+                                METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
+                                    parameters=",".join(
+                                        [f"{full_name}* self"]
+                                        + [
+                                            parameter.definition
+                                            for parameter in definition
+                                        ]
+                                    ),
+                                    return_type=method.return_type,
+                                    method_call=method_name,
+                                    parameters_names=",".join(
+                                        parameter.name for parameter in definition
+                                    ),
+                                )
                             )
                         overloads.append(current_overload)
                     return flavour.FUNCTION_OVERLOAD.format(
@@ -215,7 +220,10 @@ def generate_class_bindings(class_value: ClassModel):
     # LATER: Register base class functions for sol3 on derived for optimization
     body = []
     generate_methods_bindings(
-        body, full_name, lua_name, class_value.methods,
+        body,
+        full_name,
+        lua_name,
+        class_value.methods,
     )
     for attribute in class_value.attributes.values():
         if attribute.flags.nobind:
@@ -272,8 +280,13 @@ def generate_classes_bindings(classes):
         log.info(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
         real_class_name = format_name(real_class_name)
-        objects.append(f"Class{real_class_name}")
-        class_path = strip_include(class_value.location)
+        objects.append(
+            {
+                "bindings": f"Class{real_class_name}",
+                "identifier": f"{class_value.namespace}::{class_value.name}",
+            }
+        )
+        class_path = strip_include(class_value.location.file)
         class_path = class_path.replace(os.path.sep, "/")
         class_path = f"#include <{class_path}>"
         includes.append(class_path)
