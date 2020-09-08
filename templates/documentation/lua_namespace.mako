@@ -58,6 +58,77 @@
         </div>
     </div>
 </div>
+% if any([namespace.urls.doxygen, namespace.urls.source, namespace.urls.bindings]):
+<div class="divider is-left is-info">URLs</div>
+<div class="panel" id="urls_${namespace.name}">
+    % if namespace.urls.doxygen:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Doxygen</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${namespace.urls.doxygen}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to Doxygen (${namespace.namespace}::${namespace.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+    % if namespace.urls.source:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fab fa-github" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Source</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${namespace.urls.source}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to source (${namespace.namespace}::${namespace.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+    % if namespace.urls.bindings:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-compress-arrows-alt" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Bindings</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${namespace.urls.bindings}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to bindings (${namespace.namespace}::${namespace.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+</div>
+% endif
 <div class="divider is-left is-info">Children</div>
 % if namespace.namespaces:
 <nav class="panel">

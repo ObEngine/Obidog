@@ -1,4 +1,5 @@
 from obidog.documentation.config import WEBSITE_URL, DOC_PATH, DOXYGEN_PATH
+from obidog.models.namespace import NamespaceModel
 from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
 
 SOURCE_REPOSITORY_URL = "https://github.com/Sygmei/ObEngine"
@@ -27,10 +28,10 @@ def get_source_url(element):
 
 
 def get_bindings_url(bindings_results, element):
-    if hasattr(element, "namespace"):
-        namespace = element.namespace
-    else:
+    if isinstance(element, NamespaceModel):
         namespace = element.path
+    else:
+        namespace = element.namespace
     if namespace in bindings_results:
         bindings_source = bindings_results[namespace]["source"]
         return f"{SOURCE_REPOSITORY_URL}/blob/master/src/Core/{bindings_source}"
@@ -40,10 +41,10 @@ def get_bindings_url(bindings_results, element):
 
 
 def get_doxygen_url(doxygen_index, element):
-    if element._type == "namespace":
-        identifier = element.path
-    elif hasattr(element, "from_class"):
+    if hasattr(element, "from_class"):
         identifier = f"{element.namespace}::{element.from_class}::{element.name}"
+    elif not element.namespace:
+        identifier = element.name
     else:
         identifier = f"{element.namespace}::{element.name}"
     if identifier in doxygen_index:
@@ -68,4 +69,6 @@ def fill_element_urls(element, doxygen_index: dict = {}, bindings_results: dict 
         element.urls.bindings = get_bindings_url(bindings_results, element)
     else:
         for overload in element.overloads:
-            fill_element_urls(overload, doxygen_index=doxygen_index)
+            fill_element_urls(
+                overload, doxygen_index=doxygen_index, bindings_results=bindings_results
+            )

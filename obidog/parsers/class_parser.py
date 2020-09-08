@@ -35,6 +35,7 @@ def parse_methods(class_name, class_value):
         return methods, constructors, destructor
     for xml_method in all_methods:
         method = parse_function_from_xml(xml_method, method=True)
+        method.from_class = class_name
         # Method has class name => Constructor
         if method.name == class_name and isinstance(method, FunctionModel):
             constructors.append(method)

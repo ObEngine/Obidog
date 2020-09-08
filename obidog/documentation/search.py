@@ -45,8 +45,9 @@ def _fix_overloads(search_db: CppDatabase):
 def _strip_unnecessary_attributes(search_db: CppDatabase):
     for element in search_db:
         to_pop = []
+        element.url = element.urls.documentation
         for attr in element.__dict__:
-            if attr not in ["_type", "name", "namespace", "from_class", "urls"]:
+            if attr not in ["_type", "name", "namespace", "from_class", "url"]:
                 to_pop.append(attr)
         for attr in to_pop:
             element.__dict__.pop(attr)

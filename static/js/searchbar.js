@@ -11,7 +11,7 @@ function addSuggestion(element) {
     a.onmouseleave = () => {
         a.classList.remove("is-active");
     };
-    a.href = element.urls.documentation;
+    a.href = element.url;
     a.classList.add("dropdown-item");
     a.classList.add("tile");
 

@@ -1,3 +1,4 @@
+<%namespace name="utils" file="utils.mako"/>
 <%def name="lua_enum(enum)">
 <div class="panel" id="doc_${enum.name}">
     <div class="panel-heading transparent header-padding">
@@ -8,6 +9,15 @@
                     <span class="title">${enum.name}</span>
                 </span>
             </div>
+            % if enum.urls.doxygen:
+                ${utils.link_with_icon(text="Doxygen", url=enum.urls.doxygen, icon="fas fa-link")}
+            % endif
+            % if enum.urls.source:
+                ${utils.link_with_icon(text="Source", url=enum.urls.source, icon="fas fa-link")}
+            % endif
+            % if enum.urls.bindings:
+                ${utils.link_with_icon(text="Bindings", url=enum.urls.bindings, icon="fas fa-link")}
+            % endif
         </div>
     </div>
     <div class="ocean-outline">

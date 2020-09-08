@@ -54,28 +54,6 @@
             </div>
         </div>
     </div>
-    % if klass.urls.doxygen:
-    <div class="panel-block">
-        <div class="tile is-ancestor pl-4 py-2">
-            <div class="tile is-vertical">
-                <div class="tile">
-                    <span>
-                        <i class="fas fa-link" aria-hidden="true"></i>
-                    </span>
-                    <h5 class="title is-5 pl-2">Doxygen</h5>
-                </div>
-                <div class="tile pl-4 is-vertical">
-                    <div class="tile pl-4">
-                        <a href="${klass.urls.doxygen}">
-                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
-                            <b>Go to Doxygen (${klass.namespace}::${klass.name})</b>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    % endif
     % if klass.flags.helpers:
     <div class="panel-block">
         <div class="tile is-ancestor pl-4 py-2">
@@ -98,6 +76,77 @@
     </div>
     % endif
 </div>
+% if any([klass.urls.doxygen, klass.urls.source, klass.urls.bindings]):
+<div class="divider is-left is-info">URLs</div>
+<div class="panel" id="urls_${klass.name}">
+    % if klass.urls.doxygen:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Doxygen</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${klass.urls.doxygen}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to Doxygen (${klass.namespace}::${klass.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+    % if klass.urls.source:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fab fa-github" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Source</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${klass.urls.source}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to source (${klass.namespace}::${klass.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+    % if klass.urls.bindings:
+    <div class="panel-block">
+        <div class="tile is-ancestor pl-4 py-2">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <span>
+                        <i class="fas fa-compress-arrows-alt" aria-hidden="true"></i>
+                    </span>
+                    <h5 class="title is-5 pl-2">Bindings</h5>
+                </div>
+                <div class="tile pl-4 is-vertical">
+                    <div class="tile pl-4">
+                        <a href="${klass.urls.bindings}">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                            <b>Go to bindings (${klass.namespace}::${klass.name})</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    % endif
+</div>
+% endif
 % if klass.attributes:
 <div class="divider is-left is-info">Attributes</div>
 % endif

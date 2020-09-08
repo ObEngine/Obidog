@@ -1,12 +1,3 @@
-<%def name="link_with_icon(text, url, icon)">
-<div class="column is-1">
-    <span>
-        <i class="${icon}" aria-hidden="true"></i>
-        <span class="has-text-info is-size-6"><a href="${url}">${text}</a></span>
-    </span>
-</div>
-</%def>
-
 <%def name="doc_link(type)">
 % if type.startswith("obe") or type.startswith("vili"):
 https://obengine.io/doc/lua/${'/'.join(type.split('.'))}.html
@@ -19,6 +10,7 @@ https://www.lua.org/manual/5.4/manual.html#6.4
 % endif
 </%def>
 
+<%namespace name="utils" file="utils.mako"/>
 <%def name="lua_function(function)">
 <div class="panel" id="doc_${function.name}">
     <div class="panel-heading transparent header-padding">
@@ -30,13 +22,13 @@ https://www.lua.org/manual/5.4/manual.html#6.4
                 </span>
             </div>
             % if function.urls.doxygen:
-                ${link_with_icon(text="Doxygen", url=function.urls.doxygen, icon="fas fa-link")}
+                ${utils.link_with_icon(text="Doxygen", url=function.urls.doxygen, icon="fas fa-link")}
             % endif
             % if function.urls.source:
-                ${link_with_icon(text="Source", url=function.urls.source, icon="fas fa-link")}
+                ${utils.link_with_icon(text="Source", url=function.urls.source, icon="fas fa-link")}
             % endif
             % if function.urls.bindings:
-                ${link_with_icon(text="Bindings", url=function.urls.bindings, icon="fas fa-link")}
+                ${utils.link_with_icon(text="Bindings", url=function.urls.bindings, icon="fas fa-link")}
             % endif
         </div>
     </div>

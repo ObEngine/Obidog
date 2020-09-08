@@ -23,6 +23,7 @@ from obidog.parsers.cpp_parser import parse_doxygen_files
 from obidog.parsers.doxygen_index_parser import parse_doxygen_index
 from obidog.wrappers.doxygen_wrapper import build_doxygen_documentation
 from obidog.wrappers.git_wrapper import check_git_directory
+from obidog.models.functions import FunctionModel, FunctionOverloadModel
 
 
 def main():
@@ -70,11 +71,13 @@ def main():
             item
             for item_type in cpp_db.__dict__.keys()
             for item in getattr(cpp_db, item_type).values()
+            if not item.flags.nobind
+        ] + [
+            method
+            for class_value in cpp_db.classes.values()
+            for method in class_value.methods.values()
+            if not method.flags.nobind
         ]
-        for class_value in cpp_db.classes.values():
-            for method in class_value.methods.values():
-                method.from_class = class_value.name
-                all_elements.append(method)
         log.info("Retrieving urls for all elements")
         for element in all_elements:
             fill_element_urls(
@@ -85,11 +88,13 @@ def main():
         namespaces = group_bindings_by_namespace(cpp_db)
         log.info("Generate namespaces documentation")
         for namespace_value in namespaces.values():
-            document_item(namespace_value)
+            if not namespace_value.flags.nobind:
+                document_item(namespace_value)
 
         log.info("Generate classes documentation")
         for class_value in cpp_db.classes.values():
-            document_item(class_value)
+            if not class_value.flags.nobind:
+                document_item(class_value)
 
         log.info("Generate full database")
         with open(

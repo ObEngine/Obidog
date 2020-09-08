@@ -9,6 +9,7 @@ from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.utils.xml_utils import get_content, get_content_if
+from obidog.parsers.utils.cpp_utils import parse_definition
 
 
 def make_return_type(return_type):
@@ -58,15 +59,13 @@ def parse_function_from_xml(xml_function, method=False):
     if not method:
         CONFLICTS.append(name, xml_function)
 
+    identifier = parse_definition(definition)[1]
     if method:
-        if " " in definition:
-            namespace = "::".join(definition.split(" ")[1].split("::")[:-2:])
-        else:
-            namespace = "::".join(definition.split("::")[:-2:])  # Constructors
-    elif " " in definition:
-        namespace = "::".join(definition.split(" ")[1].split("::")[:-1:])
+        if " " in identifier:
+            identifier = identifier.split(" ")[0]
+        namespace = "::".join(identifier.split("::")[:-2])
     else:
-        raise NotImplementedError("Invalid case")
+        namespace = "::".join(identifier.split("::")[:-1])
 
     return FunctionModel(
         name=name,

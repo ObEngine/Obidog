@@ -92,7 +92,7 @@
 </nav>
 <script>
 let search_db;
-let fuse;
+var fuse;
 fetch("https://${DB_LOCATION}").then(
     (resp) => resp.json()
 ).then(
@@ -106,6 +106,7 @@ fetch("https://${DB_LOCATION}").then(
             useExtendedSearch: true,
         });
     }
+);
 </script>
 <script src="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/js/version_selector.js"></script>
 <script src="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/js/searchbar.js"></script>

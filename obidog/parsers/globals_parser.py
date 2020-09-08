@@ -13,11 +13,13 @@ def parse_global_from_xml(xml_global):
     if not description:
         description = get_content(xml_global.find("briefdescription"))
     CONFLICTS.append(get_content(xml_global.find("name")), xml_global)
+    flags = parse_obidog_flags(xml_global)
     return GlobalModel(
         name=get_content(xml_global.find("name")),
         definition=get_content(xml_global.find("definition")),
         type=get_content(xml_global.find("type")),
         initializer=get_content_if(xml_global.find("initializer")),
+        flags=flags,
         location=parse_doxygen_location(xml_global),
         description=description,
     )

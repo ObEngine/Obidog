@@ -1,3 +1,4 @@
+<%namespace name="utils" file="utils.mako"/>
 <%def name="lua_global(glob)">
 <div class="panel" id="doc_${glob.name}">
     <div class="panel-heading transparent header-padding">
@@ -8,6 +9,15 @@
                     <span class="title">${glob.name}</span>
                 </span>
             </div>
+            % if glob.urls.doxygen:
+                ${utils.link_with_icon(text="Doxygen", url=glob.urls.doxygen, icon="fas fa-link")}
+            % endif
+            % if glob.urls.source:
+                ${utils.link_with_icon(text="Source", url=glob.urls.source, icon="fas fa-link")}
+            % endif
+            % if glob.urls.bindings:
+                ${utils.link_with_icon(text="Bindings", url=glob.urls.bindings, icon="fas fa-link")}
+            % endif
         </div>
     </div>
     <div class="crimson-outline">
