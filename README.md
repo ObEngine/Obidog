@@ -1,3 +1,5 @@
+![Obidog logo](https://raw.githubusercontent.com/ObEngine/Wiki/master/obidog_banner.png)
+
 # Obidog
 
 Öbengine's BIndings and DOcumentation Generator (work in progress)
