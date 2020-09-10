@@ -1,5 +1,11 @@
 from collections import defaultdict
-from obidog.config import PATH_TO_OBENGINE, SOURCE_DIRECTORIES, BINDINGS_CONFIG_FILE
+from obidog.config import (
+    PATH_TO_OBENGINE,
+    SOURCE_DIRECTORIES,
+    BINDINGS_CONFIG_FILE,
+    BINDINGS_SOURCES_LOCATION,
+    BINDINGS_HEADERS_LOCATION,
+)
 from obidog.databases import CppDatabase
 from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.utils import strip_include
@@ -152,8 +158,8 @@ def generate_bindings_for_namespace(name, namespace):
     bindings_source = os.path.join(base_path, f"{name.split('::')[-1]}.cpp").replace(
         os.path.sep, "/"
     )
-    FILES_TO_FORMAT.append(os.path.join("include/Core", bindings_header))
-    FILES_TO_FORMAT.append(os.path.join("src/Core", bindings_source))
+    FILES_TO_FORMAT.append(os.path.join(BINDINGS_HEADERS_LOCATION, bindings_header))
+    FILES_TO_FORMAT.append(os.path.join(BINDINGS_SOURCES_LOCATION, bindings_source))
     if GENERATE_BINDINGS:
         make_bindings_sources(
             name,
@@ -207,7 +213,7 @@ def generated_bindings_index(generated_objects):
     body = []
     include_list = []
     for current_dir, folders, files in os.walk(
-        os.path.join(OUTPUT_DIRECTORY, "include/Core/Bindings")
+        os.path.join(OUTPUT_DIRECTORY, BINDINGS_HEADERS_LOCATION, "Bindings")
     ):
         for f in files:
             if f.endswith(".hpp"):
@@ -310,10 +316,13 @@ def generate_bindings(cpp_db, write_files: bool = True):
         }
     if GENERATE_BINDINGS:
         with open(
-            os.path.join(OUTPUT_DIRECTORY, "src/Core/Bindings/index.cpp"), "w"
+            os.path.join(
+                OUTPUT_DIRECTORY, f"{BINDINGS_SOURCES_LOCATION}/Bindings/index.cpp"
+            ),
+            "w",
         ) as bindings_index:
             bindings_index.write(generated_bindings_index(generated_objects))
-    FILES_TO_FORMAT.append("src/Core/Bindings/index.cpp")
+    FILES_TO_FORMAT.append(f"{BINDINGS_SOURCES_LOCATION}/Bindings/index.cpp")
     if GENERATE_BINDINGS:
         clang_format_files(FILES_TO_FORMAT)
     return generated_objects

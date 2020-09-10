@@ -18,7 +18,6 @@ from obidog.generators.cpp_lua_merge import (
 )
 from obidog.generators.doc_class_generator import generate
 from obidog.logger import log
-from obidog.parsers.bindings_parser import parse_all_lua_bindings
 from obidog.parsers.cpp_parser import parse_doxygen_files
 from obidog.parsers.doxygen_index_parser import parse_doxygen_index
 from obidog.wrappers.doxygen_wrapper import build_doxygen_documentation

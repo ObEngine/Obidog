@@ -3,14 +3,14 @@ import tempfile
 
 import git
 
-from obidog.config import PATH_TO_OBENGINE, set_obengine_git_directory
+from obidog.config import (
+    PATH_TO_OBENGINE,
+    set_obengine_git_directory,
+    OBENGINE_GIT_URL,
+    OBENGINE_GIT_SSH,
+)
 from obidog.exceptions import InvalidObEngineGitRepositoryException
 from obidog.logger import log
-
-OBENGINE_GIT_URL = os.environ.get(
-    "OBENGINE_GIT_URL", "https://github.com/Sygmei/ObEngine"
-)
-OBENGINE_GIT_SSH = os.environ.get("OBENGINE_GIT_SSH", "git@github.com:Sygmei/ObEngine")
 
 
 def check_git_directory():

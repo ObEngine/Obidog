@@ -1,8 +1,8 @@
-from obidog.documentation.config import WEBSITE_URL, DOC_PATH, DOXYGEN_PATH
+from obidog.config import OBENGINE_GIT_URL, BINDINGS_SOURCES_LOCATION
+from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
 from obidog.models.namespace import NamespaceModel
+from obidog.parsers.bindings_parser import find_binding_location
 from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
-
-SOURCE_REPOSITORY_URL = "https://github.com/Sygmei/ObEngine"
 
 
 def get_documentation_url(element):
@@ -24,7 +24,7 @@ def get_documentation_url(element):
 
 def get_source_url(element):
     if hasattr(element, "location") and element.location.file:
-        return f"{SOURCE_REPOSITORY_URL}/blob/master/{element.location.file}#L{element.location.line}"
+        return f"{OBENGINE_GIT_URL}/blob/master/{element.location.file}#L{element.location.line}"
 
 
 def get_bindings_url(bindings_results, element):
@@ -34,7 +34,8 @@ def get_bindings_url(bindings_results, element):
         namespace = element.namespace
     if namespace in bindings_results:
         bindings_source = bindings_results[namespace]["source"]
-        return f"{SOURCE_REPOSITORY_URL}/blob/master/src/Core/{bindings_source}"
+        bindings_line = find_binding_location(bindings_source, element)
+        return f"{OBENGINE_GIT_URL}/blob/master/{BINDINGS_SOURCES_LOCATION}/{bindings_source}#L{bindings_line}"
     else:
         print(f"Namespace '{namespace}' not found in bindings generation results")
         return ""
