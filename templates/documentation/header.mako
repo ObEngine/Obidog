@@ -110,4 +110,5 @@ fetch("https://${DB_LOCATION}").then(
 </script>
 <script src="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/js/version_selector.js"></script>
 <script src="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/js/searchbar.js"></script>
+<script src="https://${WEBSITE_LOCATION}/${DOCUMENTATION_PATH}/static/js/burger_menu.js"></script>
 </%def>
