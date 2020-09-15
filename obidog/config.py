@@ -4,7 +4,7 @@ PATH_TO_OBENGINE = os.environ.get("OBENGINE_GIT_DIRECTORY", None)
 BINDINGS_SOURCES_LOCATION = "src/Core"
 BINDINGS_HEADERS_LOCATION = "include/Core"
 SOURCE_DIRECTORIES = [
-    {"path": "src/Core", "namespace": "obe"},
+    # {"path": "src/Core", "namespace": "obe"},
     {"path": "include/Core", "namespace": "obe"},
     {"path": "extlibs/vili/include", "namespace": "vili"},
 ]

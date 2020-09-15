@@ -38,24 +38,6 @@ https://www.lua.org/manual/5.4/manual.html#6.4
                 <div class="tile is-vertical">
                     <div class="tile">
                         <span>
-                            <i class="fas fa-code" aria-hidden="true"></i>
-                        </span>
-                        <h5 class="title is-5 pl-2">Signature</h5>
-                    </div>
-                    <div class="tile pl-4 is-vertical">
-                        <div class="tile pl-4">
-                            <pre
-                class="px-0 py-0"><code class="lua">${function.definition}</code></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="panel-block">
-            <div class="tile is-ancestor pl-4 py-2">
-                <div class="tile is-vertical">
-                    <div class="tile">
-                        <span>
                             <i class="fas fa-book" aria-hidden="true"></i>
                         </span>
                         <h5 class="title is-5 pl-2">Description</h5>
@@ -92,6 +74,7 @@ https://www.lua.org/manual/5.4/manual.html#6.4
             </div>
         </div>
         % endif
+        % if function.return_type.type != "nil":
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -107,6 +90,7 @@ https://www.lua.org/manual/5.4/manual.html#6.4
                 </div>
             </div>
         </div>
+        % endif
         % if function.urls.example:
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">

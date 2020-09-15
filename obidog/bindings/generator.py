@@ -1,29 +1,32 @@
+import os
+import re
 from collections import defaultdict
-from obidog.config import (
-    PATH_TO_OBENGINE,
-    SOURCE_DIRECTORIES,
-    BINDINGS_CONFIG_FILE,
-    BINDINGS_SOURCES_LOCATION,
-    BINDINGS_HEADERS_LOCATION,
-)
-from obidog.databases import CppDatabase
-from obidog.bindings.flavours import sol3 as flavour
-from obidog.bindings.utils import strip_include
+
+import inflection
+
 from obidog.bindings.classes import (
-    generate_classes_bindings,
-    copy_parent_bindings,
     copy_parent_bases,
+    copy_parent_bindings,
+    generate_classes_bindings,
 )
 from obidog.bindings.enums import generate_enums_bindings
+from obidog.bindings.flavours import sol3 as flavour
 from obidog.bindings.functions import generate_functions_bindings
 from obidog.bindings.globals import generate_globals_bindings
+from obidog.bindings.utils import strip_include
+from obidog.config import (
+    BINDINGS_CONFIG_FILE,
+    BINDINGS_HEADERS_LOCATION,
+    BINDINGS_SOURCES_LOCATION,
+    PATH_TO_OBENGINE,
+    SOURCE_DIRECTORIES,
+)
+from obidog.databases import CppDatabase
 from obidog.logger import log
-from obidog.wrappers.clangformat_wrapper import clang_format_files
-from obidog.utils.string_utils import clean_capitalize
 from obidog.models.functions import PlaceholderFunctionModel
-import os
-import inflection
-import re
+from obidog.parsers.utils.cpp_utils import parse_definition
+from obidog.utils.string_utils import clean_capitalize
+from obidog.wrappers.clangformat_wrapper import clang_format_files
 
 GENERATE_BINDINGS = False
 BINDINGS_INCLUDE_TEMPLATE = """
@@ -242,7 +245,7 @@ def generated_bindings_index(generated_objects):
         print(objects)
         for generated_object in objects["objects"]:
             bindings.append(
-                f"{namespace_name}::Bindings::Load{generated_object}(state);"
+                f"{namespace_name}::Bindings::Load{generated_object['bindings']}(state);"
             )
         bindings.append("\n")
     fix_index_tables(tables)
@@ -268,7 +271,7 @@ def apply_proxies(cpp_db, functions):
             patch.parameters = function_value.parameters
             patch.return_type = function_value.return_type
             patch.location = function_value.location
-            patch.replacement = function_value.definition.split()[1]
+            patch.replacement = parse_definition(function_value.definition)[1]
 
 
 def discard_placeholders(cpp_db):
