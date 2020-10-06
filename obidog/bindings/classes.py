@@ -197,7 +197,10 @@ def generate_class_bindings(class_value: ClassModel):
     class_value.lua_name = ".".join(full_name.split("::"))
 
     constructors_signatures_str = ""
-    if not class_value.abstract:
+    if (
+        not (class_value.abstract or class_value.flags.abstract)
+        and not class_value.flags.noconstructor
+    ):
         constructors_signatures = generate_constructors_definitions(
             class_value.constructors
         )

@@ -84,7 +84,7 @@ WARN_NO_PARAMDOC       = NO
 WARN_AS_ERROR          = NO
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = {{input_directories}}
-EXCLUDE_PATTERNS       = */Bindings/*
+EXCLUDE_PATTERNS       = */Bindings/**/**
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
@@ -242,3 +242,4 @@ ALIASES += additionalinclude{1}="\xrefitem additionalincludes \"\" \"\" <a href=
 ALIASES += asproperty="\xrefitem asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"
 ALIASES += copyparentitems="\xrefitem copyparentitems \"\" \"\" <a href=\"obidog.copy_parent_items\"></a>"
 ALIASES += proxy{1}="\xrefitem proxy \"\" \"\" <a href=\"obidog.proxy:\1\"></a>"
+ALIASES += noconstructor="\xrefitem noconstrucotr \"\" \"\" <a href=\"obidog.noconstructor\"></a>"

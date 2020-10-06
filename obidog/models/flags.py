@@ -15,3 +15,4 @@ class ObidogFlagsModel(BaseModel):
     as_property: bool = False
     copy_parent_items: bool = False
     proxy: bool = False
+    noconstructor: bool = False

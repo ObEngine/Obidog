@@ -7,7 +7,7 @@ TEMPLATE_HINTS_VARIABLES = {
         "std::vector<int>",
         "std::vector<bool>",
         "std::vector<std::string>",
-        "std::vector<double>"
+        "std::vector<double>",
     ],
     "maps": [
         "std::map<int, int>",
@@ -18,22 +18,22 @@ TEMPLATE_HINTS_VARIABLES = {
         "std::map<bool, int>",
         "std::map<bool, std::string>",
         "std::map<bool, double>",
-        "std::map<std::string, int>"
-        "std::map<std::string, bool>",
+        "std::map<std::string, int>" "std::map<std::string, bool>",
         "std::map<std::string, std::string>",
         "std::map<std::string, double>",
-        "std::map<double, int>"
-        "std::map<double, bool>",
+        "std::map<double, int>" "std::map<double, bool>",
         "std::map<double, std::string>",
-        "std::map<double, double>"
+        "std::map<double, double>",
     ],
     "primitives": [
-        "int", "double", "std::string", "bool",
+        "int",
+        "double",
+        "std::string",
+        "bool",
     ],
-    "numerics": [
-        "int", "double"
-    ]
+    "numerics": ["int", "double"],
 }
+
 
 def inject_template_variables(template_combination):
     associations = {}
@@ -42,7 +42,9 @@ def inject_template_variables(template_combination):
         associate_type = template_association.split("=")[1].strip()
         if associate_type.startswith("$"):
             if associate_type[1::] in TEMPLATE_HINTS_VARIABLES:
-                associations[template_name] = TEMPLATE_HINTS_VARIABLES[associate_type[1::]]
+                associations[template_name] = TEMPLATE_HINTS_VARIABLES[
+                    associate_type[1::]
+                ]
             else:
                 raise RuntimeError(f"Unknown template_hint variable {associate_type}")
     if not associations:
@@ -65,18 +67,15 @@ def inject_template_variables(template_combination):
         return generated_combinations
 
 
-
 def find_obidog_flag(tree, flag_name, amount=None):
     search_for = f"obidog.{flag_name}"
     flags = [
-        elem.attrib["url"][len(search_for)::]
-        for elem in
-        tree.xpath(f"detaileddescription//ulink[starts-with(@url, '{search_for}')]")
+        elem.attrib["url"][len(search_for) : :]
+        for elem in tree.xpath(
+            f"detaileddescription//ulink[starts-with(@url, '{search_for}')]"
+        )
     ]
-    flags = [
-        flag[1::] if flag.startswith(":") else flag
-        for flag in flags
-    ]
+    flags = [flag[1::] if flag.startswith(":") else flag for flag in flags]
     if amount:
         if len(flags) > amount:
             raise RuntimeError(
@@ -84,6 +83,7 @@ def find_obidog_flag(tree, flag_name, amount=None):
                 f"{len(flags)} times but is needed {amount} times"
             )
     return flags
+
 
 def parse_obidog_flags(tree):
     flags = ObidogFlagsModel()
@@ -104,12 +104,14 @@ def parse_obidog_flags(tree):
                 thints[bind_name] = []
             template_combinations = inject_template_variables(template_combination)
             for template_combination in template_combinations:
-                thints[bind_name].append({
-                    template_association.split("=")[0].strip():
-                    template_association.split("=")[1].strip()
-                    for template_association
-                    in template_combination
-                })
+                thints[bind_name].append(
+                    {
+                        template_association.split("=")[0]
+                        .strip(): template_association.split("=")[1]
+                        .strip()
+                        for template_association in template_combination
+                    }
+                )
         flags.template_hints = thints
     force_abstract = find_obidog_flag(tree, "force_abstract", 1)
     if force_abstract:
@@ -132,16 +134,22 @@ def parse_obidog_flags(tree):
     proxy = find_obidog_flag(tree, "proxy", 1)
     if proxy:
         flags.proxy = proxy[0]
+    noconstructor = find_obidog_flag(tree, "noconstructor", 1)
+    if noconstructor:
+        flags.noconstructor = True
     return flags
+
 
 class ConflictsManager:
     def __init__(self):
         self.conflicts = {}
+
     def append(self, conflict, xml):
         if not conflict in self.conflicts:
             self.conflicts[conflict] = []
         else:
             print("Conflict detected")
         self.conflicts[conflict].append(xml)
+
 
 CONFLICTS = ConflictsManager()

@@ -88,13 +88,17 @@ def parse_attributes(class_value):
             attribute_desc = get_content(xml_attribute.find("briefdescription"))
             qualifiers = QualifiersModel(static=is_static)
             flags = parse_obidog_flags(xml_attribute)
-            attributes[attribute_name] = AttributeModel(
-                name=attribute_name,
-                type=attribute_type,
-                qualifiers=qualifiers,
-                description=attribute_desc,
-                flags=flags,
-            )
+            templated = False
+            if xml_attribute.find("templateparamlist") is not None:
+                templated = True
+            if not templated:
+                attributes[attribute_name] = AttributeModel(
+                    name=attribute_name,
+                    type=attribute_type,
+                    qualifiers=qualifiers,
+                    description=attribute_desc,
+                    flags=flags,
+                )
 
     return attributes
 

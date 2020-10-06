@@ -13,7 +13,11 @@ def parse_doxygen_files(path_to_doc, cpp_db):
     for currentDir, _, files in os.walk(os.path.join(path_to_doc, "docbuild/xml/")):
         for f in files:
             if any(
-                f.startswith(f"class{item['namespace']}") for item in SOURCE_DIRECTORIES
+                (
+                    f.startswith(f"class{item['namespace']}")
+                    or f.startswith(f"struct{item['namespace']}")
+                )
+                for item in SOURCE_DIRECTORIES
             ):
                 class_filepath = os.path.join(currentDir, f)
                 log.debug(f"  Parsing class {class_filepath}")
