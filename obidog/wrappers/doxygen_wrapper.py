@@ -13,8 +13,8 @@ def _check_doxygen():
     try:
         with subprocess.Popen(
             [DOXYGEN_PATH, "--version"], stdout=subprocess.PIPE
-        ) as clang_format_exec:
-            version = clang_format_exec.stdout.read().decode("utf-8").strip()
+        ) as doxygen_exec:
+            version = doxygen_exec.stdout.read().decode("utf-8").strip()
             try:
                 version = version.split()[0].split(".")
                 if int(version[0]) >= 1 and int(version[1]) >= 8:
