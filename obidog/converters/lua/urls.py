@@ -13,9 +13,9 @@ def get_documentation_url(element):
         element_path = "/".join(element.namespace.split("::"))
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.name}.html"
     elif hasattr(element, "from_class"):
-        element_path = "/".join(element.from_class.split("::"))
+        element_path = "/".join(element.namespace.split("::"))
         return (
-            f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}.html#doc_{element.name}"
+            f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.from_class}.html#doc_{element.name}"
         )
     else:
         element_path = "/".join(element.namespace.split("::"))
