@@ -17,7 +17,7 @@ def _check_doxygen():
             version = doxygen_exec.stdout.read().decode("utf-8").strip()
             try:
                 version = version.split()[0].split(".")
-                if int(version[0]) >= 1 and int(version[1]) >= 8:
+                if int(version[0]) >= 1 and int(version[1]) >= 8 and int(version[2]) >= 18:
                     return True
                 else:
                     return False
@@ -27,10 +27,6 @@ def _check_doxygen():
         return False
 
 def build_doxygen_documentation(source_path):
-    if DOXYGEN_PATH is None:
-        log.warn("doxygen not found, could not create doxygen files")
-        return ""
-
     path = tempfile.mkdtemp()
     src_directories = [
         os.path.join(source_path, directory)
@@ -49,4 +45,4 @@ def build_doxygen_documentation(source_path):
 
 
 if not _check_doxygen():
-    DOXYGEN_PATH = None
+    raise RuntimeError(f"Doxygen (>= 1.8.18) not found")
