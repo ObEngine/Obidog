@@ -144,8 +144,38 @@ def generate_method_bindings(
                 else:
                     return binding
     elif isinstance(method, FunctionOverloadModel):
-        casts = [cast_method(full_name, overload) for overload in method.overloads]
-        return flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
+        casts = [
+            cast_method(full_name, overload)
+            for overload in method.overloads
+            if not overload.template
+        ]
+        if casts:
+            return flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
+
+
+def generate_templated_method_bindings(
+    body: List[str], full_name: str, lua_name: str, method: FunctionModel
+):
+    if method.flags.template_hints:
+        for bind_name, template_hint in method.flags.template_hints.items():
+            if len(template_hint) > 1:
+                raise NotImplementedError()
+            else:
+                specialized_method = generate_template_specialization(
+                    method, bind_name, template_hint[0]
+                )
+                body.append(f'bind{lua_name}["{bind_name}"] = ')
+                body.append(
+                    generate_method_bindings(
+                        full_name, bind_name, specialized_method, True
+                    )
+                )
+                body.append(";")
+
+    else:
+        print(
+            f"[WARNING] Template hints not implemented for {full_name} -> {method.name}"
+        )
 
 
 def generate_methods_bindings(
@@ -153,42 +183,22 @@ def generate_methods_bindings(
 ):
     for method in methods.values():
         if isinstance(method, FunctionModel) and method.template:
-            if method.flags.template_hints:
-                for bind_name, template_hint in method.flags.template_hints.items():
-                    if len(template_hint) > 1:
-                        raise NotImplementedError()
-                    else:
-                        specialized_method = generate_template_specialization(
-                            method, bind_name, template_hint[0]
-                        )
-                        body.append(f'bind{lua_name}["{bind_name}"] = ')
-                        body.append(
-                            generate_method_bindings(
-                                full_name, bind_name, specialized_method, True
-                            )
-                        )
-                        body.append(";")
-
-            else:
-                print(
-                    f"[WARNING] Template hints not implemented for {full_name} -> {method.name}"
-                )
+            generate_templated_method_bindings(body, full_name, lua_name, method)
         else:
-            method_name = method.name
-            bind_name = method.flags.bind_to or method_name
+            bind_name = method.flags.bind_to or method.name
             if bind_name in flavour.TRANSLATION_TABLE:
-                bind_name = flavour.TRANSLATION_TABLE[method_name]
+                bind_name = flavour.TRANSLATION_TABLE[method.name]
                 if bind_name is None:
                     continue
             else:
                 bind_name = f'"{bind_name}"'
-            body.append(f"bind{lua_name}[{bind_name}] = ")
-            body.append(
-                generate_method_bindings(
-                    full_name, method_name, method, method.force_cast
-                )
+            method_bindings = generate_method_bindings(
+                full_name, method.name, method, method.force_cast
             )
-            body.append(";")
+            if method_bindings:
+                body.append(f"bind{lua_name}[{bind_name}] = ")
+                body.append(method_bindings)
+                body.append(";")
 
 
 def generate_class_bindings(class_value: ClassModel):
