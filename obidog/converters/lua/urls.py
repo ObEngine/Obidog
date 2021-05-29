@@ -14,9 +14,7 @@ def get_documentation_url(element):
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.name}.html"
     elif hasattr(element, "from_class"):
         element_path = "/".join(element.namespace.split("::"))
-        return (
-            f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.from_class}.html#doc_{element.name}"
-        )
+        return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.from_class}.html#doc_{element.name}"
     else:
         element_path = "/".join(element.namespace.split("::"))
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}#doc_{element.name}"
@@ -35,6 +33,7 @@ def get_bindings_url(bindings_results, element):
     if namespace in bindings_results:
         bindings_source = bindings_results[namespace]["source"]
         bindings_line = find_binding_location(bindings_source, element)
+        # TODO: Take Location parameter into account
         return f"{OBENGINE_GIT_URL}/blob/master/{BINDINGS_SOURCES_LOCATION}/{bindings_source}#L{bindings_line}"
     else:
         print(f"Namespace '{namespace}' not found in bindings generation results")

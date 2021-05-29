@@ -11,7 +11,7 @@ from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
 def parse_doxygen_files(path_to_doc, cpp_db):
     log.info("Loading classes info...")
     for currentDir, _, files in os.walk(os.path.join(path_to_doc, "docbuild/xml/")):
-        for f in files:
+        for f in sorted(files):
             if any(
                 (
                     f.startswith(f"class{item['namespace']}")

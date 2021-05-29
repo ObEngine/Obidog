@@ -41,6 +41,7 @@ class ClassModel(ClassBaseModel):
     constructors: List[FunctionModel] = None
     destructor: FunctionModel = None
     methods: Dict[str, FunctionModel] = None
+    internal: Dict[str, FunctionModel] = None
     flags: ObidogFlagsModel = ObidogFlagsModel()
     description: str = ""
     location: Location = field(default_factory=lambda: Location())

@@ -8,6 +8,7 @@ from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
     PlaceholderFunctionModel,
+    FunctionVisibility,
 )
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
@@ -25,42 +26,60 @@ def parse_methods(class_name, class_value):
     methods = {}
     constructors = []
     destructor = None
-    all_methods = class_value.xpath(
-        "sectiondef[@kind='public-func']/memberdef[@kind='function']"
-    ) + class_value.xpath(
-        "sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
+    internal = {}
+    all_methods = (
+        class_value.xpath("sectiondef[@kind='public-func']/memberdef[@kind='function']")
+        + class_value.xpath(
+            "sectiondef[@kind='public-static-func']/memberdef[@kind='function']"
+        )
+        + class_value.xpath(
+            "sectiondef[@kind='protected-func']/memberdef[@kind='function']"
+        )
+        + class_value.xpath(
+            "sectiondef[@kind='private-func']/memberdef[@kind='function']"
+        )
     )
 
     if not all_methods:
-        return methods, constructors, destructor
+        return methods, constructors, destructor, internal
     for xml_method in all_methods:
-        method = parse_function_from_xml(xml_method, method=True)
+        method = parse_function_from_xml(xml_method, is_method=True)
         method.from_class = class_name
-        # Method has class name => Constructor
-        if method.name == class_name and isinstance(method, FunctionModel):
-            constructors.append(method)
-            continue
-        # Method has ~class name => Destructor
-        elif method.name == f"~{class_name}" and isinstance(method, FunctionModel):
-            destructor = method
-            continue
+        if method.visibility == FunctionVisibility.Public:
+            # Method has class name => Constructor
+            if method.name == class_name and isinstance(method, FunctionModel):
+                constructors.append(method)
+                continue
+            # Method has ~class name => Destructor
+            elif method.name == f"~{class_name}" and isinstance(method, FunctionModel):
+                destructor = method
+                continue
+            # Method has no return type, probably a tricky case such as reusing a parent class constructor
+            if isinstance(method, FunctionModel) and not method.return_type:
+                continue
+            function_dest = methods
+        else:
+            # Method is protected / private => Implementation details
+            # This won't be used for details but can be used for some details
+            # Such as knowing whether a class is abstract or not
+            function_dest = internal
         # Method not already in methods dict
-        if not method.name in methods:
-            methods[method.name] = method
+        if not method.name in function_dest:
+            function_dest[method.name] = method
         else:
             # Replace unusable method with usable overload and force casting
-            if isinstance(methods[method.name], PlaceholderFunctionModel):
+            if isinstance(function_dest[method.name], PlaceholderFunctionModel):
                 method.force_cast = True
-                methods[method.name] = method
+                function_dest[method.name] = method
             # Create a function overload
             else:
-                overload = methods[method.name]
+                overload = function_dest[method.name]
                 if isinstance(overload, FunctionOverloadModel):
                     overload.overloads.append(method)
                     if method.flags.bind_to:
                         overload.flags.bind_to = method.bind_to
                 else:
-                    methods[method.name] = FunctionOverloadModel(
+                    function_dest[method.name] = FunctionOverloadModel(
                         name=method.name,
                         overloads=[overload, method],
                         flags=ObidogFlagsModel(
@@ -68,7 +87,7 @@ def parse_methods(class_name, class_value):
                         ),
                     )
 
-    return methods, constructors, destructor
+    return methods, constructors, destructor, internal
 
 
 def parse_attributes(class_value):
@@ -84,6 +103,9 @@ def parse_attributes(class_value):
     for is_static, xml_attributes in all_xml_attributes.items():
         for xml_attribute in xml_attributes:
             attribute_name = get_content(xml_attribute.find("name"))
+            # Ignore unions
+            if attribute_name.startswith("@"):
+                continue
             attribute_type = get_content(xml_attribute.find("type"))
             attribute_desc = get_content(xml_attribute.find("briefdescription"))
             qualifiers = QualifiersModel(static=is_static)
@@ -103,7 +125,7 @@ def parse_attributes(class_value):
     return attributes
 
 
-def parse_class_from_xml(class_value):
+def parse_class_from_xml(class_value) -> ClassModel:
     nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
     namespace_name, class_name = (
@@ -132,11 +154,13 @@ def parse_class_from_xml(class_value):
 
     description = extract_xml_value(class_value, "briefdescription/para")
 
-    methods, constructors, destructor = parse_methods(
+    methods, constructors, destructor, internal = parse_methods(
         class_name.split("::")[-1], class_value
     )
     attributes = parse_attributes(class_value)
-    flags = parse_obidog_flags(class_value)
+    flags = parse_obidog_flags(
+        class_value, symbol_name="::".join([namespace_name, class_name])
+    )
     flags.nobind = flags.nobind or nobind
 
     CONFLICTS.append(class_name, class_value)
@@ -149,6 +173,7 @@ def parse_class_from_xml(class_value):
         constructors=constructors,
         destructor=destructor,
         methods=methods,
+        internal=internal,
         flags=flags,
         description=description,
         location=parse_doxygen_location(class_value),

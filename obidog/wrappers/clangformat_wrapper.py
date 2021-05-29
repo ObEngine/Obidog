@@ -33,7 +33,7 @@ def clang_format_files(file_list):
             )
             p.wait()
         return True
-    log.warn("clang-format not found, could not format files")
+    log.warning("clang-format not found, could not format files")
     return False
 
 

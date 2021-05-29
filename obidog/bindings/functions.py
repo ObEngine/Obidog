@@ -6,7 +6,7 @@ import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, strip_include, get_include_file
 from obidog.logger import log
-from obidog.models.functions import FunctionModel, FunctionOverloadModel
+from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
 from obidog.utils.string_utils import clean_capitalize, format_name
 
 FUNCTION_CAST_TEMPLATE = (
@@ -110,6 +110,89 @@ def get_real_function_name(
     return "Function", function_name
 
 
+PRIMITIVE_TYPES = [
+    "int",
+    "bool",
+    "float",
+    "double",
+    "unsigned int",
+    "size_t",
+    "std::size_t",
+]
+
+FUNCTION_PROXY_TEMPLATE = """
+[]({function_parameters_signature})
+{{
+    {function_name}({function_parameters_forward});
+}}
+"""
+
+
+def fix_parameter_for_signature(parameter: ParameterModel):
+    if (
+        parameter.type.strip().endswith("&")
+        and parameter.ref
+        and parameter.ref.abstract
+    ):
+        return f"{parameter.type.removesuffix('&')}* {parameter.name}"
+    elif parameter.type.endswith("&&"):
+        return f"{parameter.type.removesuffix('&&')} {parameter.name}"
+    elif (
+        parameter.type.endswith("&") and parameter.type.rstrip(" &") in PRIMITIVE_TYPES
+    ):
+        return f"{parameter.type.rstrip(' &')} {parameter.name}"
+    else:
+        return f"{parameter.type} {parameter.name}"
+
+
+def fix_parameter_for_usage(parameter: ParameterModel):
+    if (
+        parameter.type.strip().endswith("&")
+        and parameter.ref
+        and parameter.ref.abstract
+    ):
+        return f"*{parameter.name}"
+    elif parameter.type.endswith("&&"):
+        return f"std::move({parameter.name})"
+    else:
+        return parameter.name
+
+
+def create_proxy_function(function: FunctionModel) -> str:
+    function_parameters_signature = [
+        fix_parameter_for_signature(parameter) for parameter in function.parameters
+    ]
+    function_parameters_forward = [
+        fix_parameter_for_usage(parameter) for parameter in function.parameters
+    ]
+    return FUNCTION_PROXY_TEMPLATE.format(
+        function_name=function.name,
+        function_parameters_signature=",".join(function_parameters_signature),
+        function_parameters_forward=",".join(function_parameters_forward),
+    )
+
+
+def does_requires_proxy_function(function: FunctionModel) -> bool:
+    # An abstract parameter passed by reference
+    if any(
+        parameter.type.strip().endswith("&")
+        and parameter.ref
+        and parameter.ref.abstract
+        for parameter in function.parameters
+    ):
+        return True
+    # Parameter which is move-only
+    elif any(parameter.type.endswith("&&") for parameter in function.parameters):
+        return True
+    # A primitive type is passed by reference
+    if any(
+        parameter.type.endswith("&") and parameter.type.rstrip(" &") in PRIMITIVE_TYPES
+        for parameter in function.parameters
+    ):
+        return True
+    return False
+
+
 @dataclass
 class DefaultOverloadModel:
     definition: str
@@ -184,7 +267,6 @@ def generate_function_bindings(
 ):
     namespace_splitted = function_name.split("::")[:-1]
     function_ptr = function_name
-    function_list = []
     if isinstance(function_value, FunctionModel) and function_value.template:
         if function_value.flags.template_hints:
             full_body = ""
@@ -216,21 +298,25 @@ def generate_function_bindings(
             print(f"[WARNING] No template hints found for function {function_name}")
             return ""
     if isinstance(function_value, FunctionOverloadModel):
-        function_list = function_value.overloads
-    all_overloads = []
-    for function_overload in function_list:
-        if any(parameter.default for parameter in function_overload.parameters):
-            all_overloads += generate_function_definitions(
-                function_name, function_value
+        all_overloads = []
+        for function_overload in function_value.overloads:
+            if any(parameter.default for parameter in function_overload.parameters):
+                all_overloads += generate_function_definitions(
+                    function_name, function_value
+                )
+            else:
+                if does_requires_proxy_function(function_overload):
+                    all_overloads += [create_proxy_function(function_overload)]
+                else:
+                    all_overloads += [
+                        get_overload_static_cast(function_name, function_overload)
+                    ]
+        if all_overloads:
+            function_ptr = flavour.FUNCTION_OVERLOAD.format(
+                overloads=",".join(all_overloads)
             )
-        else:
-            all_overloads += [
-                get_overload_static_cast(function_name, function_overload)
-            ]
-    if all_overloads:
-        function_ptr = flavour.FUNCTION_OVERLOAD.format(
-            overloads=",".join(all_overloads)
-        )
+    elif does_requires_proxy_function(function_value):
+        function_ptr = create_proxy_function(function_value)
 
     binding_body = (
         fetch_table("::".join(namespace_splitted))

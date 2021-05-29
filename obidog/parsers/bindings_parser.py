@@ -28,6 +28,7 @@ def ENUM_BINDING_REG(identifier, namespace):
 
 
 def find_binding_location(location: str, element):
+    # TODO: Take Location parameter into account
     full_path = os.path.join(PATH_TO_OBENGINE, BINDINGS_SOURCES_LOCATION, location)
     with open(full_path, encoding="utf-8") as bindings_source_file:
         bindings = bindings_source_file.read()

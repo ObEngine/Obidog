@@ -1,7 +1,11 @@
 import os
 
 from obidog.config import PATH_TO_OBENGINE
-from obidog.models.functions import FunctionModel, PlaceholderFunctionModel
+from obidog.models.functions import (
+    FunctionModel,
+    PlaceholderFunctionModel,
+    FunctionVisibility,
+)
 from obidog.models.location import Location
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.location_parser import parse_doxygen_location
@@ -25,24 +29,29 @@ def make_return_type(return_type):
                 full_return_type += " "
             else:
                 full_return_type += return_type_part.tail.strip()
-    return full_return_type
+    return full_return_type.strip()
 
 
-def parse_function_from_xml(xml_function, method=False):
+def parse_function_from_xml(xml_function, is_method: bool = False):
     name = get_content(xml_function.find("name"))
+    deleted = False
+    if (
+        get_content(xml_function.find("argsstring"))
+        .replace(" ", "")
+        .endswith("=delete")
+    ):
+        deleted = True
     templated = False
+    visibility = FunctionVisibility(xml_function.attrib["prot"])
     if (
         "<" in name and ">" in name and "<=>" not in name
     ):  # Template specialisation is ignored
-        return PlaceholderFunctionModel(name)
-    if name.startswith("operator") and not method:  # TODO: Improve matching
-        return PlaceholderFunctionModel(name)
+        return PlaceholderFunctionModel(name, visibility)
+    if name.startswith("operator") and not is_method:  # TODO: Improve matching
+        return PlaceholderFunctionModel(name, visibility)
     return_type = make_return_type(xml_function.find("type"))
-    if not return_type and not method:
-        return PlaceholderFunctionModel(name)
-    flags = parse_obidog_flags(xml_function)
-    if flags.nobind:
-        return PlaceholderFunctionModel(name)
+    if not return_type and not is_method:
+        return PlaceholderFunctionModel(name, visibility)
     if xml_function.find("templateparamlist") is not None:
         templated = True
     definition = get_content(xml_function.find("definition"))
@@ -55,17 +64,24 @@ def parse_function_from_xml(xml_function, method=False):
         qualifiers.volatile = True
     if xml_function.attrib["static"] == "yes":
         qualifiers.static = True
+    abstract = False
+    if xml_function.attrib["virt"] == "pure-virtual":
+        abstract = True
 
-    if not method:
+    if not is_method:
         CONFLICTS.append(name, xml_function)
 
     identifier = parse_definition(definition)[1]
-    if method:
+    if is_method:
         if " " in identifier:
             identifier = identifier.split(" ")[0]
         namespace = "::".join(identifier.split("::")[:-2])
     else:
         namespace = "::".join(identifier.split("::")[:-1])
+
+    flags = parse_obidog_flags(xml_function, symbol_name=identifier)
+    if flags.nobind:
+        return PlaceholderFunctionModel(name, visibility)
 
     return FunctionModel(
         name=name,
@@ -77,5 +93,8 @@ def parse_function_from_xml(xml_function, method=False):
         qualifiers=qualifiers,
         flags=flags,
         description=description,
+        deleted=deleted,
+        abstract=abstract,
+        visibility=visibility,
         location=parse_doxygen_location(xml_function),
     )

@@ -56,3 +56,12 @@
 - Default constructor not usable
 ## Events/Keys.cpp
 - Default constructor not usable
+
+# Patches TGUI v1
+- std::stringstream not usable in GuiBase::loadWidgetsFromStream / Container::loadWidgetsFromStream
+- BoxLayout::get
+X @3 in Event.cpp
+- Layout ctor with unique_ptr
+- Transform takes const float[16] not const float
+X ImageLoader::loadFromFile / loadFromMemory requires custom proxies
+- getFileTypeFilters

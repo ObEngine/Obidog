@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import List, Dict, Any
 
 from obidog.models.base import BaseModel
@@ -16,6 +17,7 @@ class ParameterModel(BaseModel):
     description: str = ""
     default: Any = None
     export: Export = Export()
+    ref: Any = None
     _type: str = "parameter"
 
 
@@ -24,9 +26,15 @@ class FunctionBaseModel(BaseModel):
     name: str
 
 
+class FunctionVisibility(Enum):
+    Private = "private"
+    Protected = "protected"
+    Public = "public"
+
+
 @dataclass
 class PlaceholderFunctionModel(FunctionBaseModel):
-    pass
+    visibility: FunctionVisibility = FunctionVisibility.Public
 
 
 @dataclass
@@ -42,6 +50,9 @@ class FunctionModel(FunctionBaseModel):
     description: str = ""
     location: Location = field(default_factory=lambda: Location())
     export: Export = Export()
+    deleted: bool = False
+    abstract: bool = False
+    visibility: FunctionVisibility = FunctionVisibility.Public
     _type: str = "function"
     urls: URLs = field(default_factory=lambda: URLs())
 

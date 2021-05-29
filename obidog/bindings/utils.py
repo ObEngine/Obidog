@@ -6,7 +6,6 @@ from obidog.config import SOURCE_DIRECTORIES
 
 
 def strip_include(path):
-
     for strip_path in [src["path"] for src in SOURCE_DIRECTORIES]:
         if os.path.commonprefix([strip_path, path]):
             path = os.path.relpath(path, strip_path)
@@ -36,3 +35,14 @@ def get_include_file(item: LocalizableModel):
     include_path = strip_include(item.location.file)
     include_path = include_path.replace(os.path.sep, "/")
     return f"#include <{include_path}>"
+
+
+def strip_qualifiers_from_type(cpp_type: str):
+    buffer = ""
+    while buffer != cpp_type:
+        buffer = cpp_type
+        cpp_type = cpp_type.rstrip(" &*[]")
+        cpp_type = cpp_type.removeprefix("const")
+        cpp_type = cpp_type.strip()
+        cpp_type = cpp_type.removeprefix("volatile")
+    return cpp_type

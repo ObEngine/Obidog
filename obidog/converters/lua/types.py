@@ -69,7 +69,7 @@ def cpp_type_to_lua_type(cpp_db, cpp_type, lookup_cpp=False):
     lua_type = ""
     if cpp_type.startswith("const"):
         type_prefix.append("constant")
-        cpp_type = cpp_type.lstrip("const")
+        cpp_type = cpp_type.removeprefix("const")
     if cpp_type.endswith("&"):
         type_prefix.append("reference to")
         cpp_type = cpp_type.rstrip("&")

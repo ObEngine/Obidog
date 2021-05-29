@@ -1,3 +1,4 @@
+from typing import Dict
 from itertools import product
 
 from obidog.models.flags import ObidogFlagsModel
@@ -85,7 +86,10 @@ def find_obidog_flag(tree, flag_name, amount=None):
     return flags
 
 
-def parse_obidog_flags(tree):
+FLAG_SURROGATES: Dict[str, ObidogFlagsModel] = {}
+
+
+def parse_obidog_flags(tree, symbol_name: str = None):
     flags = ObidogFlagsModel()
     bind_to = find_obidog_flag(tree, "bind", 1)
     if bind_to:
@@ -137,6 +141,15 @@ def parse_obidog_flags(tree):
     noconstructor = find_obidog_flag(tree, "noconstructor", 1)
     if noconstructor:
         flags.noconstructor = True
+    flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
+    if flag_surrogate:
+        flag_surrogate_target = flag_surrogate[0]
+        if flag_surrogate_target not in FLAG_SURROGATES:
+            FLAG_SURROGATES[flag_surrogate_target] = flags
+        else:
+            FLAG_SURROGATES[flag_surrogate_target].combine(flags)
+    elif symbol_name and symbol_name in FLAG_SURROGATES:
+        flags.combine(FLAG_SURROGATES[symbol_name])
     return flags
 
 
