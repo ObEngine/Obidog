@@ -16,6 +16,7 @@ class ObidogFlagsModel(BaseModel):
     copy_parent_items: bool = False
     proxy: bool = False
     noconstructor: bool = False
+    load_priority: int = 0
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.bind_to = self.bind_to or flags.bind_to
@@ -28,3 +29,4 @@ class ObidogFlagsModel(BaseModel):
         self.copy_parent_items = self.copy_parent_items or flags.copy_parent_items
         self.proxy = self.proxy or flags.proxy
         self.noconstructor = self.noconstructor or flags.noconstructor
+        self.load_priority = self.load_priority or flags.load_priority

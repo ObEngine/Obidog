@@ -22,6 +22,7 @@ def generate_globals_bindings(name, cpp_globals):
             {
                 "bindings": f"Global{export_name}",
                 "identifier": f"{cpp_global.namespace}::{cpp_global.name}",
+                "load_priority": cpp_global.flags.load_priority
             }
         )
         state_view = flavour.STATE_VIEW

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 import re
 from collections import defaultdict
@@ -108,7 +109,6 @@ def make_bindings_header(path, namespace, objects):
         f"void Load{object_name['bindings']}({state_view} state);"
         for object_name in objects
     ]
-    return
     with open(inc_out, "w") as class_binding:
         class_binding.write(
             BINDINGS_INCLUDE_TEMPLATE.format(
@@ -274,6 +274,12 @@ def fix_index_tables(tables):
     tables.sort(key=lambda x: x.count("["))
 
 
+@dataclass
+class BindingIndexEntry:
+    code: str
+    priority: int
+
+
 # LATER: Generate bindings shorthands
 def generated_bindings_index(source_name, generated_objects):
     print("Generating Bindings Index...")
@@ -310,12 +316,17 @@ def generated_bindings_index(source_name, generated_objects):
         print(objects)
         for generated_object in objects["objects"]:
             bindings.append(
-                f"{namespace_name}::Bindings::Load{generated_object['bindings']}(state);"
+                BindingIndexEntry(
+                    code=f"{namespace_name}::Bindings::Load{generated_object['bindings']}(state);",
+                    priority=generated_object["load_priority"],
+                )
             )
-        bindings.append("\n")
+
+    sorted_bindings = sorted(bindings, key=lambda entry: entry.priority, reverse=True)
+    bindings_code = ["\n"] + [entry.code for entry in sorted_bindings]
     fix_index_tables(tables)
     body += tables
-    body += bindings
+    body += bindings_code
     body.append("}}")
     return "\n".join(body)
 

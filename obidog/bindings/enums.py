@@ -40,6 +40,7 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
             {
                 "bindings": f"Enum{export_name}",
                 "identifier": f"{enum.namespace}::{enum.name}",
+                "load_priority": enum.flags.load_priority,
             }
         )
     return {

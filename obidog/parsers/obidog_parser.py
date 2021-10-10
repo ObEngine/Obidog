@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Dict
 from itertools import product
 
@@ -91,12 +92,18 @@ FLAG_SURROGATES: Dict[str, ObidogFlagsModel] = {}
 
 def parse_obidog_flags(tree, symbol_name: str = None):
     flags = ObidogFlagsModel()
+
+    # bind_to
     bind_to = find_obidog_flag(tree, "bind", 1)
     if bind_to:
         flags.bind_to = bind_to[0]
+
+    # helpers
     helpers = find_obidog_flag(tree, "helper")
     if helpers:
         flags.helpers = helpers
+
+    # template_hints
     template_hints = find_obidog_flag(tree, "template_hint")
     if template_hints:
         thints = {}
@@ -117,39 +124,64 @@ def parse_obidog_flags(tree, symbol_name: str = None):
                     }
                 )
         flags.template_hints = thints
+
+    # force_abstract
     force_abstract = find_obidog_flag(tree, "force_abstract", 1)
     if force_abstract:
         flags.abstract = True
+
+    # nobind
     nobind = find_obidog_flag(tree, "nobind", 1)
     if nobind:
         flags.nobind = True
+
+    # additional_includes
     additional_includes = find_obidog_flag(tree, "additional_include")
     if additional_includes:
         flags.additional_includes = [
             f"#include <{additional_include}>"
             for additional_include in additional_includes
         ]
+
+    # as_property
     as_property = find_obidog_flag(tree, "as_property", 1)
     if as_property:
         flags.as_property = True
+
+    # copy_parent_items
     copy_parent_items = find_obidog_flag(tree, "copy_parent_items", 1)
     if copy_parent_items:
         flags.copy_parent_items = True
+
+    # proxy
     proxy = find_obidog_flag(tree, "proxy", 1)
     if proxy:
         flags.proxy = proxy[0]
+
+    # noconstructor
     noconstructor = find_obidog_flag(tree, "noconstructor", 1)
     if noconstructor:
         flags.noconstructor = True
+
+    # load_priority
+    load_priority = find_obidog_flag(tree, "loadpriority", 1)
+    if load_priority:
+        flags.load_priority = int(load_priority[0])
+
+    # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
     if flag_surrogate:
+        flags.nobind = True
         flag_surrogate_target = flag_surrogate[0]
+        flags_copy = copy(flags)
         if flag_surrogate_target not in FLAG_SURROGATES:
-            FLAG_SURROGATES[flag_surrogate_target] = flags
+            FLAG_SURROGATES[flag_surrogate_target] = flags_copy
         else:
-            FLAG_SURROGATES[flag_surrogate_target].combine(flags)
+            FLAG_SURROGATES[flag_surrogate_target].combine(flags_copy)
+        flags.nobind = True
     elif symbol_name and symbol_name in FLAG_SURROGATES:
         flags.combine(FLAG_SURROGATES[symbol_name])
+
     return flags
 
 

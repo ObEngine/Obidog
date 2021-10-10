@@ -48,3 +48,6 @@ class ClassModel(ClassBaseModel):
     export: Export = Export()
     _type: str = "class"
     urls: URLs = field(default_factory=lambda: URLs())
+
+    def get_non_templated_bases(self):
+        return [base for base in self.bases if not ("<" in base and ">" in base)]

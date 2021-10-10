@@ -246,3 +246,4 @@ ALIASES += copyparentitems="\xrefitem copyparentitems \"\" \"\" <a href=\"obidog
 ALIASES += proxy{1}="\xrefitem proxy \"\" \"\" <a href=\"obidog.proxy:\1\"></a>"
 ALIASES += noconstructor="\xrefitem noconstructor \"\" \"\" <a href=\"obidog.noconstructor\"></a>"
 ALIASES += flagsurrogate{1}="\xrefitem flagsurrogate \"\" \"\" <a href=\"obidog.flagsurrogate:\1\"></a>"
+ALIASES += loadpriority{1}="\xrefitem loadpriority \"\" \"\" <a href=\"obidog.loadpriority:\1\"></a>"

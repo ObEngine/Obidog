@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Union, overload
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.template import generate_template_specialization
@@ -224,6 +224,17 @@ def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloa
     return function_definitions
 
 
+def generate_function_default_value_wrapper(
+    function_name: str, return_type: str, overload: DefaultOverloadModel
+):
+    return FUNCTION_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
+        parameters=",".join(parameter.definition for parameter in overload),
+        return_type=return_type,
+        function_call=function_name,
+        parameters_names=",".join(parameter.name for parameter in overload),
+    )
+
+
 def generate_function_definitions(function_name: str, function: FunctionModel):
     """This function generates all possible combinations of a function with default parameters
     If a function has 2 mandatory parameters and 3 default ones, it will generate 4 function
@@ -234,15 +245,8 @@ def generate_function_definitions(function_name: str, function: FunctionModel):
     overloads = []
     for function_definition in function_definitions:
         overloads.append(
-            FUNCTION_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
-                parameters=",".join(
-                    parameter.definition for parameter in function_definition
-                ),
-                return_type=function.return_type,
-                function_call=function_name,
-                parameters_names=",".join(
-                    parameter.name for parameter in function_definition
-                ),
+            generate_function_default_value_wrapper(
+                function_name, function.return_type, function_definition
             )
         )
     return overloads
@@ -317,6 +321,17 @@ def generate_function_bindings(
             )
     elif does_requires_proxy_function(function_value):
         function_ptr = create_proxy_function(function_value)
+    elif any(parameter.default for parameter in function_value.parameters):
+        all_overloads = create_all_default_overloads(function_value)
+        all_overloads = [
+            generate_function_default_value_wrapper(
+                function_name, function_value.return_type, default_overload
+            )
+            for default_overload in all_overloads
+        ]
+        function_ptr = flavour.FUNCTION_OVERLOAD.format(
+            overloads=",".join(all_overloads)
+        )
 
     binding_body = (
         fetch_table("::".join(namespace_splitted))
@@ -352,6 +367,7 @@ def generate_functions_bindings(functions):
             {
                 "bindings": f"{func_type}{real_function_name}",
                 "identifier": identifier,
+                "load_priority": function_value.flags.load_priority,
             }
         )
         if isinstance(function_value, FunctionOverloadModel):

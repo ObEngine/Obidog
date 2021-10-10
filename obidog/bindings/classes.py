@@ -359,6 +359,7 @@ def generate_classes_bindings(classes):
             {
                 "bindings": f"Class{real_class_name}",
                 "identifier": f"{class_value.namespace}::{class_value.name}",
+                "load_priority": class_value.flags.load_priority,
             }
         )
         class_path = strip_include(class_value.location.file)
@@ -422,10 +423,11 @@ def copy_parent_bindings(cpp_db, classes):
 
 def flag_abstract_classes(cpp_db, classes):
     for class_value in classes.values():
+        class_bases = class_value.get_non_templated_bases()
         if not class_value.abstract and any(
-            cpp_db.classes[base].abstract for base in class_value.bases
+            cpp_db.classes[base].abstract for base in class_bases
         ):
-            bases = [cpp_db.classes[base] for base in class_value.bases]
+            bases = [cpp_db.classes[base] for base in class_bases]
             bases = [base for base in bases if base.abstract]
             abstract_methods = [
                 method
@@ -444,7 +446,7 @@ def flag_abstract_classes(cpp_db, classes):
             ]
             implemented_methods += [
                 method
-                for parent_class in [cpp_db.classes[base] for base in class_value.bases]
+                for parent_class in [cpp_db.classes[base] for base in class_bases]
                 for method in [
                     *parent_class.internal.values(),
                     *parent_class.methods.values(),
