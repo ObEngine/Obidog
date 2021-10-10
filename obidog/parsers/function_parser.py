@@ -1,10 +1,9 @@
 import os
 
-from obidog.config import PATH_TO_OBENGINE
+from obidog.models.base import ItemVisibility
 from obidog.models.functions import (
     FunctionModel,
     PlaceholderFunctionModel,
-    FunctionVisibility,
 )
 from obidog.models.location import Location
 from obidog.models.qualifiers import QualifiersModel
@@ -42,7 +41,7 @@ def parse_function_from_xml(xml_function, is_method: bool = False):
     ):
         deleted = True
     templated = False
-    visibility = FunctionVisibility(xml_function.attrib["prot"])
+    visibility = ItemVisibility(xml_function.attrib["prot"])
     if (
         "<" in name and ">" in name and "<=>" not in name
     ):  # Template specialisation is ignored

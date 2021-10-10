@@ -115,6 +115,8 @@ def convert_all_types(cpp_db: CppDatabase):
     for class_value in cpp_db.classes.values():
         for method in class_value.methods.values():
             convert_function_types(cpp_db, method)
+        for attribute in class_value.attributes.values():
+            attribute.type = cpp_type_to_lua_type(cpp_db, attribute.type, True)
     for function in cpp_db.functions.values():
         convert_function_types(cpp_db, function)
     for glob in cpp_db.globals.values():

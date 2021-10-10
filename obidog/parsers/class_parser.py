@@ -1,19 +1,19 @@
 import os
 
 from obidog.config import PATH_TO_OBENGINE
-from obidog.exceptions import ParameterNameNotFoundInXMLException
-from obidog.models.classes import AttributeModel, ClassBaseModel, ClassModel
+from obidog.models.base import ItemVisibility
+from obidog.models.classes import AttributeModel, ClassModel
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
     PlaceholderFunctionModel,
-    FunctionVisibility,
 )
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
+from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.utils.xml_utils import (
     extract_xml_value,
@@ -26,7 +26,7 @@ def parse_methods(class_name, class_value):
     methods = {}
     constructors = []
     destructor = None
-    internal = {}
+    private_methods = {}
     all_methods = (
         class_value.xpath("sectiondef[@kind='public-func']/memberdef[@kind='function']")
         + class_value.xpath(
@@ -41,11 +41,11 @@ def parse_methods(class_name, class_value):
     )
 
     if not all_methods:
-        return methods, constructors, destructor, internal
+        return methods, constructors, destructor, private_methods
     for xml_method in all_methods:
         method = parse_function_from_xml(xml_method, is_method=True)
         method.from_class = class_name
-        if method.visibility == FunctionVisibility.Public:
+        if method.visibility == ItemVisibility.Public:
             # Method has class name => Constructor
             if method.name == class_name and isinstance(method, FunctionModel):
                 constructors.append(method)
@@ -62,7 +62,7 @@ def parse_methods(class_name, class_value):
             # Method is protected / private => Implementation details
             # This won't be used for details but can be used for some details
             # Such as knowing whether a class is abstract or not
-            function_dest = internal
+            function_dest = private_methods
         # Method not already in methods dict
         if not method.name in function_dest:
             function_dest[method.name] = method
@@ -87,11 +87,12 @@ def parse_methods(class_name, class_value):
                         ),
                     )
 
-    return methods, constructors, destructor, internal
+    return methods, constructors, destructor, private_methods
 
 
 def parse_attributes(class_value):
     attributes = {}
+    private_attributes = {}
     all_xml_attributes = {
         False: class_value.xpath(
             "sectiondef[@kind='public-attrib']/memberdef[@kind='variable']"
@@ -108,21 +109,35 @@ def parse_attributes(class_value):
                 continue
             attribute_type = get_content(xml_attribute.find("type"))
             attribute_desc = get_content(xml_attribute.find("briefdescription"))
+            initializer = get_content_if(xml_attribute.find("initializer"))
             qualifiers = QualifiersModel(static=is_static)
             flags = parse_obidog_flags(xml_attribute)
             templated = False
+            visibility = ItemVisibility(xml_attribute.attrib["prot"])
+            attribute_dest = attributes
+            if visibility != ItemVisibility.Public:
+                attribute_dest = private_attributes
             if xml_attribute.find("templateparamlist") is not None:
                 templated = True
+            definition = get_content(xml_attribute.find("definition"))
+            identifier = parse_definition(definition)[1]
+            if " " in identifier:
+                identifier = identifier.split(" ")[0]
+            namespace = "::".join(identifier.split("::")[:-2])
             if not templated:
-                attributes[attribute_name] = AttributeModel(
+                attribute_dest[attribute_name] = AttributeModel(
                     name=attribute_name,
+                    namespace=namespace,
                     type=attribute_type,
                     qualifiers=qualifiers,
+                    initializer=initializer,
                     description=attribute_desc,
                     flags=flags,
+                    location=parse_doxygen_location(xml_attribute),
+                    visibility=visibility,
                 )
 
-    return attributes
+    return attributes, private_attributes
 
 
 def parse_class_from_xml(class_value) -> ClassModel:
@@ -154,10 +169,12 @@ def parse_class_from_xml(class_value) -> ClassModel:
 
     description = extract_xml_value(class_value, "briefdescription/para")
 
-    methods, constructors, destructor, internal = parse_methods(
-        class_name.split("::")[-1], class_value
+    methods, constructors, destructor, private_methods = parse_methods(
+        class_name, class_value
     )
-    attributes = parse_attributes(class_value)
+    attributes, private_attributes = parse_attributes(class_value)
+    for attribute in list(attributes.values()) + list(private_attributes.values()):
+        attribute.from_class = class_name
     flags = parse_obidog_flags(
         class_value, symbol_name="::".join([namespace_name, class_name])
     )
@@ -173,7 +190,8 @@ def parse_class_from_xml(class_value) -> ClassModel:
         constructors=constructors,
         destructor=destructor,
         methods=methods,
-        internal=internal,
+        private_methods=private_methods,
+        private_attributes=private_attributes,
         flags=flags,
         description=description,
         location=parse_doxygen_location(class_value),

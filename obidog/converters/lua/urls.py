@@ -70,5 +70,7 @@ def fill_element_urls(element, doxygen_index: dict = {}, bindings_results: dict 
     else:
         for overload in element.overloads:
             fill_element_urls(
-                overload, doxygen_index=doxygen_index, bindings_results=bindings_results
+                overload,
+                doxygen_index=doxygen_index,
+                bindings_results=bindings_results,
             )

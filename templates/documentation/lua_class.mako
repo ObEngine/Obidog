@@ -1,4 +1,5 @@
 <%namespace name="function_template" file="lua_function.mako"/>
+<%namespace name="attribute_template" file="lua_attribute.mako"/>
 <%def name="lua_class(klass)">
 <h1 class="title is-1"><i class="fas fa-layer-group"></i><span class="has-text-info"> class </span>${klass.name}</h1>
 <div class="divider is-left is-info">Info</div>
@@ -149,6 +150,9 @@
 % endif
 % if klass.attributes:
 <div class="divider is-left is-info">Attributes</div>
+% for attribute in klass.attributes.values():
+    ${attribute_template.lua_attribute(attribute)}
+% endfor
 % endif
 % if klass.methods:
 <div class="divider is-left is-info">Methods</div>

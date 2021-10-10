@@ -32,6 +32,9 @@ function addSuggestion(element) {
     else if (element._type == "method") {
         i.classList.add("fa-code")
     }
+    else if (element._type == "attribute") {
+        i.classList.add("fa-tag")
+    }
     else if (element._type == "enum") {
         i.classList.add("fa-list-ol")
     }
@@ -39,13 +42,13 @@ function addSuggestion(element) {
         i.classList.add("fa-flask")
     }
     else if (element._type == "global") {
-        i.classList.add("fa-thermometer-half")
+        i.classList.add("fa-expand")
     }
     i.setAttribute("aria-hidden", true);
 
     var p = document.createElement("p");
     p.classList.add("pl-2");
-    if (element._type == "method") {
+    if (element._type == "method" || element._type == "attribute") {
         var class_name = element.from_class.split("::").slice(-1)[0];
         p.innerHTML = "<span style=\"color: grey\">" + class_name + "</span>." + element.name;
     }

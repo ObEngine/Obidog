@@ -1,7 +1,7 @@
 import os
 
 PATH_TO_OBENGINE = os.environ.get("OBENGINE_GIT_DIRECTORY", None)
-BINDINGS_SOURCES_LOCATION = "src/Core"
+BINDINGS_SOURCES_LOCATION = "src/Core/Bindings"
 LOCATIONS = {
     "Core": {"headers": "include/Core/Bindings", "sources": "src/Core/Bindings"},
     # "Dev": {"headers": "include/Dev/Bindings", "sources": "src/Dev/Bindings"},

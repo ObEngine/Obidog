@@ -1,22 +1,22 @@
 <%namespace name="utils" file="utils.mako"/>
-<%def name="lua_global(glob)">
-<div class="panel" id="doc_${glob.name}">
+<%def name="lua_attribute(attribute)">
+<div class="panel" id="doc_${attribute.name}">
     <div class="panel-heading transparent header-padding">
         <div class="columns">
             <div class="column is-4 crimson-header">
                 <span>
-                    <i class="fas fa-expand" aria-hidden="true"></i>
-                    <span class="title">${glob.name}</span>
+                    <i class="fas fa-tag" aria-hidden="true"></i>
+                    <span class="title">${attribute.name}</span>
                 </span>
             </div>
-            % if glob.urls.doxygen:
-                ${utils.link_with_icon(text="Doxygen", url=glob.urls.doxygen, icon="fas fa-link")}
+            % if attribute.urls.doxygen:
+                ${utils.link_with_icon(text="Doxygen", url=attribute.urls.doxygen, icon="fas fa-link")}
             % endif
-            % if glob.urls.source:
-                ${utils.link_with_icon(text="Source", url=glob.urls.source, icon="fas fa-link")}
+            % if attribute.urls.source:
+                ${utils.link_with_icon(text="Source", url=attribute.urls.source, icon="fas fa-link")}
             % endif
-            % if glob.urls.bindings:
-                ${utils.link_with_icon(text="Bindings", url=glob.urls.bindings, icon="fas fa-link")}
+            % if attribute.urls.bindings:
+                ${utils.link_with_icon(text="Bindings", url=attribute.urls.bindings, icon="fas fa-link")}
             % endif
         </div>
     </div>
@@ -32,7 +32,7 @@
                     </div>
                     <div class="tile pl-4 is-vertical">
                         <div class="tile pl-4">
-                            <p>${glob.description}</p>
+                            <p>${attribute.description}</p>
                         </div>
                     </div>
                 </div>
@@ -49,13 +49,13 @@
                     </div>
                     <div class="tile pl-4 is-vertical">
                         <div class="tile pl-4">
-                            <p>${glob.type}</p>
+                            <p>${attribute.type}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        % if glob.initializer:
+        % if attribute.initializer:
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -67,14 +67,14 @@
                     </div>
                     <div class="tile pl-4 is-vertical">
                         <div class="tile pl-4">
-                            <p>${glob.initializer}</p>
+                            <p>${attribute.initializer}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         % endif
-        % if glob.urls.example:
+        % if attribute.urls.example:
         <div class="panel-block">
             <div class="tile is-ancestor pl-4 py-2">
                 <div class="tile is-vertical">
@@ -85,7 +85,7 @@
                         <h5 class="title is-5 pl-2">Example</h5>
                     </div>
                     <div class="tile pl-4">
-                        <pre class="px-0 py-0"><code class="lua">${glob.example}</code></pre>
+                        <pre class="px-0 py-0"><code class="lua">${attribute.example}</code></pre>
                     </div>
                 </div>
             </div>

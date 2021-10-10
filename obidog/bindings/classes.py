@@ -265,7 +265,7 @@ def generate_class_bindings(class_value: ClassModel):
     ):
         private_constructors = any(
             internal_func.name == class_value.name
-            for internal_func in class_value.internal.values()
+            for internal_func in class_value.private_methods.values()
         )
         constructors_signatures = generate_constructors_definitions(
             class_value.constructors
@@ -432,14 +432,14 @@ def flag_abstract_classes(cpp_db, classes):
             abstract_methods = [
                 method
                 for base in bases
-                for method in [*base.internal.values(), *base.methods.values()]
+                for method in [*base.private_methods.values(), *base.methods.values()]
                 if isinstance(method, FunctionModel) and method.abstract
             ]
             abstract_methods_names = [method.name for method in abstract_methods]
             implemented_methods = [
                 method
                 for method in [
-                    *class_value.internal.values(),
+                    *class_value.private_methods.values(),
                     *class_value.methods.values(),
                 ]
                 if method.name in abstract_methods_names and not method.abstract
@@ -448,7 +448,7 @@ def flag_abstract_classes(cpp_db, classes):
                 method
                 for parent_class in [cpp_db.classes[base] for base in class_bases]
                 for method in [
-                    *parent_class.internal.values(),
+                    *parent_class.private_methods.values(),
                     *parent_class.methods.values(),
                 ]
                 if method.name in abstract_methods_names and not method.abstract

@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 import os
 
@@ -6,6 +7,8 @@ from obidog.databases import CppDatabase
 
 class DefaultEncoder(json.JSONEncoder):
     def default(self, o):
+        if isinstance(o, Enum):
+            return o.value
         return o.__dict__
 
 
@@ -25,6 +28,13 @@ def _add_overloads(cpp_db: CppDatabase, search_db):
             method.from_class = f"{class_value.namespace}::{class_value.name}"
             method._type = "method"
             search_db.append(method)
+
+
+def _add_attributes(cpp_db: CppDatabase, search_db):
+    for class_value in cpp_db.classes.values():
+        for attribute in class_value.attributes.values():
+            attribute.from_class = f"{class_value.namespace}::{class_value.name}"
+            search_db.append(attribute)
 
 
 def _strip_namespace_content(search_db):
@@ -56,6 +66,7 @@ def _strip_unnecessary_attributes(search_db: CppDatabase):
 def generate_search_db(cpp_db: CppDatabase):
     search_db = _make_search_db(cpp_db)
     _add_overloads(cpp_db, search_db)
+    _add_attributes(cpp_db, search_db)
     _strip_namespace_content(search_db)
     _fix_overloads(search_db)
     _strip_unnecessary_attributes(search_db)

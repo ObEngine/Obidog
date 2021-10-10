@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Dict, Any
+from typing import List, Any
 
-from obidog.models.base import BaseModel
+from obidog.models.base import BaseModel, ItemVisibility
 from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.location import Location
@@ -26,15 +25,9 @@ class FunctionBaseModel(BaseModel):
     name: str
 
 
-class FunctionVisibility(Enum):
-    Private = "private"
-    Protected = "protected"
-    Public = "public"
-
-
 @dataclass
 class PlaceholderFunctionModel(FunctionBaseModel):
-    visibility: FunctionVisibility = FunctionVisibility.Public
+    visibility: ItemVisibility = ItemVisibility.Public
 
 
 @dataclass
@@ -52,7 +45,7 @@ class FunctionModel(FunctionBaseModel):
     export: Export = Export()
     deleted: bool = False
     abstract: bool = False
-    visibility: FunctionVisibility = FunctionVisibility.Public
+    visibility: ItemVisibility = ItemVisibility.Public
     _type: str = "function"
     urls: URLs = field(default_factory=lambda: URLs())
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Dict
 
-from obidog.models.base import BaseModel
+from obidog.models.base import BaseModel, ItemVisibility
 from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.functions import FunctionModel
@@ -13,13 +13,17 @@ from obidog.models.urls import URLs
 @dataclass
 class AttributeModel(BaseModel):
     name: str
+    namespace: str
     type: str
     qualifiers: QualifiersModel = QualifiersModel()
     description: str = ""
+    initializer: str = ""
     flags: ObidogFlagsModel = ObidogFlagsModel()
     export: Export = Export()
+    location: Location = field(default_factory=lambda: Location())
+    visibility: ItemVisibility = ItemVisibility.Public
     _type: str = "attribute"
-    urls: URLs = URLs()
+    urls: URLs = field(default_factory=lambda: URLs())
 
 
 @dataclass
@@ -41,7 +45,8 @@ class ClassModel(ClassBaseModel):
     constructors: List[FunctionModel] = None
     destructor: FunctionModel = None
     methods: Dict[str, FunctionModel] = None
-    internal: Dict[str, FunctionModel] = None
+    private_methods: Dict[str, FunctionModel] = None
+    private_attributes: Dict[str, AttributeModel] = None
     flags: ObidogFlagsModel = ObidogFlagsModel()
     description: str = ""
     location: Location = field(default_factory=lambda: Location())

@@ -19,6 +19,10 @@ def METHOD_BINDING_REG(method_name, class_name):
     return f'bind{class_name}\s*\[\s*"{method_name}"\s*\]\s*='
 
 
+def ATTRIBUTE_BINDING_REG(attribute_name, class_name):
+    return f'bind{class_name}\s*\[\s*"{attribute_name}"\s*\]\s*='
+
+
 def GLOBAL_BINDING_REG(identifier, global_name, namespace):
     return f'{namespace}Namespace\s*\[\s*"{global_name}"\s*\]\s*=\s*{identifier}\s*;'
 
@@ -60,6 +64,12 @@ def find_binding_location(location: str, element):
                 bindings,
                 re.DOTALL | re.MULTILINE,
             )
+    elif element._type == "attribute":
+        search_result = re.search(
+            ATTRIBUTE_BINDING_REG(re.escape(element.name), element.from_class),
+            bindings,
+            re.DOTALL | re.MULTILINE,
+        )
     elif element._type == "global":
         search_result = re.search(
             GLOBAL_BINDING_REG(identifier, re.escape(element.name), last_namespace),
@@ -73,6 +83,6 @@ def find_binding_location(location: str, element):
             re.DOTALL | re.MULTILINE,
         )
     if search_result is not None:
-        return bindings[0 : search_result.span()[0]].count("\n")
+        return bindings[0 : search_result.span()[0]].count("\n") + 1
     else:
         return 1
