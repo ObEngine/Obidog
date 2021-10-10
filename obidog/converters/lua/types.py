@@ -113,6 +113,8 @@ def convert_function_types(
 
 def convert_all_types(cpp_db: CppDatabase):
     for class_value in cpp_db.classes.values():
+        for constructor in class_value.constructors:
+            convert_function_types(cpp_db, constructor)
         for method in class_value.methods.values():
             convert_function_types(cpp_db, method)
         for attribute in class_value.attributes.values():

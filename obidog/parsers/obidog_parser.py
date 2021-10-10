@@ -168,6 +168,16 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     if load_priority:
         flags.load_priority = int(load_priority[0])
 
+    # rename
+    rename = find_obidog_flag(tree, "rename", 1)
+    if rename:
+        flags.rename = rename[0].strip()
+
+    # rename_parameter
+    rename_parameter = find_obidog_flag(tree, "renameparameter")
+    if rename_parameter:
+        flags.rename_parameter.append((rename_parameter[0], rename_parameter[1]))
+
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
     if flag_surrogate:

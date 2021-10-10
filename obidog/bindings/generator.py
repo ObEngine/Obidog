@@ -408,7 +408,7 @@ def inject_ref_in_function_parameters(cpp_db: CppDatabase):
 # TODO: Check behaviour with std::optional, std::variant, std::any (getSegmentContainingPoint for example)
 # TODO: Check behaviour with smart pointers
 # TODO: Allow injection of "commonly used types" in templated functions using a certain flag in doc (pushParameter for example)
-def generate_bindings(cpp_db, write_files: bool = True):
+def generate_bindings(cpp_db: CppDatabase, write_files: bool = True):
     global GENERATE_BINDINGS
     GENERATE_BINDINGS = write_files
     log.info("===== Generating bindings for ÖbEngine ====")
