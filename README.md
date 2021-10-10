@@ -32,7 +32,7 @@ To make the script run faster, you should export the following environment varia
 Embedding a scripting language inside a C++ application is not free though, as C++ lacks any kind of reflection capability, it requires the user to manually bind each function/class/enum/... to the scripting language's virtual machine.
 
 Doing such a task takes a lot of time, is error-prone and is really boring.
-That's where Obidog comes into action ! It will Doxygen as a reflection tool (it uses Doxygen's XML output) and automatically generates all the execution gluecode.
+That's where Obidog comes into action : it will use Doxygen as a reflection tool (thanks to Doxygen's XML output) and automatically generates all the gluecode.
 
 ### Usage
 
