@@ -248,4 +248,4 @@ ALIASES += noconstructor="\xrefitem noconstructor \"\" \"\" <a href=\"obidog.noc
 ALIASES += flagsurrogate{1}="\xrefitem flagsurrogate \"\" \"\" <a href=\"obidog.flagsurrogate:\1\"></a>"
 ALIASES += loadpriority{1}="\xrefitem loadpriority \"\" \"\" <a href=\"obidog.loadpriority:\1\"></a>"
 ALIASES += rename{1}="\xrefitem rename \"\" \"\" <a href=\"obidog.rename:\1\"></a>"
-ALIASES += renameparameter{2}="\xrefitem renameparameter \"\" \"\" <a href=\"obidog.renameparameter:\1,\2\"></a>"
+ALIASES += paramrename{2}="\xrefitem paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"

@@ -174,14 +174,15 @@ def parse_obidog_flags(tree, symbol_name: str = None):
         flags.rename = rename[0].strip()
 
     # rename_parameter
-    rename_parameter = find_obidog_flag(tree, "renameparameter")
-    if rename_parameter:
-        flags.rename_parameter.append((rename_parameter[0], rename_parameter[1]))
+    rename_parameters = find_obidog_flag(tree, "paramrename")
+    for rename_parameter in rename_parameters:
+        from_parameter, to_parameter = rename_parameter.split(",")
+        from_parameter, to_parameter = from_parameter.strip(), to_parameter.strip()
+        flags.rename_parameters.append((from_parameter, to_parameter))
 
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
     if flag_surrogate:
-        flags.nobind = True
         flag_surrogate_target = flag_surrogate[0]
         flags_copy = copy(flags)
         if flag_surrogate_target not in FLAG_SURROGATES:

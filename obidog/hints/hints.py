@@ -17,7 +17,8 @@ from obidog.models.namespace import NamespaceModel
 
 
 def write_hints(
-    elements: List[Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]]
+    tables: List[str],
+    elements: List[Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]],
 ):
     lookup = TemplateLookup(["templates/hints"])
     with open("templates/hints/lua_class.mako", "r", encoding="utf-8") as tpl:
@@ -28,7 +29,8 @@ def write_hints(
         enum_tpl = Template(tpl.read(), lookup=lookup)
     with open("templates/hints/lua_global.mako", "r", encoding="utf-8") as tpl:
         global_tpl = Template(tpl.read(), lookup=lookup)
-    hints = []
+    hints = [f"{table} = {{}};\n" for table in tables]
+    hints += ["\n"]
     for element in elements:
         if element._type == "class":
             hints.append(class_tpl.get_def("lua_class").render(klass=element))
@@ -71,6 +73,21 @@ def _remove_operators(cpp_db: CppDatabase):
             class_value.methods.pop(method_name)
 
 
+def _get_namespace_tables(elements):
+    return sorted(
+        list(
+            set(
+                [
+                    element.namespace.replace("::", ".")
+                    for element in elements
+                    if hasattr(element, "namespace") and element.namespace
+                ]
+            )
+        ),
+        key=lambda s: s.count("."),
+    )
+
+
 def generate_hints(cpp_db: CppDatabase):
     log.info("Discarding placeholders")
     discard_placeholders(cpp_db)
@@ -89,4 +106,4 @@ def generate_hints(cpp_db: CppDatabase):
     _remove_operators(cpp_db)
 
     log.info("Generating hints")
-    write_hints(all_elements)
+    write_hints(_get_namespace_tables(all_elements), all_elements)

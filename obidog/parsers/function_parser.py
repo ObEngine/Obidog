@@ -1,5 +1,6 @@
 import os
 
+from obidog.logger import log
 from obidog.models.base import ItemVisibility
 from obidog.models.functions import (
     FunctionModel,
@@ -81,6 +82,20 @@ def parse_function_from_xml(xml_function, is_method: bool = False):
     flags = parse_obidog_flags(xml_function, symbol_name=identifier)
     if flags.nobind:
         return PlaceholderFunctionModel(name, visibility)
+
+    for rename_parameter in flags.rename_parameters:
+        found_parameter = False
+        for parameter in parameters:
+            if parameter.name == rename_parameter[0]:
+                parameter.name = rename_parameter[1]
+                found_parameter = True
+                break
+        if not found_parameter:
+            log.warn(
+                f"Could not find parameter to rename '{rename_parameter[0]}'"
+                f" in function '{namespace}::{name}'"
+            )
+    name = flags.rename or name
 
     return FunctionModel(
         name=name,
