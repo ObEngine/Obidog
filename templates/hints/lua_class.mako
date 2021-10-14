@@ -2,7 +2,7 @@
 <%def name="lua_class(klass)">\
 ---@class ${klass.namespace.replace("::", ".")}.${klass.name}
 % for attribute in klass.attributes.values():
----@field ${attribute.name} ${attribute.type} #${attribute.description.strip().replace("\n", " ")}
+---@field ${attribute.name} ${attribute.type.type} #${attribute.description.strip().replace("\n", " ") if attribute.description else ''}
 % endfor
 ${klass.namespace.replace("::", ".")}._${klass.name} = {};
 
