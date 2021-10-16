@@ -8,11 +8,10 @@ from obidog.parsers.utils.xml_utils import (
     extract_xml_value,
 )
 from obidog.parsers.function_parser import parse_function_from_xml
-from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.globals_parser import parse_global_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
+from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
 from obidog.models.functions import (
     PlaceholderFunctionModel,
     FunctionOverloadModel,
@@ -23,11 +22,11 @@ from obidog.models.typedefs import TypedefModel
 from obidog.models.namespace import NamespaceModel
 
 
-def parse_functions_from_xml(namespace_name, namespace, cpp_db):
+def parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
     functions_path = "sectiondef[@kind='func']/memberdef[@kind='function']"
     xml_functions = namespace.xpath(functions_path)
     for xml_function in xml_functions:
-        function = parse_function_from_xml(xml_function)
+        function = parse_function_from_xml(xml_function, doxygen_index)
         real_name = "::".join((namespace_name, function.name))
         if isinstance(function, FunctionModel):
             if real_name in cpp_db.functions:
@@ -55,12 +54,10 @@ def parse_functions_from_xml(namespace_name, namespace, cpp_db):
                 cpp_db.functions[real_name] = function
 
 
-def parse_typedef_from_xml(xml_typedef):
+def parse_typedef_from_xml(namespace_name, xml_typedef, doxygen_index):
     typedef_name = get_content(xml_typedef.find("name"))
-    if xml_typedef.find("type").find("ref") is not None:
-        typedef_type = doxygen_refid_to_cpp_name(xml_typedef.find("type").find("ref"))
-    else:
-        typedef_type = get_content(xml_typedef.find("type"))
+    typedef_type = parse_real_type(xml_typedef, doxygen_index)
+    typedef_type = rebuild_incomplete_type(typedef_type, namespace_name, doxygen_index)
 
     typedef_description = get_content_if(
         xml_typedef.find("briefdescription").find("para")
@@ -70,6 +67,7 @@ def parse_typedef_from_xml(xml_typedef):
 
     return TypedefModel(
         name=typedef_name,
+        namespace=namespace_name,
         definition=typedef_definition,
         type=typedef_type,
         flags=parse_obidog_flags(xml_typedef),
@@ -78,11 +76,11 @@ def parse_typedef_from_xml(xml_typedef):
     )
 
 
-def parse_typedefs_from_xml(namespace_name, namespace, cpp_db):
+def parse_typedefs_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
     typedefs_path = "sectiondef[@kind='typedef']/memberdef[@kind='typedef']"
     xml_typedefs = namespace.xpath(typedefs_path)
     for xml_typedef in xml_typedefs:
-        typedef = parse_typedef_from_xml(xml_typedef)
+        typedef = parse_typedef_from_xml(namespace_name, xml_typedef, doxygen_index)
         full_name = "::".join((namespace_name, typedef.name))
         cpp_db.typedefs[full_name] = typedef
         cpp_db.typedefs[full_name].namespace = namespace_name
@@ -120,18 +118,18 @@ def parse_enums_from_xml(namespace_name, namespace, cpp_db):
         cpp_db.enums[full_name].namespace = namespace_name
 
 
-def parse_globals_from_xml(namespace_name, namespace, cpp_db):
+def parse_globals_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
     globals_path = "sectiondef[@kind='var']/memberdef[@kind='variable']"
     xml_globals = namespace.xpath(globals_path)
     for xml_global in xml_globals:
-        cpp_global = parse_global_from_xml(xml_global)
+        cpp_global = parse_global_from_xml(xml_global, doxygen_index)
         if cpp_global:
             full_name = "::".join((namespace_name, cpp_global.name))
             cpp_db.globals[full_name] = cpp_global
             cpp_db.globals[full_name].namespace = namespace_name
 
 
-def parse_namespace_from_xml(xml_path, cpp_db):
+def parse_namespace_from_xml(xml_path, cpp_db, doxygen_index):
     tree = etree.parse(xml_path)
 
     namespace = tree.xpath("/doxygen/compounddef")[0]
@@ -147,10 +145,10 @@ def parse_namespace_from_xml(xml_path, cpp_db):
         flags=parse_obidog_flags(namespace),
     )
 
-    parse_functions_from_xml(namespace_name, namespace, cpp_db)
-    parse_typedefs_from_xml(namespace_name, namespace, cpp_db)
+    parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index)
+    parse_typedefs_from_xml(namespace_name, namespace, cpp_db, doxygen_index)
     parse_enums_from_xml(namespace_name, namespace, cpp_db)
-    parse_globals_from_xml(namespace_name, namespace, cpp_db)
+    parse_globals_from_xml(namespace_name, namespace, cpp_db, doxygen_index)
 
     cpp_db.namespaces[namespace_name].functions = {
         function_name: function

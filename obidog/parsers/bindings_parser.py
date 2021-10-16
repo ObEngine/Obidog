@@ -6,29 +6,29 @@ from obidog.config import BINDINGS_SOURCES_LOCATION, PATH_TO_OBENGINE
 
 def CLASS_BINDING_REG(identifier, class_name, namespace):
     return (
-        f"sol::usertype<{identifier}>\s*bind{class_name}"
-        f"\s*=\s*{namespace}Namespace\s*.new_usertype<\s*{identifier}\s*>"
+        rf"sol::usertype<{identifier}>\s*bind{class_name}"
+        rf"\s*=\s*{namespace}Namespace\s*.new_usertype<\s*{identifier}\s*>"
     )
 
 
 def FUNCTION_BINDING_REG(function_name, namespace):
-    return f'{namespace}Namespace\s*.set_function\(\s*"{function_name}"\s*,'
+    return rf'{namespace}Namespace\s*.set_function\(\s*"{function_name}"\s*,'
 
 
 def METHOD_BINDING_REG(method_name, class_name):
-    return f'bind{class_name}\s*\[\s*"{method_name}"\s*\]\s*='
+    return rf'bind{class_name}\s*\[\s*"{method_name}"\s*\]\s*='
 
 
 def ATTRIBUTE_BINDING_REG(attribute_name, class_name):
-    return f'bind{class_name}\s*\[\s*"{attribute_name}"\s*\]\s*='
+    return rf'bind{class_name}\s*\[\s*"{attribute_name}"\s*\]\s*='
 
 
 def GLOBAL_BINDING_REG(identifier, global_name, namespace):
-    return f'{namespace}Namespace\s*\[\s*"{global_name}"\s*\]\s*=\s*{identifier}\s*;'
+    return rf'{namespace}Namespace\s*\[\s*"{global_name}"\s*\]\s*=\s*{identifier}\s*;'
 
 
 def ENUM_BINDING_REG(identifier, namespace):
-    return f"{namespace}Namespace.new_enum<{identifier}>"
+    return rf"{namespace}Namespace.new_enum<{identifier}>"
 
 
 def find_binding_location(location: str, element):
@@ -48,7 +48,7 @@ def find_binding_location(location: str, element):
             re.DOTALL | re.MULTILINE,
         )
     elif element._type == "typedef":
-        return 1  # Typedefs are not yet exposed to the Lua VM
+        return 1  # TODO: Typedefs are not yet exposed to the Lua VM
     elif element._type == "namespace":
         return 1  # The whole file is the namespace, go to line 1
     elif element._type == "function":

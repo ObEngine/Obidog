@@ -32,7 +32,7 @@ def make_return_type(return_type):
     return full_return_type.strip()
 
 
-def parse_function_from_xml(xml_function, is_method: bool = False):
+def parse_function_from_xml(xml_function, doxygen_index, is_method: bool = False):
     name = get_content(xml_function.find("name"))
     deleted = False
     if (
@@ -56,7 +56,7 @@ def parse_function_from_xml(xml_function, is_method: bool = False):
         templated = True
     definition = get_content(xml_function.find("definition"))
     description = get_content_if(xml_function.find("briefdescription").find("para"))
-    parameters = parse_parameters_from_xml(xml_function)
+    parameters = parse_parameters_from_xml(xml_function, doxygen_index)
     qualifiers = QualifiersModel()
     if xml_function.attrib["const"] == "yes":
         qualifiers.const = True

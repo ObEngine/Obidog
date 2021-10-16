@@ -10,12 +10,12 @@ from obidog.models.urls import URLs
 @dataclass
 class TypedefModel(BaseModel):
     name: str
+    namespace: str
     definition: str
     type: str
     flags: ObidogFlagsModel = ObidogFlagsModel()
     description: str = ""
     location: Location = field(default_factory=lambda: Location())
-    namespace: str = ""
     export: Export = Export()
     urls: URLs = field(default_factory=lambda: URLs())
     _type: str = "typedef"

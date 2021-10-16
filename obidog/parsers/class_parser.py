@@ -13,6 +13,7 @@ from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
+from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
 from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.utils.xml_utils import (
@@ -22,7 +23,7 @@ from obidog.parsers.utils.xml_utils import (
 )
 
 
-def parse_methods(class_name, class_value):
+def parse_methods(class_name, class_value, doxygen_index):
     methods = {}
     constructors = []
     destructor = None
@@ -43,7 +44,7 @@ def parse_methods(class_name, class_value):
     if not all_methods:
         return methods, constructors, destructor, private_methods
     for xml_method in all_methods:
-        method = parse_function_from_xml(xml_method, is_method=True)
+        method = parse_function_from_xml(xml_method, doxygen_index, is_method=True)
         method.from_class = class_name
         if method.visibility == ItemVisibility.Public:
             # Method has class name => Constructor
@@ -90,7 +91,7 @@ def parse_methods(class_name, class_value):
     return methods, constructors, destructor, private_methods
 
 
-def parse_attributes(class_value):
+def parse_attributes(class_value, doxygen_index):
     attributes = {}
     private_attributes = {}
     all_xml_attributes = {
@@ -107,7 +108,7 @@ def parse_attributes(class_value):
             # Ignore unions
             if attribute_name.startswith("@"):
                 continue
-            attribute_type = get_content(xml_attribute.find("type"))
+            attribute_type = parse_real_type(xml_attribute, doxygen_index)
             attribute_desc = get_content(xml_attribute.find("briefdescription"))
             initializer = get_content_if(xml_attribute.find("initializer"))
             qualifiers = QualifiersModel(static=is_static)
@@ -140,7 +141,7 @@ def parse_attributes(class_value):
     return attributes, private_attributes
 
 
-def parse_class_from_xml(class_value) -> ClassModel:
+def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
     namespace_name, class_name = (
@@ -165,14 +166,21 @@ def parse_class_from_xml(class_value) -> ClassModel:
     if base_classes_id:
         for base_class_id in base_classes_id:
             base = class_value.xpath(f"inheritancegraph/node[@id = {base_class_id}]")[0]
-            bases.append(get_content(base).strip())
+            # TODO: resolve with refid first (for inner types)
+            bases.append(
+                rebuild_incomplete_type(
+                    get_content(base).strip(),
+                    f"{namespace_name}::{class_name}",
+                    doxygen_index,
+                )
+            )
 
     description = extract_xml_value(class_value, "briefdescription/para")
 
     methods, constructors, destructor, private_methods = parse_methods(
-        class_name, class_value
+        class_name, class_value, doxygen_index
     )
-    attributes, private_attributes = parse_attributes(class_value)
+    attributes, private_attributes = parse_attributes(class_value, doxygen_index)
     for attribute in list(attributes.values()) + list(private_attributes.values()):
         attribute.from_class = class_name
     flags = parse_obidog_flags(

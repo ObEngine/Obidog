@@ -1,10 +1,10 @@
 from obidog.exceptions import ParameterNameNotFoundInXMLException
+from obidog.parsers.type_parser import parse_real_type
 from obidog.parsers.utils.xml_utils import get_content, get_content_if
-from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.models.functions import ParameterModel
 
 
-def parse_parameters_from_xml(xml_function):
+def parse_parameters_from_xml(xml_function, doxygen_index):
     parameters = []
     for index, xml_parameter in enumerate(xml_function.xpath("param")):
         parameter_declname = xml_parameter.find("declname")
@@ -16,16 +16,9 @@ def parse_parameters_from_xml(xml_function):
         else:
             parameter_name = f"p{index}"
             # raise ParameterNameNotFoundInXMLException()
-        if xml_parameter.find("type").find("ref") is not None:
-            parameter_return_type = doxygen_refid_to_cpp_name(
-                xml_parameter.find("type").find("ref")
-            )
-            parameter_return_type = get_content(xml_parameter.find("type")).replace(
-                get_content(xml_parameter.find("type").find("ref")),
-                parameter_return_type,
-            )
-        else:
-            parameter_return_type = get_content(xml_parameter.find("type"))
+
+        parameter_return_type = parse_real_type(xml_parameter, doxygen_index)
+
         parameter = ParameterModel(parameter_name, parameter_return_type)
         if get_content_if(xml_parameter.find("defval")):
             parameter.default = get_content_if(xml_parameter.find("defval"))

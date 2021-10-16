@@ -9,7 +9,7 @@
 % if function.return_type and function.return_type.type != "nil":
 ---@return ${function.return_type.type}
 % endif
-function ${function.namespace.replace("::", ".")}.\
+function ${function.namespace.replace("::", ".")}${'.' if function.namespace else ''}\
 % if hasattr(function, "from_class") and function.from_class != function.name:
 _${function.from_class}:\
 % endif

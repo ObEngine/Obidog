@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import re
 from typing import Dict, List, Union
@@ -13,39 +14,16 @@ from obidog.models.classes import AttributeModel, ClassModel
 from obidog.models.functions import FunctionModel
 from obidog.models.namespace import NamespaceModel
 from obidog.models.qualifiers import QualifiersModel
+from obidog.converters.lua.types import DYNAMIC_TYPES, DynamicTupleType
 
-ALIASES = {
-    "obe.Time.TimeUnit": "number",
-    "obe.Animation.Easing.Easing.EasingFunction": "function",
-    "obe.Collision.TrajectoryCheckFunction": "function(trajectory: obe.Collision.Trajectory, offset: obe.Transform.UnitVector, collider: obe.Collision.PolygonalCollider)",
-    "obe.Collision.OnCollideCallback": "function(trajectory: obe.Collision.Trajectory, offset: obe.Transform.UnitVector, data: obe.Collision.CollisionData)",
-    "obe.Event.Callback": "function",
-    "obe.Event.ExternalEventListener": "obe.Event.LuaEventListener",
-    "obe.Event.EventProfiler": "table<string, obe.Event.CallbackProfiler>",
-    "obe.Event.OnListenerChange": "function(change_state: obe.Event.ListenerChangeState, string)",
-    "obe.Event.EventGroupPtr": "obe.Event.EventGroup",
-    "sol.protected_function": "function",
-    "sol.lua_value": "any",
-    "sol.object": "table",
-    "obe.Graphics.CoordinateTransformer": "function(position: number, camera: number, layer: number):number",
-    "obe.System.MountList": "table<number, obe.System.MountablePath>",
-    "obe.Tiles.AnimatedTiles": "table<number, obe.Tiles.AnimatedTile>",
-    "obe.Transform.PolygonPath": "table<number, obe.Transform.PolygonPoint>",
-    "obe.Transform.point_index_t": "number",
-    "point_index_t": "number",
-    "vili.number": "number",
-    "vili.integer": "number",
-    "vili.boolean": "boolean",
-    "vili.array": "table<number, any>",
-    "vili.object": "table<string, any>",
-    "vili.string": "string",
-    "obe.Input.InputButtonMonitorPtr": "obe.Input.InputButtonMonitor",
-}
-
-# TODO: add the Event table as a type
 # TODO: rename p0, p1, p2 to proper parameter names
 
-MANUAL_TYPES = {"Engine": "obe.Engine.Engine", "This": "obe.Script.GameObject"}
+MANUAL_TYPES = {
+    "Engine": "obe.Engine.Engine",
+    "This": "obe.Script.GameObject",
+    "Event": "obe.Events._EventTable",
+    "Object": "table<string, any>",
+}
 
 
 def write_hints(
@@ -61,12 +39,11 @@ def write_hints(
         enum_tpl = Template(tpl.read(), lookup=lookup)
     with open("templates/hints/lua_global.mako", "r", encoding="utf-8") as tpl:
         global_tpl = Template(tpl.read(), lookup=lookup)
+    with open("templates/hints/lua_typedef.mako", "r", encoding="utf-8") as tpl:
+        typedef_tpl = Template(tpl.read(), lookup=lookup)
     hints = [f"{table} = {{}};\n" for table in tables]
     hints += ["\n"]
-    hints += [
-        f"---@alias {alias_from} {alias_to}\n\n"
-        for alias_from, alias_to in ALIASES.items()
-    ]
+
     for element in elements:
         if element._type == "class":
             hints.append(class_tpl.get_def("lua_class").render(klass=element))
@@ -76,6 +53,8 @@ def write_hints(
             hints.append(enum_tpl.get_def("lua_enum").render(enum=element))
         elif element._type == "global":
             hints.append(global_tpl.get_def("lua_global").render(glob=element))
+        elif element._type == "typedef":
+            hints.append(typedef_tpl.get_def("lua_typedef").render(typedef=element))
     hints += ["\n\n"]
     hints += [
         f"---@type {manual_type_value}\n{manual_type_name} = {{}};\n\n"
@@ -158,13 +137,107 @@ def _setup_methods_as_attributes(classes: Dict[str, ClassModel]):
             class_value.methods.pop(method)
 
 
-def generate_hints(cpp_db: CppDatabase):
+def _build_table_for_events(classes: Dict[str, ClassModel]):
+    result = {}
+    events = []
+    for class_value in classes.values():
+        if class_value.namespace.startswith("obe::Events::"):
+            events.append(class_value)
+    events_grouped_by_section = defaultdict(list)
+    for event in events:
+        if "id" not in event.attributes:
+            continue
+        event_id = (
+            event.attributes["id"]
+            .initializer.strip()
+            .removeprefix("=")
+            .strip()
+            .removeprefix('"')
+            .removesuffix('"')
+        )
+        events_grouped_by_section[event.namespace.removeprefix("obe::Events::")].append(
+            (event_id, event)
+        )
+
+    event_groups = {}
+    for event_group_name, events in events_grouped_by_section.items():
+        event_group_attributes = {
+            event_id: AttributeModel(
+                name=event_id,
+                type=LuaType(f"fun(evt:obe.Events.{event_group_name}.{event.name})"),
+                namespace=event.namespace,
+            )
+            for event_id, event in events
+        }
+        event_groups[event_group_name] = ClassModel(
+            name=event_group_name,
+            namespace="obe::Events::_EventTableGroups",
+            attributes=event_group_attributes,
+            constructors=[],
+            methods={},
+        )
+
+    event_groups_as_attributes = {}
+    for event_group_name, event_group in event_groups.items():
+        event_groups_as_attributes[event_group_name] = AttributeModel(
+            name=event_group.name,
+            namespace=event_group.namespace,
+            type=LuaType(f"obe.Events._EventTableGroups.{event_group_name}"),
+        )
+
+    event_namespace = ClassModel(
+        name="_EventTable",
+        namespace="obe::Events",
+        attributes=event_groups_as_attributes,
+        constructors=[],
+        methods={},
+    )
+
+    for event_group_name, event_group in event_groups.items():
+        result[f"{event_group.namespace}::{event_group.name}"] = event_group
+    result["obe::Events::_EventTable"] = event_namespace
+
+    return result
+
+
+def _generate_dynamic_tuple(
+    tuple_name: str, tuple_type: DynamicTupleType
+) -> ClassModel:
+    return ClassModel(
+        tuple_name,
+        "",
+        attributes={
+            f"[{i}]": AttributeModel(
+                name=f"[{i}]",
+                type=sub_type,
+                namespace="",
+            )
+            for i, sub_type in enumerate(tuple_type.sub_types)
+        },
+        constructors=[],
+        methods={},
+    )
+
+
+def _generate_dynamic_types() -> Dict[str, ClassModel]:
+    result = {}
+    for dynamic_type_name, dynamic_type in DYNAMIC_TYPES.dynamic_types.items():
+        if isinstance(dynamic_type, DynamicTupleType):
+            result[dynamic_type_name] = _generate_dynamic_tuple(
+                dynamic_type_name, dynamic_type
+            )
+    return result
+
+
+def generate_hints(cpp_db: CppDatabase, path_to_doc: str):
     log.info("Discarding placeholders")
     discard_placeholders(cpp_db)
 
     log.info("Converting all types")
     convert_all_types(cpp_db)
 
+    cpp_db.classes |= _build_table_for_events(cpp_db.classes)
+    cpp_db.classes |= _generate_dynamic_types()
     all_elements = [
         item
         for item_type in cpp_db.__dict__.keys()
