@@ -233,6 +233,7 @@ def cpp_type_to_lua_type(cpp_db, cpp_type):
         elif cpp_type in ["std::shared_ptr", "std::unique_ptr"]:
             return cpp_type_to_lua_type(cpp_db, sub_types[0])
         elif cpp_type == "std::function":
+            # TODO: re-use what is done in obidog.parsers.type_parser
             fun_return_type, fun_args = sub_types[0].split("(")
             fun_args = fun_args.strip().removesuffix(")").strip()
             fun_args = split_root_types(fun_args)
