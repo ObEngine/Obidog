@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List, Dict
 
 from obidog.models.base import BaseModel
 from obidog.models.location import Location

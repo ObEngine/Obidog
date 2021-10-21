@@ -1,10 +1,9 @@
-import os
 from dataclasses import dataclass
-from typing import List, Union, overload
+from typing import List, Union
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.template import generate_template_specialization
-from obidog.bindings.utils import fetch_table, strip_include, get_include_file
+from obidog.bindings.utils import fetch_table, get_include_file
 from obidog.logger import log
 from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
 from obidog.utils.string_utils import clean_capitalize, format_name
@@ -47,7 +46,7 @@ OPERATOR_TABLE = {
     "/": "divide",
     "!": "negate",
     "~": "complement",
-    "&": "address_of",
+    # "&": "address_of",
     "%": "modulus",
     "==": "equal",
     "!=": "not_equal",

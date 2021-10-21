@@ -8,7 +8,6 @@ from obidog.bindings.functions import (
     FUNCTION_CAST_TEMPLATE,
     create_all_default_overloads,
     does_requires_proxy_function,
-    PRIMITIVE_TYPES,
     fix_parameter_for_signature,
     fix_parameter_for_usage,
 )
@@ -21,7 +20,6 @@ from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
     FunctionPatchModel,
-    ParameterModel,
 )
 from obidog.utils.string_utils import format_name
 
@@ -30,7 +28,10 @@ METHOD_CAST_TEMPLATE = (
     "({parameters}) {qualifiers}>({method_address})"
 )
 
-METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER = "[]({parameters}) -> {return_type} {{ return self->{method_call}({parameters_names}); }}"
+METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER = (
+    "[]({parameters}) -> {return_type} "
+    "{{ return self->{method_call}({parameters_names}); }}"
+)
 METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY = (
     "[]({parameters}) -> {return_type} {{ return {method_call}({parameters_names}); }}"
 )

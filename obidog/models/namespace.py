@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Union
+from typing import Dict, Union
 
 from obidog.models.base import BaseModel
 from obidog.models.classes import ClassModel

@@ -4,8 +4,6 @@ import re
 from collections import defaultdict
 from typing import Union
 
-import inflection
-
 from obidog.bindings.classes import (
     copy_parent_bases,
     copy_parent_bindings,
@@ -32,7 +30,6 @@ from obidog.models.functions import (
     PlaceholderFunctionModel,
 )
 from obidog.parsers.utils.cpp_utils import parse_definition
-from obidog.utils.string_utils import clean_capitalize
 from obidog.wrappers.clangformat_wrapper import clang_format_files
 
 GENERATE_BINDINGS = False
@@ -260,7 +257,7 @@ def fix_index_tables(tables):
     for table in tables:
         table_path = re.findall(r'(?:\[\"([^"]+)\"\])', table)
         for i, elem in enumerate(table_path):
-            if not elem in fetch_sub_dict(table_tree, table_path[:i]):
+            if elem not in fetch_sub_dict(table_tree, table_path[:i]):
                 if i != len(table_path) - 1:
                     print("Add missing intermediate table", ".".join(table_path))
                     namespace_full_path = "".join(

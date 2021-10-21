@@ -1,4 +1,4 @@
-from obidog.models.base import LocalizableModel
+from obidog.models.location import LocalizableModel
 
 import os
 import obidog.bindings.flavours.sol3 as flavour

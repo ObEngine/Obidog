@@ -111,7 +111,7 @@ def parse_obidog_flags(tree, symbol_name: str = None):
             bind_name, template_combination = template_hint.split(",")
             bind_name = bind_name.strip()
             template_combination = template_combination.strip().split(";")
-            if not bind_name in thints:
+            if bind_name not in thints:
                 thints[bind_name] = []
             template_combinations = inject_template_variables(template_combination)
             for template_combination in template_combinations:
@@ -201,7 +201,7 @@ class ConflictsManager:
         self.conflicts = {}
 
     def append(self, conflict, xml):
-        if not conflict in self.conflicts:
+        if conflict not in self.conflicts:
             self.conflicts[conflict] = []
         else:
             print("Conflict detected")

@@ -1,4 +1,3 @@
-import os
 import tempfile
 
 import git
@@ -36,7 +35,8 @@ def clone_obengine_repo():
 def check_obengine_repo(git_dir):
     try:
         repo = git.Repo(git_dir)
-    except:
+    except Exception as e:
+        log.warning(f"unable to use repository at '{git_dir}': {e}")
         return False
     return (
         OBENGINE_GIT_URL in repo.remote().urls,

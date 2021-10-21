@@ -32,7 +32,7 @@ def group_bindings_by_namespace(cpp_db: CppDatabase):
     root_namespaces = {
         sub_namespace_name: sub_namespace
         for sub_namespace_name, sub_namespace in group_by_namespace.items()
-        if not "::" in sub_namespace_name
+        if "::" not in sub_namespace_name
     }
     group_by_namespace[""] = NamespaceModel(
         name="ÖbEngine",

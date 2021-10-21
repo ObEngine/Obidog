@@ -2,7 +2,6 @@ from obidog.config import OBENGINE_GIT_URL, BINDINGS_SOURCES_LOCATION
 from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.bindings_parser import find_binding_location
-from obidog.wrappers.onlinedoc_wrapper import class_name_to_doc_link
 
 
 def get_documentation_url(element):

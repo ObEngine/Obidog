@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import tempfile
 
@@ -10,6 +9,7 @@ from obidog.logger import log
 
 
 DOXYGEN_PATH = os.environ.get("DOXYGEN_PATH", "doxygen")
+
 
 def _check_doxygen():
     try:
@@ -27,7 +27,9 @@ def _check_doxygen():
             except:
                 return False
     except FileNotFoundError as e:
+        log.warning(f"doxygen not found at '{DOXYGEN_PATH}' : {e}")
         return False
+
 
 def build_doxygen_documentation(source_path):
     path = tempfile.mkdtemp()
@@ -36,7 +38,7 @@ def build_doxygen_documentation(source_path):
         for directory in [item["path"] for item in SOURCE_DIRECTORIES]
     ]
     exclude_directories = [
-        os.path.join(source_path, source['path'], exclude).replace('\\', '/')
+        os.path.join(source_path, source["path"], exclude).replace("\\", "/")
         for source in SOURCE_DIRECTORIES
         if "exclude_paths" in source
         for exclude in source["exclude_paths"]
@@ -53,16 +55,21 @@ def build_doxygen_documentation(source_path):
             dst_doxyfile.write(
                 doxyfile_content.replace(
                     "{{input_directories}}", (" \\\n" + " " * 25).join(src_directories)
-                ).replace(
-                    "{{exclude_patterns}}", (" \\\n" + " " * 25).join(exclude_directories)
-                ).replace(
+                )
+                .replace(
+                    "{{exclude_patterns}}",
+                    (" \\\n" + " " * 25).join(exclude_directories),
+                )
+                .replace(
                     "{{exclude_symbols}}", (" \\\n" + " " * 25).join(exclude_symbols)
                 )
             )
     with open(os.path.join(path, "out.log"), "w") as logger:
-        subprocess.run([DOXYGEN_PATH, "Doxyfile"], cwd=path, stdout=logger, stderr=logger)
+        subprocess.run(
+            [DOXYGEN_PATH, "Doxyfile"], cwd=path, stdout=logger, stderr=logger
+        )
     return path
 
 
 if not _check_doxygen():
-    raise RuntimeError(f"Doxygen (>= 1.8.18) not found")
+    raise RuntimeError("Doxygen (>= 1.8.18) not found")

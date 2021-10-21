@@ -19,9 +19,13 @@ def _check_clang_format():
                     return True
                 else:
                     return False
-            except:
+            except Exception as e:
+                log.warning(
+                    f"unable to use clang-format at '{CLANG_FORMAT_PATH}' : {e}"
+                )
                 return False
     except FileNotFoundError as e:
+        log.warning(f"unable to find clang-format at '{CLANG_FORMAT_PATH}' : {e}")
         return False
 
 

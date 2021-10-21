@@ -1,6 +1,3 @@
-import os
-
-from obidog.config import PATH_TO_OBENGINE
 from obidog.models.base import ItemVisibility
 from obidog.models.classes import AttributeModel, ClassModel
 from obidog.models.flags import ObidogFlagsModel
@@ -15,7 +12,6 @@ from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
 from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
 from obidog.parsers.utils.cpp_utils import parse_definition
-from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.utils.xml_utils import (
     extract_xml_value,
     get_content,
@@ -65,7 +61,7 @@ def parse_methods(class_name, class_value, doxygen_index):
             # Such as knowing whether a class is abstract or not
             function_dest = private_methods
         # Method not already in methods dict
-        if not method.name in function_dest:
+        if method.name not in function_dest:
             function_dest[method.name] = method
         else:
             # Replace unusable method with usable overload and force casting

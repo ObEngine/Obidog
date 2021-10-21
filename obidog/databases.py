@@ -7,6 +7,7 @@ class CppDatabase:
         self.enums = {}
         self.namespaces = {}
 
+
 class LuaDatabase:
     def __init__(self):
         self.classes = {}

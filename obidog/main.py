@@ -1,12 +1,8 @@
 import argparse
-import json
-import os
 import tempfile
 
-import requests
-
 from obidog.bindings.generator import generate_bindings
-from obidog.databases import CppDatabase, LuaDatabase
+from obidog.databases import CppDatabase
 from obidog.documentation.documentation import generate_documentation
 from obidog.hints.hints import generate_hints
 from obidog.logger import log

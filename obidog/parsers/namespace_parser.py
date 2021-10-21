@@ -1,7 +1,5 @@
-import os
-
 from lxml import etree
-from obidog.config import PATH_TO_OBENGINE
+
 from obidog.parsers.utils.xml_utils import (
     get_content,
     get_content_if,

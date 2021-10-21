@@ -1,11 +1,7 @@
-import os
-
-from obidog.bindings.utils import strip_include
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.utils.string_utils import format_name
 from obidog.bindings.utils import fetch_table, get_include_file
 from obidog.logger import log
-import inflection
 
 
 def generate_globals_bindings(name, cpp_globals):
@@ -22,7 +18,7 @@ def generate_globals_bindings(name, cpp_globals):
             {
                 "bindings": f"Global{export_name}",
                 "identifier": f"{cpp_global.namespace}::{cpp_global.name}",
-                "load_priority": cpp_global.flags.load_priority
+                "load_priority": cpp_global.flags.load_priority,
             }
         )
         state_view = flavour.STATE_VIEW
