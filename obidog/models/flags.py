@@ -19,6 +19,7 @@ class ObidogFlagsModel(BaseModel):
     load_priority: int = 0
     rename: str = None
     rename_parameters: List[Tuple[str, str]] = field(default_factory=lambda: [])
+    bind_code: str = None
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.bind_to = self.bind_to or flags.bind_to
@@ -34,3 +35,4 @@ class ObidogFlagsModel(BaseModel):
         self.load_priority = self.load_priority or flags.load_priority
         self.rename = self.rename or flags.rename
         self.rename_parameters = self.rename_parameters or flags.rename_parameters
+        self.bind_code = self.bind_code or flags.bind_code

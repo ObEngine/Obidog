@@ -80,10 +80,17 @@ class CppQualifiers:
     def format(self, type: str):
         return " ".join(self.prefix_qualifiers + [type] + self.postfix_qualifiers)
 
+    def is_const_ref(self):
+        return (
+            (self.prefix_qualifiers == ["const"] and self.postfix_qualifiers == ["&"])
+            or self.postfix_qualifiers == ["const&"]
+            or self.postfix_qualifiers == ["const", "&"]
+        )
+
 
 def strip_qualifiers(type: str) -> Tuple[str, CppQualifiers]:
     valid_prefix_qualifiers = ["const", "constexpr", "consteval", "static"]
-    valid_postfix_qualifiers = ["&", "*"]
+    valid_postfix_qualifiers = ["&", "*", "const&", "const*", "const"]
     prefix_qualifiers = []
     postfix_qualifiers = []
     qualifier_detected = True

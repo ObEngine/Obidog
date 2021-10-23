@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import os
 import re
 from collections import defaultdict
+from types import FunctionType
 from typing import Union
 
 from obidog.bindings.classes import (
@@ -30,6 +31,7 @@ from obidog.models.functions import (
     PlaceholderFunctionModel,
 )
 from obidog.parsers.utils.cpp_utils import parse_definition
+from obidog.parsers.type_parser import parse_cpp_type
 from obidog.wrappers.clangformat_wrapper import clang_format_files
 
 GENERATE_BINDINGS = False
@@ -393,6 +395,55 @@ def inject_ref_in_function_parameters(cpp_db: CppDatabase):
             fill_parameters_refs_for_function(constructor)
 
 
+# See: https://github.com/ThePhD/sol2/issues/1259
+def patch_const_ref_return_type(cpp_db: CppDatabase):
+    all_functions = [function_value for function_value in cpp_db.functions.values()] + [
+        method_value
+        for class_value in cpp_db.classes.values()
+        for method_value in class_value.methods.values()
+    ]
+    all_functions_overloads = [
+        function_value
+        for function_value in all_functions
+        if isinstance(function_value, FunctionOverloadModel)
+    ]
+    all_functions = [
+        function_value
+        for function_value in all_functions
+        if not isinstance(function_value, FunctionOverloadModel)
+    ]
+    all_functions += [
+        overload
+        for function_value in all_functions_overloads
+        for overload in function_value.overloads
+    ]
+
+    for function_value in all_functions:
+        parsed_ret_type = parse_cpp_type(function_value.return_type)
+        if parsed_ret_type.qualifiers.is_const_ref():
+            arg_list = [
+                f"{param.type} {param.name}" for param in function_value.parameters
+            ]
+            arg_names = [param.name for param in function_value.parameters]
+            if function_value.from_class:
+                class_name = "::".join(
+                    (
+                        [elem for elem in function_value.namespace.split("::") if elem]
+                        + [function_value.from_class]
+                    )
+                )
+                arg_list.insert(0, f"{class_name}* self")
+                function_value.flags.bind_code = (
+                    f"[]({', '.join(arg_list)})"
+                    f"{{ return &self->{function_value.name}({', '.join(arg_names)}); }}"
+                )
+            else:
+                function_value.flags.bind_code = (
+                    f"[]({', '.join(arg_list)})"
+                    f"{{ return &{function_value.name}({', '.join(arg_names)}); }}"
+                )
+
+
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding
 # LATER: Add a tag in Doxygen to list possible templated types
 # LATER: Add a tag in Doxygen to make fields privates
@@ -411,6 +462,7 @@ def generate_bindings(cpp_db: CppDatabase, write_files: bool = True):
     log.info("===== Generating bindings for ÖbEngine ====")
     discard_placeholders(cpp_db)
     inject_ref_in_function_parameters(cpp_db)
+    patch_const_ref_return_type(cpp_db)
     namespaces = group_bindings_by_namespace(cpp_db)
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():

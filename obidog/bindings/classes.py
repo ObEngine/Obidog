@@ -156,6 +156,8 @@ def generate_method_bindings(
             binding = flavour.METHOD.format(address=address)
             if method.flags.as_property:
                 return flavour.PROPERTY.format(address=binding)
+            elif method.flags.bind_code:
+                return flavour.METHOD.format(address=method.flags.bind_code)
             else:
                 definitions = create_all_default_overloads(method)
                 if len(definitions) > 1:

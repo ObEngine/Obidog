@@ -331,6 +331,8 @@ def generate_function_bindings(
         function_ptr = flavour.FUNCTION_OVERLOAD.format(
             overloads=",".join(all_overloads)
         )
+    elif function_value.flags.bind_code:
+        function_ptr = function_value.flags.bind_code
 
     binding_body = (
         fetch_table("::".join(namespace_splitted))
