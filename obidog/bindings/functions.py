@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, get_include_file
 from obidog.logger import log
 from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
+from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import clean_capitalize, format_name
 
 FUNCTION_CAST_TEMPLATE = (
@@ -193,12 +195,17 @@ def does_requires_proxy_function(function: FunctionModel) -> bool:
 
 
 @dataclass
-class DefaultOverloadModel:
+class MaybeDefaultParameter:
     definition: str
     name: str
 
 
-def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloadModel]:
+@dataclass
+class FunctionWithDefaultParameter:
+    parameters: List[MaybeDefaultParameter]
+
+
+"""def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloadModel]:
     function_definitions = []
     static_part_index = 0
     for parameter in function.parameters:
@@ -220,10 +227,10 @@ def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloa
                 for parameter in function.parameters[static_part_index : i + 1]
             ]
         )
-    return function_definitions
+    return function_definitions"""
 
 
-def generate_function_default_value_wrapper(
+"""def generate_function_default_value_wrapper(
     function_name: str, return_type: str, overload: DefaultOverloadModel
 ):
     return FUNCTION_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
@@ -231,7 +238,7 @@ def generate_function_default_value_wrapper(
         return_type=return_type,
         function_call=function_name,
         parameters_names=",".join(parameter.name for parameter in overload),
-    )
+    )"""
 
 
 def generate_function_definitions(function_name: str, function: FunctionModel):
@@ -284,17 +291,19 @@ def generate_function_bindings(
                     )
                 if len(template_hints) == 1:
                     new_func = generate_template_specialization(
-                        function_value, bind_name, template_hints[0]
+                        function_value, template_hints[0]
                     )
                     full_body += generate_function_bindings(new_name, new_func)
                 else:
                     overloads = [
-                        generate_template_specialization(
-                            function_value, bind_name, template_hint
-                        )
+                        generate_template_specialization(function_value, template_hint)
                         for template_hint in template_hints
                     ]
-                    funcs = FunctionOverloadModel(new_name, overloads)
+                    funcs = FunctionOverloadModel(
+                        name=new_name,
+                        namespace=function_value.namespace,
+                        overloads=overloads,
+                    )
                     full_body += generate_function_bindings(new_name, funcs)
             return full_body
         else:
@@ -382,9 +391,12 @@ def generate_functions_bindings(functions):
             f"void LoadFunction{real_function_name}({state_view} state)"
         )
 
+        namespace_split = function_name.split("::")[:-1]
+        store_in, fetch_instruction = fetch_table("::".join(namespace_split))
         binding_function = (
             f"{binding_function_signature}\n{{\n"
-            f"{generate_function_bindings(function_name, function_value)}}}"
+            f"{fetch_instruction}"
+            f"{create_function_bindings(store_in, function_value)}}}"
         )
         bindings_functions.append(binding_function)
     return {

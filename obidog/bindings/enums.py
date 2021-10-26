@@ -26,7 +26,7 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
         state_view = flavour.STATE_VIEW
         export_name = format_name(enum.name)
         binding_function_signature = f"void LoadEnum{export_name}({state_view} state)"
-        table_access = fetch_table(name) + "\n"
+        _, table_access = fetch_table(name)
         binding_function_body = table_access + flavour.ENUM_BODY.format(
             namespace=name.split("::")[-1],
             enum_type=enum_name,

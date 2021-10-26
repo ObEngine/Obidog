@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Any
+from typing import List, Any, Optional
 
 from obidog.models.base import BaseModel, ItemVisibility
 from obidog.models.bindings import Export
@@ -23,6 +23,7 @@ class ParameterModel(BaseModel):
 @dataclass
 class FunctionBaseModel(BaseModel):
     name: str
+    namespace: str
 
 
 @dataclass
@@ -32,7 +33,6 @@ class PlaceholderFunctionModel(FunctionBaseModel):
 
 @dataclass
 class FunctionModel(FunctionBaseModel):
-    namespace: str
     definition: str
     parameters: List[ParameterModel]
     return_type: str
@@ -46,6 +46,9 @@ class FunctionModel(FunctionBaseModel):
     deleted: bool = False
     abstract: bool = False
     visibility: ItemVisibility = ItemVisibility.Public
+    # FQN of proxy function
+    replacement: Optional[str] = None
+    from_class: Optional[str] = None
     _type: str = "function"
     urls: URLs = field(default_factory=lambda: URLs())
 
@@ -55,6 +58,7 @@ class FunctionOverloadModel(FunctionBaseModel):
     overloads: List[FunctionModel]
     flags: ObidogFlagsModel = ObidogFlagsModel()
     force_cast: bool = False
+    from_class: Optional[str] = None
     export: Export = Export()
     _type: str = "overload"
 

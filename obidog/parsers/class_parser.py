@@ -78,6 +78,8 @@ def parse_methods(class_name, class_value, doxygen_index):
                 else:
                     function_dest[method.name] = FunctionOverloadModel(
                         name=method.name,
+                        namespace=overload.namespace,
+                        from_class=overload.from_class,
                         overloads=[overload, method],
                         flags=ObidogFlagsModel(
                             bind_to=overload.flags.bind_to or method.flags.bind_to

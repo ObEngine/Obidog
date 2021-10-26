@@ -39,6 +39,7 @@ def parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
                     else:
                         cpp_db.functions[real_name] = FunctionOverloadModel(
                             name=existing_function.name,
+                            namespace=existing_function.namespace,
                             overloads=[existing_function, function],
                         )
             else:

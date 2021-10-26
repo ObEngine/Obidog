@@ -6,11 +6,11 @@ from typing import List, Union, Dict
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions import (
     FUNCTION_CAST_TEMPLATE,
-    create_all_default_overloads,
     does_requires_proxy_function,
     fix_parameter_for_signature,
     fix_parameter_for_usage,
 )
+from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, make_shorthand, strip_include
 from obidog.config import SOURCE_DIRECTORIES
@@ -216,7 +216,7 @@ def generate_templated_method_bindings(
                 raise NotImplementedError()
             else:
                 specialized_method = generate_template_specialization(
-                    method, bind_name, template_hint[0]
+                    method, template_hint[0]
                 )
                 body.append(f'bind{lua_name}["{bind_name}"] = ')
                 body.append(
@@ -247,13 +247,13 @@ def generate_methods_bindings(
                     continue
             else:
                 bind_name = f'"{bind_name}"'
-            method_bindings = generate_method_bindings(
+            store_in = f"bind{lua_name}"
+            method_bindings = create_function_bindings(store_in, method)
+            """method_bindings = generate_method_bindings(
                 class_name, method.name, method, method.force_cast
-            )
+            )"""
             if method_bindings:
-                body.append(f"bind{lua_name}[{bind_name}] = ")
                 body.append(method_bindings)
-                body.append(";")
 
 
 def generate_class_bindings(class_value: ClassModel):
@@ -326,7 +326,7 @@ def generate_class_bindings(class_value: ClassModel):
         class_definition += ", " + flavour.BASE_CLASSES.format(
             bases=", ".join(class_value.bases)
         )
-    namespace_access = fetch_table("::".join(full_name.split("::")[:-1])) + "\n"
+    _, namespace_access = fetch_table("::".join(full_name.split("::")[:-1]))
     class_body = flavour.CLASS_BODY.format(
         cpp_class=f"{class_value.namespace}::{class_value.name}",
         lua_short_name=lua_name,
