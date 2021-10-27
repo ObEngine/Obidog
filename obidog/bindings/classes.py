@@ -240,7 +240,7 @@ def generate_methods_bindings(
         if isinstance(method, FunctionModel) and method.template:
             generate_templated_method_bindings(body, class_name, lua_name, method)
         else:
-            bind_name = method.flags.bind_to or method.name
+            bind_name = method.flags.rename or method.name
             if bind_name in flavour.TRANSLATION_TABLE:
                 bind_name = flavour.TRANSLATION_TABLE[method.name]
                 if bind_name is None:
@@ -342,8 +342,8 @@ def generate_class_bindings(class_value: ClassModel):
     )
     # TODO: Add shorthand
     shorthand = ""
-    if class_value.flags.bind_to:
-        shorthand = make_shorthand(full_name, class_value.flags.bind_to)
+    if class_value.flags.rename:
+        shorthand = make_shorthand(full_name, class_value.flags.rename)
     return namespace_access + class_body
 
 
@@ -439,13 +439,26 @@ def flag_abstract_classes(cpp_db, classes):
                 if isinstance(method, FunctionModel) and method.abstract
             ]
             abstract_methods_names = [method.name for method in abstract_methods]
+            # TODO: Better implementation for overloads
             implemented_methods = [
                 method
                 for method in [
                     *class_value.private_methods.values(),
                     *class_value.methods.values(),
                 ]
-                if method.name in abstract_methods_names and not method.abstract
+                if isinstance(method, FunctionModel)
+                and method.name in abstract_methods_names
+                and not method.abstract
+            ]
+            implemented_methods += [
+                method.overloads[0]
+                for method in [
+                    *class_value.private_methods.values(),
+                    *class_value.methods.values(),
+                ]
+                if isinstance(method, FunctionOverloadModel)
+                and method.name in abstract_methods_names
+                and any(not overload.abstract for overload in method.overloads)
             ]
             implemented_methods += [
                 method

@@ -1,6 +1,6 @@
 from obidog.models.base import ItemVisibility
 from obidog.models.classes import AttributeModel, ClassModel
-from obidog.models.flags import ObidogFlagsModel
+from obidog.models.flags import MetaTag, ObidogFlagsModel
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
@@ -10,13 +10,18 @@ from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
-from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
+from obidog.parsers.type_parser import (
+    parse_cpp_type,
+    parse_real_type,
+    rebuild_incomplete_type,
+)
 from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.utils.xml_utils import (
     extract_xml_value,
     get_content,
     get_content_if,
 )
+from obidog.utils.cpp_utils import make_fqn
 
 
 def parse_methods(class_name, class_value, doxygen_index):
@@ -73,14 +78,14 @@ def parse_methods(class_name, class_value, doxygen_index):
                 overload = function_dest[method.name]
                 if isinstance(overload, FunctionOverloadModel):
                     overload.overloads.append(method)
-                    if method.flags.bind_to:
-                        overload.flags.bind_to = method.bind_to
+                    if method.flags.rename:
+                        overload.flags.rename = method.rename
                 else:
                     function_dest[method.name] = FunctionOverloadModel(
                         name=method.name,
                         overloads=[overload, method],
                         flags=ObidogFlagsModel(
-                            bind_to=overload.flags.bind_to or method.flags.bind_to
+                            rename=overload.flags.rename or method.flags.rename
                         ),
                     )
 
@@ -137,6 +142,16 @@ def parse_attributes(class_value, doxygen_index):
     return attributes, private_attributes
 
 
+def is_class_non_copyable(class_model: ClassModel):
+    for constructor in class_model.constructors:
+        if len(constructor.parameters) == 1 and constructor.deleted:
+            parsed_type = parse_cpp_type(constructor.parameters[0].type)
+            class_fqn = make_fqn(name=class_model.name, namespace=class_model.namespace)
+            if parsed_type.qualifiers.is_const_ref() and parsed_type.type == class_fqn:
+                return True
+    return False
+
+
 def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     nobind = False
     class_name = extract_xml_value(class_value, "compoundname")
@@ -185,7 +200,7 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     flags.nobind = flags.nobind or nobind
 
     CONFLICTS.append(class_name, class_value)
-    return ClassModel(
+    class_model = ClassModel(
         name=class_name,
         namespace=namespace_name,
         abstract=abstract,
@@ -200,3 +215,6 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
         description=description,
         location=parse_doxygen_location(class_value),
     )
+    if is_class_non_copyable(class_model):
+        class_model.flags.meta.add(MetaTag.NonCopyable.value)
+    return class_model

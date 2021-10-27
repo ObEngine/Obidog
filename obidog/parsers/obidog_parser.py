@@ -92,12 +92,6 @@ FLAG_SURROGATES: Dict[str, ObidogFlagsModel] = {}
 
 def parse_obidog_flags(tree, symbol_name: str = None):
     flags = ObidogFlagsModel()
-
-    # bind_to
-    bind_to = find_obidog_flag(tree, "bind", 1)
-    if bind_to:
-        flags.bind_to = bind_to[0]
-
     # helpers
     helpers = find_obidog_flag(tree, "helper")
     if helpers:
@@ -179,6 +173,11 @@ def parse_obidog_flags(tree, symbol_name: str = None):
         from_parameter, to_parameter = rename_parameter.split(",")
         from_parameter, to_parameter = from_parameter.strip(), to_parameter.strip()
         flags.rename_parameters.append((from_parameter, to_parameter))
+
+    # meta
+    meta_tags = find_obidog_flag(tree, "meta")
+    for meta_tag in meta_tags:
+        flags.meta.add(meta_tag.strip())
 
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
