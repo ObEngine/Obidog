@@ -1,12 +1,16 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from enum import Enum
+from typing import List, Set, Tuple
 
 from obidog.models.base import BaseModel
 
 
+class MetaTag(Enum):
+    NonCopyable = "NonCopyable"
+
+
 @dataclass
 class ObidogFlagsModel(BaseModel):
-    bind_to: str = ""
     helpers: List[str] = field(default_factory=lambda: [])
     template_hints: List[str] = field(default_factory=lambda: [])
     abstract: bool = False
@@ -20,9 +24,9 @@ class ObidogFlagsModel(BaseModel):
     rename: str = None
     rename_parameters: List[Tuple[str, str]] = field(default_factory=lambda: [])
     bind_code: str = None
+    meta: Set[str] = field(default_factory=lambda: set())
 
     def combine(self, flags: "ObidogFlagsModel"):
-        self.bind_to = self.bind_to or flags.bind_to
         self.helpers += flags.helpers
         self.template_hints += flags.template_hints
         self.abstract = self.abstract or flags.abstract
@@ -36,3 +40,4 @@ class ObidogFlagsModel(BaseModel):
         self.rename = self.rename or flags.rename
         self.rename_parameters = self.rename_parameters or flags.rename_parameters
         self.bind_code = self.bind_code or flags.bind_code
+        self.meta = self.meta | flags.meta

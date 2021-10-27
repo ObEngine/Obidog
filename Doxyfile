@@ -235,7 +235,6 @@ MAX_GENERATE_LEGEND    = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = "TGUI_DEPRECATED(x)="
-ALIASES += bind{1}="\xrefitem bind \"\" \"\" <a href=\"obidog.bind:\1\"></a>"
 ALIASES += nobind="\xrefitem nobind \"\" \"\" <a href=\"obidog.nobind\"></a>"
 ALIASES += thint{2}="\xrefitem template_hints \"\" \"\" <a href=\"obidog.template_hint:\1,\2\"></a>"
 ALIASES += helper{1}="\xrefitem helpers \"\" \"\" <a href=\"obidog.helper:\1\"></a>"
@@ -249,3 +248,4 @@ ALIASES += flagsurrogate{1}="\xrefitem flagsurrogate \"\" \"\" <a href=\"obidog.
 ALIASES += loadpriority{1}="\xrefitem loadpriority \"\" \"\" <a href=\"obidog.loadpriority:\1\"></a>"
 ALIASES += rename{1}="\xrefitem rename \"\" \"\" <a href=\"obidog.rename:\1\"></a>"
 ALIASES += paramrename{2}="\xrefitem paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"
+ALIASES += meta{1}="\xrefitem meta \"\" \"\" <a href=\"obidog.meta:\1\"></a>"

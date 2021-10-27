@@ -25,6 +25,7 @@ from obidog.config import (
 )
 from obidog.databases import CppDatabase
 from obidog.logger import log
+from obidog.models.flags import MetaTag
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
@@ -421,27 +422,36 @@ def patch_const_ref_return_type(cpp_db: CppDatabase):
     for function_value in all_functions:
         parsed_ret_type = parse_cpp_type(function_value.return_type)
         if parsed_ret_type.qualifiers.is_const_ref():
-            arg_list = [
-                f"{param.type} {param.name}" for param in function_value.parameters
-            ]
-            arg_names = [param.name for param in function_value.parameters]
-            if function_value.from_class:
-                class_name = "::".join(
-                    (
-                        [elem for elem in function_value.namespace.split("::") if elem]
-                        + [function_value.from_class]
+            if (
+                parsed_ret_type.type in cpp_db.classes
+                and MetaTag.NonCopyable.value
+                in cpp_db.classes[parsed_ret_type.type].flags.meta
+            ):
+                arg_list = [
+                    f"{param.type} {param.name}" for param in function_value.parameters
+                ]
+                arg_names = [param.name for param in function_value.parameters]
+                if function_value.from_class:
+                    class_name = "::".join(
+                        (
+                            [
+                                elem
+                                for elem in function_value.namespace.split("::")
+                                if elem
+                            ]
+                            + [function_value.from_class]
+                        )
                     )
-                )
-                arg_list.insert(0, f"{class_name}* self")
-                function_value.flags.bind_code = (
-                    f"[]({', '.join(arg_list)})"
-                    f"{{ return &self->{function_value.name}({', '.join(arg_names)}); }}"
-                )
-            else:
-                function_value.flags.bind_code = (
-                    f"[]({', '.join(arg_list)})"
-                    f"{{ return &{function_value.name}({', '.join(arg_names)}); }}"
-                )
+                    arg_list.insert(0, f"{class_name}* self")
+                    function_value.flags.bind_code = (
+                        f"[]({', '.join(arg_list)})"
+                        f"{{ return &self->{function_value.name}({', '.join(arg_names)}); }}"
+                    )
+                else:
+                    function_value.flags.bind_code = (
+                        f"[]({', '.join(arg_list)})"
+                        f"{{ return &{function_value.name}({', '.join(arg_names)}); }}"
+                    )
 
 
 # LATER: Add a tag in Doxygen to allow custom name / namespace binding

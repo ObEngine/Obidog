@@ -95,7 +95,6 @@ def parse_function_from_xml(xml_function, doxygen_index, is_method: bool = False
                 f"Could not find parameter to rename '{rename_parameter[0]}'"
                 f" in function '{namespace}::{name}'"
             )
-    name = flags.rename or name
 
     return FunctionModel(
         name=name,
