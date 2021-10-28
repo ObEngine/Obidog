@@ -22,7 +22,15 @@ METHOD = "{address}"
 # LATER: Add missing elements, even the ones not in sol::meta_function
 OPERATOR_TRANSLATION_TABLE = {
     "operator+": "sol::meta_function::addition",
-    "operator-": "sol::meta_function::subtraction",
+    "operator-": {
+        "sol::meta_function::subtraction": lambda f: (
+            f.from_class and len(f.parameters) == 1
+        )
+        or (len(f.parameters) > 1),
+        "sol::meta_function::unary_minus": lambda f: (
+            f.from_class and len(f.parameters) == 0
+        ),
+    },
     "operator*": "sol::meta_function::multiplication",
     "operator/": "sol::meta_function::division",
     "operator==": "sol::meta_function::equal_to",
@@ -35,6 +43,7 @@ OPERATOR_TRANSLATION_TABLE = {
     "operator*=": None,
     "operator/=": None,
     "operator[]": "sol::meta_function::index",
+    "operator%": "sol::meta_function::modulus",
 }
 FETCH_TABLE = """
 sol::table {store_in} = state{namespace_path}.get<sol::table>();

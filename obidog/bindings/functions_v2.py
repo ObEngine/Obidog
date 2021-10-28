@@ -280,7 +280,14 @@ def make_bindings_source_code(
 def make_function_bind_name_string(function_value: BindableFunctionModel) -> str:
     bind_name = function_value.name
     if bind_name in flavour.OPERATOR_TRANSLATION_TABLE:
-        return flavour.OPERATOR_TRANSLATION_TABLE[bind_name]
+        translation = flavour.OPERATOR_TRANSLATION_TABLE[bind_name]
+        if isinstance(translation, dict):
+            for translation_name, translation_condition in translation.items():
+                if translation_condition(function_value):
+                    return translation_name
+            return None
+        else:
+            return translation
     return f'"{bind_name}"'
 
 
@@ -321,26 +328,41 @@ def create_function_bindings(
         )
     else:
         bindings_by_function_name = []
-        for function_name, specialisations_by_func_name in groupby(
-            specialisations, key=lambda f: f.name
+        specialisations_bind_names = defaultdict(list)
+        for specialisation in specialisations:
+            specialisations_bind_names[
+                make_function_bind_name_string(specialisation)
+            ].append(specialisation)
+        specialisations_bind_names = {
+            key: value
+            for key, value in specialisations_bind_names.items()
+            if key is not None
+        }
+        sort_and_group_by_bind_name_criteria = (
+            lambda bind_name_and_specialisation: bind_name_and_specialisation[0]
+        )
+        specialisations_bind_names = sorted(
+            specialisations_bind_names.items(),
+            key=sort_and_group_by_bind_name_criteria,
+        )
+        for bind_name, specialisations_by_bind_name in groupby(
+            specialisations_bind_names, key=sort_and_group_by_bind_name_criteria
         ):
-            specialisations_by_func_name = list(specialisations_by_func_name)
+            # Extracting single list element [0] and value from dict tuple [1]
+            specialisations_by_bind_name = list(specialisations_by_bind_name)[0][1]
             binding_source_code = [
                 make_bindings_source_code(specialisation)
-                for specialisation in specialisations_by_func_name
+                for specialisation in specialisations_by_bind_name
             ]
-            if len(specialisations_by_func_name) > 1:
+            if len(specialisations_by_bind_name) > 1:
                 function_calls = f'sol::overload({", ".join(binding_source_code)})'
             else:
                 function_calls = binding_source_code[0]
-            bind_name = make_function_bind_name_string(specialisations_by_func_name[0])
-            if bind_name is None:
-                continue
             bind_instruction = make_bind_instruction(
                 store_in=store_in,
                 bind_name=bind_name,
                 function_call=function_calls,
-                function_value=specialisations_by_func_name[0],
+                function_value=specialisations_by_bind_name[0],
             )
             bindings_by_function_name.append(bind_instruction)
         return "\n".join(bindings_by_function_name)
