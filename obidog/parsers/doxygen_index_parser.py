@@ -106,6 +106,16 @@ def parse_class(class_value):
             "refid": refid,
         }
 
+    for inner_enum in class_value.xpath("member[@kind='enum']"):
+        enum_name = _get_element_identifier(inner_enum)
+        refid = inner_enum.attrib["refid"]
+        result[refid] = {
+            "kind": "enum",
+            "name": enum_name,
+            "full_name": f"{class_name}::{enum_name}",
+            "refid": refid,
+        }
+
     for inner_class in class_value.xpath("member[@kind='class']"):
         raise NotImplementedError()
 

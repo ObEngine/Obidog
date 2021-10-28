@@ -14,6 +14,7 @@ from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, make_shorthand, strip_include
 from obidog.config import SOURCE_DIRECTORIES
+from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.models.classes import ClassModel
 from obidog.models.functions import (
@@ -21,6 +22,7 @@ from obidog.models.functions import (
     FunctionOverloadModel,
     FunctionPatchModel,
 )
+from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import format_name
 
 METHOD_CAST_TEMPLATE = (
@@ -233,22 +235,19 @@ def generate_templated_method_bindings(
 
 
 def generate_methods_bindings(
-    body: List[str], class_name: str, lua_name: str, methods: Dict[str, FunctionModel]
+    cpp_db: CppDatabase,
+    body: List[str],
+    class_name: str,
+    lua_name: str,
+    methods: Dict[str, FunctionModel],
 ):
     for method in methods.values():
         # TODO: Skip deleted methods
         if isinstance(method, FunctionModel) and method.template:
             generate_templated_method_bindings(body, class_name, lua_name, method)
         else:
-            bind_name = method.flags.rename or method.name
-            if bind_name in flavour.TRANSLATION_TABLE:
-                bind_name = flavour.TRANSLATION_TABLE[method.name]
-                if bind_name is None:
-                    continue
-            else:
-                bind_name = f'"{bind_name}"'
             store_in = f"bind{lua_name}"
-            method_bindings = create_function_bindings(store_in, method)
+            method_bindings = create_function_bindings(cpp_db, store_in, method)
             """method_bindings = generate_method_bindings(
                 class_name, method.name, method, method.force_cast
             )"""
@@ -256,7 +255,7 @@ def generate_methods_bindings(
                 body.append(method_bindings)
 
 
-def generate_class_bindings(class_value: ClassModel):
+def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
     full_name = "::".join([class_value.namespace, class_value.name])
     namespace, lua_name = full_name.split("::")[-2::]
     class_value.lua_name = ".".join(full_name.split("::"))
@@ -297,6 +296,7 @@ def generate_class_bindings(class_value: ClassModel):
     # LATER: Register base class functions for sol3 on derived for optimization
     body = []
     generate_methods_bindings(
+        cpp_db,
         body,
         full_name,
         lua_name,
@@ -347,7 +347,7 @@ def generate_class_bindings(class_value: ClassModel):
     return namespace_access + class_body
 
 
-def generate_classes_bindings(classes):
+def generate_classes_bindings(cpp_db: CppDatabase, classes):
     objects = []
     includes = []
     bindings_functions = []
@@ -376,7 +376,7 @@ def generate_classes_bindings(classes):
         )
         binding_function = (
             f"{binding_function_signature}\n{{\n"
-            f"{generate_class_bindings(class_value)}\n}}"
+            f"{generate_class_bindings(cpp_db, class_value)}\n}}"
         )
         if "_fs" in binding_function:
             includes_for_class.append("#include <System/Path.hpp>")
@@ -420,6 +420,9 @@ def copy_parent_bindings(cpp_db, classes):
                 non_template_name = base.split("<")[0]
                 base_value = cpp_db.classes[non_template_name]
                 base_methods = copy.deepcopy(base_value.methods)
+                for base_method in base_methods.values():
+                    base_method.from_class = class_value.name
+                    base_method.namespace = class_value.namespace
                 base_methods.update(class_value.methods)
                 class_value.methods = base_methods
 

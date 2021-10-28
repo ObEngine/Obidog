@@ -120,6 +120,7 @@ class CppType(ABC):
     def __init__(self, qualifiers: CppQualifiers) -> None:
         super().__init__()
         self.qualifiers = qualifiers
+        self.type: Optional[Union[str, CppType]] = None
 
     @abstractmethod
     def __str__(self) -> str:

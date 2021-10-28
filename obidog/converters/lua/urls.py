@@ -11,7 +11,7 @@ def get_documentation_url(element):
     elif element._type == "class":
         element_path = "/".join(element.namespace.split("::"))
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.name}.html"
-    elif hasattr(element, "from_class"):
+    elif getattr(element, "from_class", False):
         element_path = "/".join(element.namespace.split("::"))
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}/{element.from_class}.html#doc_{element.name}"
     else:
@@ -40,7 +40,7 @@ def get_bindings_url(bindings_results, element):
 
 
 def get_doxygen_url(doxygen_index, element):
-    if hasattr(element, "from_class"):
+    if getattr(element, "from_class", False):
         identifier = f"{element.namespace}::{element.from_class}::{element.name}"
     elif not element.namespace:
         identifier = element.name

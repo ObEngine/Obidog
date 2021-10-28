@@ -33,6 +33,7 @@ from obidog.models.functions import (
 )
 from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.type_parser import parse_cpp_type
+from obidog.utils.cpp_utils import make_fqn
 from obidog.wrappers.clangformat_wrapper import clang_format_files
 
 GENERATE_BINDINGS = False
@@ -91,10 +92,14 @@ def group_bindings_by_namespace(cpp_db):
         for item_name, item_value in getattr(cpp_db, item_type).items():
             strip_template = item_name.split("<")[0]
             last_namespace = "::".join(strip_template.split("::")[:-1:])
-            if last_namespace in cpp_db.namespaces:
-                getattr(group_by_namespace[last_namespace], item_type)[
-                    item_name
-                ] = item_value
+            while last_namespace:
+                if last_namespace in cpp_db.namespaces:
+                    getattr(group_by_namespace[last_namespace], item_type)[
+                        item_name
+                    ] = item_value
+                    break
+                else:
+                    last_namespace = "::".join(last_namespace.split("::")[:-1:])
     for namespace_name, namespace in group_by_namespace.items():
         namespace.namespaces = cpp_db.namespaces[namespace_name]
     return group_by_namespace
@@ -182,7 +187,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
             FILES_TO_FORMAT.append(src_out)
 
 
-def generate_bindings_for_namespace(namespace_name, namespace):
+def generate_bindings_for_namespace(cpp_db: CppDatabase, namespace_name, namespace):
     log.info(f"Generating bindings for namespace {namespace_name}")
     split_name = "/".join(namespace_name.split("::"))
     source = match_namespace_with_source(namespace_name)
@@ -196,9 +201,9 @@ def generate_bindings_for_namespace(namespace_name, namespace):
         exist_ok=True,
     )
 
-    class_bindings = generate_classes_bindings(namespace.classes)
+    class_bindings = generate_classes_bindings(cpp_db, namespace.classes)
     enum_bindings = generate_enums_bindings(namespace_name, namespace.enums)
-    functions_bindings = generate_functions_bindings(namespace.functions)
+    functions_bindings = generate_functions_bindings(cpp_db, namespace.functions)
     globals_bindings = generate_globals_bindings(namespace_name, namespace.globals)
 
     generated_objects = (
@@ -331,18 +336,52 @@ def generated_bindings_index(source_name, generated_objects):
     return "\n".join(body)
 
 
-def apply_proxies(cpp_db, functions):
-    all_functions = {
-        **cpp_db.functions,
-        **{
-            f"{class_name}::{method_name}": method_value
-            for class_name, class_value in cpp_db.classes.items()
-            for method_name, method_value in class_value.methods.items()
-        },
-    }
-    for function_value in functions.values():
+def apply_proxies(cpp_db: CppDatabase, functions):
+    def find_and_requalify_if_needed(proxy_name: str) -> FunctionModel:
+        def requalify_if_needed(
+            proxy_func: Union[FunctionModel, FunctionOverloadModel]
+        ) -> FunctionModel:
+            if isinstance(proxy_func, FunctionOverloadModel):
+                return proxy_func.to_function_model()
+            return proxy_func
+
+        if proxy_name in cpp_db.functions:
+            cpp_db.functions[proxy_name] = requalify_if_needed(
+                cpp_db.functions[proxy_name]
+            )
+            return cpp_db.functions[proxy_name]
+        all_methods = {
+            make_fqn(
+                name=method_value.name,
+                namespace=method_value.namespace,
+                from_class=method_value.from_class,
+            ): method_value
+            for class_value in cpp_db.classes.values()
+            for method_value in class_value.methods.values()
+        }
+        if proxy_name in all_methods:
+            method_value = all_methods[proxy_name]
+            class_fqn = make_fqn(
+                name=method_value.from_class,
+                namespace=method_value.namespace,
+            )
+            cpp_db.classes[class_fqn].methods[method_value.name] = requalify_if_needed(
+                method_value
+            )
+            return cpp_db.classes[class_fqn].methods[method_value.name]
+
+    for function_name, function_value in functions.items():
         if function_value.flags.proxy:
-            patch = all_functions[function_value.flags.proxy]
+            if isinstance(function_value, FunctionOverloadModel):
+                functions[function_name] = FunctionModel(
+                    name=function_value.name,
+                    namespace=function_value.namespace,
+                    definition=function_value.definition,
+                    parameters=[],
+                    from_class=function_value.from_class,
+                )
+                function_value = functions[function_name]
+            patch = find_and_requalify_if_needed(function_value.flags.proxy)
             patch.definition = function_value.definition
             patch.parameters = function_value.parameters
             patch.return_type = function_value.return_type
@@ -480,7 +519,9 @@ def generate_bindings(cpp_db: CppDatabase, write_files: bool = True):
         copy_parent_bases(cpp_db, namespace.classes)
         flag_abstract_classes(cpp_db, namespace.classes)
         apply_proxies(cpp_db, namespace.functions)
-        generation_results = generate_bindings_for_namespace(namespace_name, namespace)
+        generation_results = generate_bindings_for_namespace(
+            cpp_db, namespace_name, namespace
+        )
         generated_objects[namespace_name] = {
             "objects": generation_results[0],
             "header": generation_results[1],

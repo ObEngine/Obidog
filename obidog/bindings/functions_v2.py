@@ -4,13 +4,17 @@ from dataclasses import dataclass
 from itertools import groupby
 from typing import List, Optional, Union
 
+import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.models import BindableFunctionModel, BindingsSourceCode
 from obidog.bindings.template import generate_template_specialization
+from obidog.databases import CppDatabase
 from obidog.logger import log
+from obidog.models.flags import MetaTag
 from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
 
+REACTIVE_ATTRIBUTE_TEMPLATE = "sol::property({function_call})"
 
 CALL_WRAPPER_TPL = (
     "[]"
@@ -51,7 +55,7 @@ def make_call_wrapper(
 
 FUNCTION_CAST_TEMPLATE = (
     "static_cast<{return_type} ({function_location}*)"
-    "({parameters}) {qualifiers}>({fqn})"
+    "({parameters}) {qualifiers}>(&{fqn})"
 )
 
 
@@ -121,7 +125,7 @@ class FunctionBindingGenerationOptions:
 def make_bindable_function_model(
     function_value: Union[FunctionModel, FunctionOverloadModel]
 ):
-    is_method = hasattr(function_value, "from_class")
+    is_method = bool(function_value.from_class)
 
     # Get fully qualified name
     if is_method:
@@ -143,25 +147,35 @@ def make_bindable_function_model(
     # Define function call / function call args
     function_call = fqn
     prefix_call_args = []
-    if is_method:
-        function_call = f"self->{function_value.name}"
-        prefix_call_args = [
-            ParameterModel(
-                name="self",
-                type=f"{class_fqn}*",
-            )
-        ]
+    if is_method and not function_value.qualifiers.static:
+        # Proxy functions do not need to inject self (they already have it)
+        if not function_value.replacement:
+            function_call = f"self->{function_value.name}"
+            prefix_call_args = [
+                ParameterModel(
+                    name="self",
+                    type=f"{class_fqn}*",
+                )
+            ]
+
+    existing_attributes = function_value.__dict__
+
+    # Detect "rename" flag
+    if function_value.flags.rename:
+        existing_attributes.update({"name": function_value.flags.rename})
 
     # Build BindableFunctionModel with additional infos
     return BindableFunctionModel(
-        **function_value.__dict__,
+        **existing_attributes,
         fqn=fqn,
         function_call=function_call,
         prefix_call_args=prefix_call_args,
+        requires_static_cast=function_value.force_cast,
     )
 
 
-def prepare_function_bindings(
+def generate_function_specialisations(
+    cpp_db: CppDatabase,
     function_value: Union[FunctionModel, FunctionOverloadModel],
     options: Optional[FunctionBindingGenerationOptions] = None,
 ) -> List[BindableFunctionModel]:
@@ -175,14 +189,19 @@ def prepare_function_bindings(
         for overload in function_value.overloads:
             overload_options = copy(options)
             overload_options.is_overload = True
-            overload_specialisations += prepare_function_bindings(
-                function_value=overload, options=overload_options
+            overload_specialisations += generate_function_specialisations(
+                cpp_db=cpp_db, function_value=overload, options=overload_options
             )
         return overload_specialisations
 
     ext_function_value = make_bindable_function_model(function_value)
 
     discard_base_function = False
+
+    # Detect if function is replaced by a proxy
+    if function_value.replacement:
+        ext_function_value.fqn = function_value.replacement
+        ext_function_value.function_call = function_value.replacement
 
     # Detect if function has default parameters
     if any(parameter.default is not None for parameter in function_value.parameters):
@@ -191,14 +210,19 @@ def prepare_function_bindings(
             ext_function_value
         )
 
-    # Detect if function has const reference return type
+    # Detect if function has const reference non-copyable return type
     parsed_return_type = parse_cpp_type(ext_function_value.return_type)
     if parsed_return_type.qualifiers.is_const_ref():
-        parsed_return_type.qualifiers.prefix_qualifiers = ["const"]
-        parsed_return_type.qualifiers.postfix_qualifiers = ["*"]
-        ext_function_value.return_type = str(parsed_return_type)
-        ext_function_value.requires_call_wrapper = True
-        ext_function_value.call_prefix = "&"
+        if (
+            parsed_return_type.type in cpp_db.classes
+            and MetaTag.NonCopyable.value
+            in cpp_db.classes[parsed_return_type.type].flags.meta
+        ):
+            parsed_return_type.qualifiers.prefix_qualifiers = ["const"]
+            parsed_return_type.qualifiers.postfix_qualifiers = ["*"]
+            ext_function_value.return_type = str(parsed_return_type)
+            ext_function_value.requires_call_wrapper = True
+            ext_function_value.call_prefix = "&"
 
     # Detect if function is templated and provides template hints
     if ext_function_value.template:
@@ -245,23 +269,55 @@ def make_bindings_source_code(
     bindable_function: BindableFunctionModel,
 ) -> BindingsSourceCode:
     if bindable_function.requires_call_wrapper:
-        return make_call_wrapper(bindable_function)
-    if bindable_function.requires_static_cast:
-        return make_static_cast(bindable_function)
+        function_call = make_call_wrapper(bindable_function)
+    elif bindable_function.requires_static_cast:
+        function_call = make_static_cast(bindable_function)
     else:
-        return f"&{bindable_function.fqn}"
+        function_call = f"&{bindable_function.fqn}"
+    return function_call
+
+
+def make_function_bind_name_string(function_value: BindableFunctionModel) -> str:
+    bind_name = function_value.name
+    if bind_name in flavour.OPERATOR_TRANSLATION_TABLE:
+        return flavour.OPERATOR_TRANSLATION_TABLE[bind_name]
+    return f'"{bind_name}"'
+
+
+def make_bind_instruction(
+    store_in: str,
+    bind_name: str,
+    function_call: str,
+    function_value: BindableFunctionModel,
+) -> str:
+    if function_value.from_class:
+        return f"{store_in}[{bind_name}] = {function_call};"
+    else:
+        return f"{store_in}.set_function({bind_name}, {function_call});"
 
 
 def create_function_bindings(
-    store_in: str, function_value: Union[FunctionModel, FunctionOverloadModel]
+    cpp_db: CppDatabase,
+    store_in: str,
+    function_value: Union[FunctionModel, FunctionOverloadModel],
 ) -> List[BindingsSourceCode]:
-    specialisations = prepare_function_bindings(function_value)
+    specialisations = generate_function_specialisations(cpp_db, function_value)
 
     if len(specialisations) == 1:
         single_specialisation = specialisations[0]
-        return (
-            f'{store_in}["{single_specialisation.name}"] = '
-            f"{make_bindings_source_code(single_specialisation)};"
+        function_call = make_bindings_source_code(single_specialisation)
+        if function_value.flags.as_property:
+            function_call = REACTIVE_ATTRIBUTE_TEMPLATE.format(
+                function_call=function_call
+            )
+        bind_name = make_function_bind_name_string(single_specialisation)
+        if bind_name is None:
+            return
+        return make_bind_instruction(
+            store_in=store_in,
+            bind_name=bind_name,
+            function_call=function_call,
+            function_value=single_specialisation,
         )
     else:
         bindings_by_function_name = []
@@ -274,8 +330,17 @@ def create_function_bindings(
                 for specialisation in specialisations_by_func_name
             ]
             if len(specialisations_by_func_name) > 1:
-                bindings_by_function_name.append(
-                    f'{store_in}["{function_name}"] = '
-                    f'sol::overload({", ".join(binding_source_code)});'
-                )
+                function_calls = f'sol::overload({", ".join(binding_source_code)})'
+            else:
+                function_calls = binding_source_code[0]
+            bind_name = make_function_bind_name_string(specialisations_by_func_name[0])
+            if bind_name is None:
+                continue
+            bind_instruction = make_bind_instruction(
+                store_in=store_in,
+                bind_name=bind_name,
+                function_call=function_calls,
+                function_value=specialisations_by_func_name[0],
+            )
+            bindings_by_function_name.append(bind_instruction)
         return "\n".join(bindings_by_function_name)

@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Dict, List, Union
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, get_include_file
+from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
 from obidog.utils.cpp_utils import make_fqn
@@ -356,7 +357,10 @@ def generate_function_bindings(
 
 
 # LATER: Catch operator function and assign them to correct classes metafunctions
-def generate_functions_bindings(functions):
+def generate_functions_bindings(
+    cpp_db: CppDatabase,
+    functions: Dict[str, Union[FunctionModel, FunctionOverloadModel]],
+):
     objects = []
     includes = []
     bindings_functions = []
@@ -373,6 +377,16 @@ def generate_functions_bindings(functions):
         else:
             identifier = f"{function_value.namespace}::{function_value.name}"
 
+        if isinstance(function_value, FunctionOverloadModel):
+            for overload in function_value.overloads:
+                includes.append(get_include_file(overload))
+        else:
+            includes.append(get_include_file(function_value))
+
+        # Do not bind proxy functions but still append related includes
+        if function_value.flags.proxy:
+            continue
+
         objects.append(
             {
                 "bindings": f"{func_type}{real_function_name}",
@@ -380,11 +394,6 @@ def generate_functions_bindings(functions):
                 "load_priority": function_value.flags.load_priority,
             }
         )
-        if isinstance(function_value, FunctionOverloadModel):
-            for overload in function_value.overloads:
-                includes.append(get_include_file(overload))
-        else:
-            includes.append(get_include_file(function_value))
 
         state_view = flavour.STATE_VIEW
         binding_function_signature = (
@@ -396,7 +405,7 @@ def generate_functions_bindings(functions):
         binding_function = (
             f"{binding_function_signature}\n{{\n"
             f"{fetch_instruction}"
-            f"{create_function_bindings(store_in, function_value)}}}"
+            f"{create_function_bindings(cpp_db, store_in, function_value)}}}"
         )
         bindings_functions.append(binding_function)
     return {

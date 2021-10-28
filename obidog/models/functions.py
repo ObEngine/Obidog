@@ -62,6 +62,16 @@ class FunctionOverloadModel(FunctionBaseModel):
     export: Export = Export()
     _type: str = "overload"
 
+    def to_function_model(self) -> FunctionModel:
+        return FunctionModel(
+            name=self.name,
+            namespace=self.namespace,
+            definition=None,
+            parameters=[],
+            from_class=self.from_class,
+            return_type=None,
+        )
+
 
 @dataclass
 class FunctionPatchModel(FunctionBaseModel):

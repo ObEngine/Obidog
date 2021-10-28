@@ -52,7 +52,7 @@ def find_binding_location(location: str, element):
     elif element._type == "namespace":
         return 1  # The whole file is the namespace, go to line 1
     elif element._type == "function":
-        if hasattr(element, "from_class"):
+        if getattr(element, "from_class", False):
             search_result = re.search(
                 METHOD_BINDING_REG(re.escape(element.name), element.from_class),
                 bindings,

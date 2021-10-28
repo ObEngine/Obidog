@@ -108,7 +108,9 @@ def parse_enum_from_xml(xml_enum):
 
 
 def parse_enums_from_xml(namespace_name, namespace, cpp_db):
-    enums_path = "sectiondef[@kind='enum']/memberdef[@kind='enum']"
+    namespace_kind = namespace.attrib["kind"]
+    from_section = "enum" if namespace_kind == "namespace" else "public-type"
+    enums_path = f"sectiondef[@kind='{from_section}']/memberdef[@kind='enum']"
     xml_enums = namespace.xpath(enums_path)
     for xml_enum in xml_enums:
         enum = parse_enum_from_xml(xml_enum)

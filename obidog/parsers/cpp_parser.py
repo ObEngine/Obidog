@@ -5,7 +5,11 @@ from obidog.config import SOURCE_DIRECTORIES
 from obidog.logger import log
 from obidog.parsers.class_parser import parse_class_from_xml
 from obidog.parsers.doxygen_index_parser import parse_doxygen_index
-from obidog.parsers.namespace_parser import parse_namespace_from_xml
+from obidog.parsers.namespace_parser import (
+    parse_enums_from_xml,
+    parse_namespace_from_xml,
+)
+from obidog.utils.cpp_utils import make_fqn
 
 
 def parse_doxygen_files(path_to_doc, cpp_db):
@@ -25,8 +29,12 @@ def parse_doxygen_files(path_to_doc, cpp_db):
                 class_filepath = os.path.join(currentDir, f)
                 log.debug(f"  Parsing class {class_filepath}")
                 tree = etree.parse(class_filepath)
-                class_model = parse_class_from_xml(
-                    tree.xpath("/doxygen/compounddef")[0], doxygen_index
+                class_xml = tree.xpath("/doxygen/compounddef")[0]
+                class_model = parse_class_from_xml(class_xml, doxygen_index)
+                parse_enums_from_xml(
+                    make_fqn(name=class_model.name, namespace=class_model.namespace),
+                    class_xml,
+                    cpp_db,
                 )
                 cpp_db.classes[
                     "::".join([class_model.namespace, class_model.name])

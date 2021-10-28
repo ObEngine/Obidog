@@ -20,7 +20,7 @@ BASE_CLASSES = "sol::base_classes, sol::bases<{bases}>()"
 SCRIPT_FILE = 'state.script_file("{source}"_fs);'
 METHOD = "{address}"
 # LATER: Add missing elements, even the ones not in sol::meta_function
-TRANSLATION_TABLE = {
+OPERATOR_TRANSLATION_TABLE = {
     "operator+": "sol::meta_function::addition",
     "operator-": "sol::meta_function::subtraction",
     "operator*": "sol::meta_function::multiplication",
