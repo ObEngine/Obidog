@@ -62,6 +62,16 @@ def parse_namespace(namespace, ignore_namespace=False):
             "refid": refid,
         }
 
+    for define in namespace.xpath("member[@kind='define']"):
+        define_name = _get_element_identifier(define)
+        refid = define.attrib["refid"]
+        result[refid] = {
+            "kind": "define",
+            "name": define_name,
+            "full_name": define_name,
+            "refid": refid,
+        }
+
     return result
 
 

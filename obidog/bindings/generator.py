@@ -166,12 +166,16 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
             )
         ]
         for element in elements:
-            if element["identifier"] != "tgui::GuiBase":
-                continue
             element_path = "/".join(element["identifier"].split("::")[1::])
-            src_out = os.path.join(
-                OUTPUT_DIRECTORY, location, os.path.dirname(path), f"{element_path}.cpp"
+            src_out_base = os.path.join(
+                OUTPUT_DIRECTORY,
+                location,
+                os.path.dirname(path),
+                os.path.dirname(element_path),
             )
+            src_filename = os.path.basename(element_path)
+            src_out = os.path.join(src_out_base, f"{src_filename}.cpp")
+            os.makedirs(src_out_base, exist_ok=True)
             with open(src_out, "w") as bindings_source:
                 bindings_source.write(
                     BINDINGS_SRC_TEMPLATE.format(

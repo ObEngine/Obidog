@@ -12,7 +12,10 @@ def parse_real_type(element, doxygen_index):
         for param_ref in param_refs:
             param_refid = param_ref.attrib.get("refid")
             if param_refid:
-                real_ref_type = doxygen_index[param_refid]["full_name"]
+                if doxygen_index[param_refid]["kind"] == "define":
+                    real_ref_type = ""
+                else:
+                    real_ref_type = doxygen_index[param_refid]["full_name"]
             else:
                 real_ref_type = doxygen_refid_to_cpp_name(param_ref)
             repl_index = final_type.index(get_content(param_ref))

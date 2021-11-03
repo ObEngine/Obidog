@@ -28,20 +28,20 @@ SOURCE_DIRECTORIES = [
         "output_location": "Core",
         "structure_policy": "namespaces",
     },
-    # {
-    #     "path": "extlibs/tgui/include",
-    #     "namespace": "tgui",
-    #     "exclude_paths": ["TGUI/Backends/**", "TGUI/extlibs/**"],
-    #     "exclude_symbols": [
-    #         "tgui::dev",
-    #         "tgui::utf",
-    #         "tgui::keyboard",
-    #         "tgui::priv",
-    #         "tgui::bind_functions",
-    #     ],
-    #     "output_location": "Dev",
-    #     "structure_policy": "classes",
-    # },
+    {
+        "path": "extlibs/tgui/include",
+        "namespace": "tgui",
+        "exclude_paths": ["TGUI/Backends/**", "TGUI/extlibs/**"],
+        "exclude_symbols": [
+            "tgui::dev",
+            "tgui::utf",
+            "tgui::keyboard",
+            "tgui::priv",
+            "tgui::bind_functions",
+        ],
+        "output_location": "Core",
+        "structure_policy": "classes",
+    },
 ]
 SOURCE_DIRECTORIES_BY_OUTPUT = {
     location: [
