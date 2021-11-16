@@ -307,7 +307,6 @@ def generate_class_template_specialisations(cpp_db: CppDatabase):
                     # Adding return type (specialized class) for constructors
                     if not method.return_type:
                         method.return_type = specialisation.name
-                        method.qualifiers.static = True
                     return_type = parse_cpp_type(method.return_type)
                     return_type.traverse(
                         lambda rtype: specialisation_types.get(rtype, rtype)

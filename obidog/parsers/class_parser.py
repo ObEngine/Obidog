@@ -50,6 +50,7 @@ def parse_methods(class_name, class_value, doxygen_index):
         if method.visibility == ItemVisibility.Public:
             # Method has class name => Constructor
             if method.name == class_name and isinstance(method, FunctionModel):
+                method.constructor = True
                 constructors.append(method)
                 continue
             # Method has ~class name => Destructor

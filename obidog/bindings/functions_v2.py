@@ -148,8 +148,10 @@ def make_bindable_function_model(
     function_call = fqn
     prefix_call_args = []
     if is_method and not function_value.qualifiers.static:
+        if function_value.constructor:
+            function_call = class_fqn
         # Proxy functions do not need to inject self (they already have it)
-        if not function_value.replacement:
+        elif not function_value.replacement:
             function_call = f"self->{function_value.name}"
             prefix_call_args = [
                 ParameterModel(

@@ -49,6 +49,7 @@ class FunctionModel(FunctionBaseModel):
     # FQN of proxy function
     replacement: Optional[str] = None
     from_class: Optional[str] = None
+    constructor: bool = False
     _type: str = "function"
     urls: URLs = field(default_factory=lambda: URLs())
 
