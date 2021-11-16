@@ -8,6 +8,7 @@ from typing import Union
 from obidog.bindings.classes import (
     copy_parent_bases,
     copy_parent_bindings,
+    generate_class_template_specialisations,
     generate_classes_bindings,
     flag_abstract_classes,
 )
@@ -516,6 +517,7 @@ def generate_bindings(cpp_db: CppDatabase, write_files: bool = True):
     discard_placeholders(cpp_db)
     inject_ref_in_function_parameters(cpp_db)
     patch_const_ref_return_type(cpp_db)
+    generate_class_template_specialisations(cpp_db)
     namespaces = group_bindings_by_namespace(cpp_db)
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():

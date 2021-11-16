@@ -266,6 +266,8 @@ def parse_cpp_type(cpp_type: str) -> CppType:
         return parse_function_type(cpp_type)
     elif "(" not in cpp_type:
         return parse_templated_type(cpp_type)
+    elif "decltype(" in cpp_type:
+        return CppBaseType(*strip_qualifiers(cpp_type))
     elif cpp_type.strip().endswith(")"):
         return parse_function_type(cpp_type)
     elif cpp_type.index("<") < cpp_type.index("("):

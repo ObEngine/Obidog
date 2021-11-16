@@ -1,15 +1,10 @@
 import copy
 from dataclasses import dataclass
 import os
-from typing import List, Union, Dict
+from typing import List, Dict
 
 import obidog.bindings.flavours.sol3 as flavour
-from obidog.bindings.functions import (
-    FUNCTION_CAST_TEMPLATE,
-    does_requires_proxy_function,
-    fix_parameter_for_signature,
-    fix_parameter_for_usage,
-)
+from obidog.bindings.functions import does_requires_proxy_function
 from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, make_shorthand, strip_include
@@ -20,8 +15,8 @@ from obidog.models.classes import ClassModel
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
-    FunctionPatchModel,
 )
+from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import format_name
 
@@ -85,36 +80,6 @@ def generate_constructors_definitions(constructors: List[FunctionModel]):
     )
 
 
-def cast_method(class_name: str, method: FunctionModel):
-    if does_requires_proxy_function(method):
-        return create_proxy_method(class_name, method)
-    elif method.qualifiers.static:
-        return FUNCTION_CAST_TEMPLATE.format(
-            return_type=method.return_type,
-            parameters=", ".join([parameter.type for parameter in method.parameters]),
-            qualifiers=" ".join(
-                [
-                    "const" if method.qualifiers.const else "",
-                    "volatile" if method.qualifiers.volatile else "",
-                ]
-            ),
-            function_address=f"&{class_name}::{method.name}",
-        )
-    else:
-        return METHOD_CAST_TEMPLATE.format(
-            return_type=method.return_type,
-            class_name=class_name,
-            parameters=", ".join([parameter.type for parameter in method.parameters]),
-            qualifiers=" ".join(
-                [
-                    "const" if method.qualifiers.const else "",
-                    "volatile" if method.qualifiers.volatile else "",
-                ]
-            ),
-            method_address=f"&{class_name}::{method.name}",
-        )
-
-
 METHOD_PROXY_TEMPLATE = """
 []({class_type}* self, {method_parameters_signature})
 {{
@@ -123,94 +88,12 @@ METHOD_PROXY_TEMPLATE = """
 """
 
 
-def create_proxy_method(class_name: str, method: FunctionModel) -> str:
-    method_parameters_signature = [
-        fix_parameter_for_signature(parameter) for parameter in method.parameters
-    ]
-    method_parameters_forward = [
-        fix_parameter_for_usage(parameter) for parameter in method.parameters
-    ]
-    return METHOD_PROXY_TEMPLATE.format(
-        method_name=method.name,
-        class_type=class_name,
-        method_parameters_signature=",".join(method_parameters_signature),
-        method_parameters_forward=",".join(method_parameters_forward),
-    )
-
-
-def generate_method_bindings(
-    class_name: str,
-    method_name: str,
-    method: Union[FunctionModel, FunctionOverloadModel, FunctionPatchModel],
-    force_cast: bool = False,
-):
-    if isinstance(method, (FunctionModel, FunctionPatchModel)):
-        if method.deleted:
-            return
-        if does_requires_proxy_function(method):
-            return create_proxy_method(class_name, method)
-        if force_cast:
-            return cast_method(class_name, method)
-        else:
-            address = f"&{class_name}::{method_name}"
-            if hasattr(method, "replacement"):
-                address = f"&{method.replacement}"
-            binding = flavour.METHOD.format(address=address)
-            if method.flags.as_property:
-                return flavour.PROPERTY.format(address=binding)
-            elif method.flags.bind_code:
-                return flavour.METHOD.format(address=method.flags.bind_code)
-            else:
-                definitions = create_all_default_overloads(method)
-                if len(definitions) > 1:
-                    overloads = []
-                    for definition in definitions:
-                        if hasattr(method, "replacement"):
-                            current_overload = METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY.format(
-                                parameters=",".join(
-                                    [parameter.definition for parameter in definition]
-                                ),
-                                return_type=method.return_type,
-                                method_call=method.replacement,
-                                parameters_names=",".join(
-                                    parameter.name for parameter in definition
-                                ),
-                            )
-                        else:
-                            current_overload = (
-                                METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
-                                    parameters=",".join(
-                                        [f"{class_name}* self"]
-                                        + [
-                                            parameter.definition
-                                            for parameter in definition
-                                        ]
-                                    ),
-                                    return_type=method.return_type,
-                                    method_call=method_name,
-                                    parameters_names=",".join(
-                                        parameter.name for parameter in definition
-                                    ),
-                                )
-                            )
-                        overloads.append(current_overload)
-                    return flavour.FUNCTION_OVERLOAD.format(
-                        overloads=",".join(overloads)
-                    )
-                else:
-                    return binding
-    elif isinstance(method, FunctionOverloadModel):
-        casts = [
-            cast_method(class_name, overload)
-            for overload in method.overloads
-            if not overload.template
-        ]
-        if casts:
-            return flavour.FUNCTION_OVERLOAD.format(overloads=", ".join(casts))
-
-
 def generate_templated_method_bindings(
-    body: List[str], class_name: str, lua_name: str, method: FunctionModel
+    cpp_db: CppDatabase,
+    body: List[str],
+    class_name: str,
+    lua_name: str,
+    method: FunctionModel,
 ):
     if method.flags.template_hints:
         for bind_name, template_hint in method.flags.template_hints.items():
@@ -220,11 +103,11 @@ def generate_templated_method_bindings(
                 specialized_method = generate_template_specialization(
                     method, template_hint[0]
                 )
-                body.append(f'bind{lua_name}["{bind_name}"] = ')
+                specialized_method.flags.rename = bind_name
+                specialized_method.force_cast = True
+                store_in = f"bind{lua_name}"
                 body.append(
-                    generate_method_bindings(
-                        class_name, bind_name, specialized_method, True
-                    )
+                    create_function_bindings(cpp_db, store_in, specialized_method)
                 )
                 body.append(";")
 
@@ -242,29 +125,28 @@ def generate_methods_bindings(
     methods: Dict[str, FunctionModel],
 ):
     for method in methods.values():
-        # TODO: Skip deleted methods
         if isinstance(method, FunctionModel) and method.template:
-            generate_templated_method_bindings(body, class_name, lua_name, method)
+            generate_templated_method_bindings(
+                cpp_db, body, class_name, lua_name, method
+            )
         else:
             store_in = f"bind{lua_name}"
             method_bindings = create_function_bindings(cpp_db, store_in, method)
-            """method_bindings = generate_method_bindings(
-                class_name, method.name, method, method.force_cast
-            )"""
             if method_bindings:
                 body.append(method_bindings)
 
 
 def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
-    full_name = "::".join([class_value.namespace, class_value.name])
+    full_name = make_fqn(
+        name=class_value.flags.rename or class_value.name,
+        namespace=class_value.namespace,
+    )
+    real_name = make_fqn(name=class_value.name, namespace=class_value.namespace)
     namespace, lua_name = full_name.split("::")[-2::]
     class_value.lua_name = ".".join(full_name.split("::"))
 
     constructors_signatures_str = ""
-    if (
-        not (class_value.abstract or class_value.flags.abstract)
-        and not class_value.flags.noconstructor
-    ):
+    if not class_value.abstract and not class_value.flags.noconstructor:
         private_constructors = any(
             internal_func.name == class_value.name
             for internal_func in class_value.private_methods.values()
@@ -278,7 +160,7 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
         if len(constructors_signatures.signatures) > 0:
             constructors_signatures_str = ", ".join(
                 [
-                    f"{full_name}({', '.join(ctor)})"
+                    f"{real_name}({', '.join(ctor)})"
                     for constructor_signatures in constructors_signatures.signatures
                     for ctor in constructor_signatures
                 ]
@@ -347,7 +229,7 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
     return namespace_access + class_body
 
 
-def generate_classes_bindings(cpp_db: CppDatabase, classes):
+def generate_classes_bindings(cpp_db: CppDatabase, classes: Dict[str, ClassModel]):
     objects = []
     includes = []
     bindings_functions = []
@@ -389,6 +271,83 @@ def generate_classes_bindings(cpp_db: CppDatabase, classes):
         "objects": objects,
         "bindings_functions": bindings_functions,
     }
+
+
+def generate_class_template_specialisations(cpp_db: CppDatabase):
+    specialisations = {}
+    specialisations_merges = {}
+    remove_base_templated_class_list = []
+    for class_name, class_value in cpp_db.classes.items():
+        # Only applies for templated classes with template hints
+        if not class_value.template or not class_value.flags.template_hints:
+            continue
+        for (
+            specialisation_name,
+            specialisation_typeset,
+        ) in class_value.flags.template_hints.items():
+            for specialisation_types in specialisation_typeset:
+                specialisation = copy.deepcopy(class_value)
+                specialisation.name = (
+                    f"{class_value.name}<{', '.join(specialisation_types.values())}>"
+                )
+                specialisation.flags.rename = specialisation_name
+                constructors_and_methods: List[
+                    FunctionModel
+                ] = specialisation.constructors + list(specialisation.methods.values())
+                for method in constructors_and_methods:
+                    method.from_class = specialisation.name
+                    for parameter in method.parameters:
+                        parameter_type = parse_cpp_type(parameter.type)
+                        # If the parameter type is one of the class template type
+                        # we replace it by the specialized type hint
+                        parameter_type.traverse(
+                            lambda ptype: specialisation_types.get(ptype, ptype)
+                        )
+                        parameter.type = str(parameter_type)
+                    # Adding return type (specialized class) for constructors
+                    if not method.return_type:
+                        method.return_type = specialisation.name
+                        method.qualifiers.static = True
+                    return_type = parse_cpp_type(method.return_type)
+                    return_type.traverse(
+                        lambda rtype: specialisation_types.get(rtype, rtype)
+                    )
+                    method.return_type = str(return_type)
+                    if method.flags.merge_template_specialisations_as:
+                        if (
+                            not method.flags.merge_template_specialisations_as
+                            in specialisations_merges
+                        ):
+                            specialisations_merges[
+                                method.flags.merge_template_specialisations_as
+                            ] = []
+                        specialisations_merges[
+                            method.flags.merge_template_specialisations_as
+                        ].append(method)
+                specialisations[
+                    make_fqn(name=specialisation_name, namespace=class_value.namespace)
+                ] = specialisation
+        remove_base_templated_class_list.append(class_name)
+    cpp_db.classes |= specialisations
+    for remove_base_templated_class in remove_base_templated_class_list:
+        cpp_db.classes.pop(remove_base_templated_class)
+    for specialisations_merge_name, specialisations in specialisations_merges.items():
+        specialisation_fqn = make_fqn(
+            name=specialisations_merge_name, namespace=specialisations[0].namespace
+        )
+        specialisations_copy = [
+            copy.deepcopy(specialisation) for specialisation in specialisations
+        ]
+        for specialisation in specialisations_copy:
+            specialisation.flags.rename = specialisations_merge_name
+        cpp_db.functions[specialisation_fqn] = FunctionOverloadModel(
+            name=specialisations_merge_name,
+            namespace=specialisations[0].namespace,
+            overloads=specialisations_copy,
+            flags=specialisations[0].flags,
+            force_cast=True,
+            from_class=specialisations[0].from_class,
+        )
 
 
 def copy_parent_bases(cpp_db, classes):

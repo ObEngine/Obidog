@@ -235,10 +235,10 @@ MAX_GENERATE_LEGEND    = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = "TGUI_DEPRECATED(x)="
+
 ALIASES += nobind="\xrefitem nobind \"\" \"\" <a href=\"obidog.nobind\"></a>"
 ALIASES += thint{2}="\xrefitem template_hints \"\" \"\" <a href=\"obidog.template_hint:\1,\2\"></a>"
 ALIASES += helper{1}="\xrefitem helpers \"\" \"\" <a href=\"obidog.helper:\1\"></a>"
-ALIASES += forceabstract="\xrefitem forceabstract \"\" \"\" <a href=\"obidog.force_abstract\"></a>"
 ALIASES += additionalinclude{1}="\xrefitem additionalincludes \"\" \"\" <a href=\"obidog.additional_include:\1\"></a>"
 ALIASES += asproperty="\xrefitem asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"
 ALIASES += copyparentitems="\xrefitem copyparentitems \"\" \"\" <a href=\"obidog.copy_parent_items\"></a>"
@@ -249,3 +249,4 @@ ALIASES += loadpriority{1}="\xrefitem loadpriority \"\" \"\" <a href=\"obidog.lo
 ALIASES += rename{1}="\xrefitem rename \"\" \"\" <a href=\"obidog.rename:\1\"></a>"
 ALIASES += paramrename{2}="\xrefitem paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"
 ALIASES += meta{1}="\xrefitem meta \"\" \"\" <a href=\"obidog.meta:\1\"></a>"
+ALIASES += mergetemplatespecialisations{1}="\xrefitem mergetemplatespecialisations \"\" \"\" <a href=\"obidog.mergetemplatespecialisations:\1\"></a>"

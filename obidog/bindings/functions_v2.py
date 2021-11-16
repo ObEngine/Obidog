@@ -198,6 +198,10 @@ def generate_function_specialisations(
 
     discard_base_function = False
 
+    # Detect if function is deleted
+    if function_value.deleted:
+        return []
+
     # Detect if function is replaced by a proxy
     if function_value.replacement:
         ext_function_value.fqn = function_value.replacement

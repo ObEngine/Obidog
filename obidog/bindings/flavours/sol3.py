@@ -44,6 +44,7 @@ OPERATOR_TRANSLATION_TABLE = {
     "operator/=": None,
     "operator[]": "sol::meta_function::index",
     "operator%": "sol::meta_function::modulus",
+    "operator=": None,
 }
 FETCH_TABLE = """
 sol::table {store_in} = state{namespace_path}.get<sol::table>();

@@ -161,9 +161,6 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
         "::".join(class_name.split("::")[:-1:]),
         class_name.split("::")[-1],
     )
-    # Ignore template classes
-    if class_value.xpath("templateparamlist"):
-        nobind = True
     abstract = False
     if "abstract" in class_value.attrib and class_value.attrib["abstract"] == "yes":
         abstract = True
@@ -199,6 +196,14 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     flags = parse_obidog_flags(
         class_value, symbol_name="::".join([namespace_name, class_name])
     )
+
+    templated = False
+    if class_value.xpath("templateparamlist"):
+        templated = True
+        # Ignore template classes without template hints
+        if not flags.template_hints:
+            nobind = True
+
     flags.nobind = flags.nobind or nobind
 
     CONFLICTS.append(class_name, class_value)
@@ -214,6 +219,7 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
         private_methods=private_methods,
         private_attributes=private_attributes,
         flags=flags,
+        template=templated,
         description=description,
         location=parse_doxygen_location(class_value),
     )

@@ -48,6 +48,7 @@ class ClassModel(ClassBaseModel):
     private_methods: Dict[str, FunctionModel] = None
     private_attributes: Dict[str, AttributeModel] = None
     flags: ObidogFlagsModel = ObidogFlagsModel()
+    template: bool = False
     description: str = ""
     location: Location = field(default_factory=lambda: Location())
     export: Export = Export()

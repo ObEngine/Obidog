@@ -119,10 +119,12 @@ def parse_obidog_flags(tree, symbol_name: str = None):
                 )
         flags.template_hints = thints
 
-    # force_abstract
-    force_abstract = find_obidog_flag(tree, "force_abstract", 1)
-    if force_abstract:
-        flags.abstract = True
+    # merge_template_specialisations_as
+    merge_template_specialisations_as = find_obidog_flag(
+        tree, "mergetemplatespecialisations"
+    )
+    if merge_template_specialisations_as:
+        flags.merge_template_specialisations_as = merge_template_specialisations_as[0]
 
     # nobind
     nobind = find_obidog_flag(tree, "nobind", 1)
