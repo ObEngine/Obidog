@@ -30,15 +30,19 @@ def parse_doxygen_files(path_to_doc, cpp_db):
                 log.debug(f"  Parsing class {class_filepath}")
                 tree = etree.parse(class_filepath)
                 class_xml = tree.xpath("/doxygen/compounddef")[0]
+                if class_xml.attrib.get("prot") == "private":
+                    continue
                 class_model = parse_class_from_xml(class_xml, doxygen_index)
+                class_fqn = make_fqn(
+                    name=class_model.name, namespace=class_model.namespace
+                )
+                cpp_db.classes[class_fqn] = class_model
+                # Inner elements
                 parse_enums_from_xml(
-                    make_fqn(name=class_model.name, namespace=class_model.namespace),
+                    class_fqn,
                     class_xml,
                     cpp_db,
                 )
-                cpp_db.classes[
-                    "::".join([class_model.namespace, class_model.name])
-                ] = class_model
             elif any(
                 f.startswith(f"namespace{item['namespace']}")
                 for item in SOURCE_DIRECTORIES

@@ -1,12 +1,12 @@
 <%namespace name="utils" file="utils.mako"/>\
-<%def name="lua_enum(enum)">
-% if enum.description:
---- ${enum.description.strip().replace("\n", " ")}
+<%def name="render(element)">
+% if element.description:
+--- ${element.description.strip().replace("\n", " ")}
 ---
 % endif
----@class ${utils.merge_namespace_typename(enum.namespace, enum.name)}
-${enum.namespace.replace("::", ".")}.${enum.name} = {
-% for i, enum_value in enumerate(enum.values):
+---@class ${utils.merge_namespace_typename(element.namespace, element.name)}
+${element.namespace.replace("::", ".")}.${element.name} = {
+% for i, enum_value in enumerate(element.values):
     ${enum_value.name} = ${i},
 % endfor
 };
