@@ -9,6 +9,17 @@ class MetaTag(Enum):
     NonCopyable = "NonCopyable"
 
 
+class ObidogHookTrigger(Enum):
+    Inherit = "Inherit"
+    Bind = "Bind"
+
+
+@dataclass(unsafe_hash=True)
+class ObidogHook:
+    trigger: ObidogHookTrigger
+    call: str
+
+
 @dataclass
 class ObidogFlagsModel(BaseModel):
     helpers: List[str] = field(default_factory=lambda: [])
@@ -25,6 +36,7 @@ class ObidogFlagsModel(BaseModel):
     bind_code: str = None
     meta: Set[str] = field(default_factory=lambda: set())
     merge_template_specialisations_as: Optional[str] = None
+    hooks: Set[ObidogHook] = field(default_factory=lambda: set())
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.helpers += flags.helpers
@@ -44,3 +56,4 @@ class ObidogFlagsModel(BaseModel):
             self.merge_template_specialisations_as
             or flags.merge_template_specialisations_as
         )
+        self.hooks = self.hooks | flags.hooks

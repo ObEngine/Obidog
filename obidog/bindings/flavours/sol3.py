@@ -6,6 +6,7 @@ sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usert
 "{lua_short_name}"{class_definition});
 {body}
 {helpers}
+{hooks}
 """.strip(
     "\n"
 )

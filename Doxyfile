@@ -250,3 +250,4 @@ ALIASES += rename{1}="\xrefitem rename \"\" \"\" <a href=\"obidog.rename:\1\"></
 ALIASES += paramrename{2}="\xrefitem paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"
 ALIASES += meta{1}="\xrefitem meta \"\" \"\" <a href=\"obidog.meta:\1\"></a>"
 ALIASES += mergetemplatespecialisations{1}="\xrefitem mergetemplatespecialisations \"\" \"\" <a href=\"obidog.mergetemplatespecialisations:\1\"></a>"
+ALIASES += hook{2}="\xrefitem hook \"\" \"\" <a href=\"obidog.hook:\1,\2\"></a>"

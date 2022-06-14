@@ -6,6 +6,7 @@ from types import FunctionType
 from typing import Union
 
 from obidog.bindings.classes import (
+    apply_inherit_hook,
     copy_parent_bases,
     copy_parent_bindings,
     generate_class_template_specialisations,
@@ -118,7 +119,7 @@ def make_bindings_header(path, namespace, objects):
     with open(inc_out, "w") as class_binding:
         class_binding.write(
             BINDINGS_INCLUDE_TEMPLATE.format(
-                namespace=f"{namespace}::Bindings",
+                namespace=f"{namespace}::bindings",
                 bindings_functions_signatures="\n".join(
                     f"{binding_function}" for binding_function in bindings_functions
                 ),
@@ -152,7 +153,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
                 BINDINGS_SRC_TEMPLATE.format(
                     bindings_header=bindings_header,
                     bindings_config_file=BINDINGS_CONFIG_FILE,
-                    namespace=f"{namespace}::Bindings",
+                    namespace=f"{namespace}::bindings",
                     includes="\n".join(all_includes),
                     bindings_functions="\n".join(all_functions),
                 )
@@ -182,7 +183,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
                     BINDINGS_SRC_TEMPLATE.format(
                         bindings_header=bindings_header,
                         bindings_config_file=BINDINGS_CONFIG_FILE,
-                        namespace=f"{namespace}::Bindings",
+                        namespace=f"{namespace}::bindings",
                         includes=element["includes"]
                         if not element["includes"].endswith(".cpp")
                         else "",
@@ -310,7 +311,7 @@ def generated_bindings_index(source_name, generated_objects):
     body += [f"#include <{path}>" for path in include_list]
     body += [
         f"#include <{flavour.INCLUDE_FILE}>",
-        "namespace obe::Bindings {",
+        "namespace obe::bindings {",
         f"void Index{source_name}Bindings({flavour.STATE_VIEW} state)\n{{",
     ]
 
@@ -518,6 +519,7 @@ def generate_bindings(cpp_db: CppDatabase, write_files: bool = True):
     inject_ref_in_function_parameters(cpp_db)
     patch_const_ref_return_type(cpp_db)
     generate_class_template_specialisations(cpp_db)
+    apply_inherit_hook(cpp_db.classes)
     namespaces = group_bindings_by_namespace(cpp_db)
     generated_objects = {}
     for namespace_name, namespace in namespaces.items():

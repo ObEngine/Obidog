@@ -55,5 +55,17 @@ class ClassModel(ClassBaseModel):
     _type: str = "class"
     urls: URLs = field(default_factory=lambda: URLs())
 
-    def get_non_templated_bases(self):
-        return [base for base in self.bases if not ("<" in base and ">" in base)]
+    def get_bases(
+        self, discard_template_types: bool = False, strip_template_types: bool = False
+    ):
+        if discard_template_types and strip_template_types:
+            raise RuntimeError(
+                "get_bases can either discard or strip template types"
+                " but not the two at the same time"
+            )
+        if discard_template_types:
+            return [base for base in self.bases if not ("<" in base and ">" in base)]
+        elif strip_template_types:
+            return [base.split("<")[0] for base in self.bases]
+        else:
+            return self.bases

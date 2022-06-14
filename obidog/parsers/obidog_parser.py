@@ -2,7 +2,7 @@ from copy import copy
 from typing import Dict
 from itertools import product
 
-from obidog.models.flags import ObidogFlagsModel
+from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
 
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
@@ -180,6 +180,13 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     meta_tags = find_obidog_flag(tree, "meta")
     for meta_tag in meta_tags:
         flags.meta.add(meta_tag.strip())
+
+    # hooks
+    hooks = find_obidog_flag(tree, "hook")
+    for hook in hooks:
+        hook_trigger_parameter, hook_call_parameter = hook.split(",")
+        hook_trigger_parameter, hook_call_parameter = hook_trigger_parameter.strip(), hook_call_parameter.strip()
+        flags.hooks.add(ObidogHook(trigger=ObidogHookTrigger(hook_trigger_parameter), call=hook_call_parameter))
 
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)

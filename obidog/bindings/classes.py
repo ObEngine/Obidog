@@ -1,7 +1,7 @@
 import copy
 from dataclasses import dataclass
 import os
-from typing import List, Dict
+from typing import List, Dict, Set
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions import does_requires_proxy_function
@@ -12,6 +12,7 @@ from obidog.config import SOURCE_DIRECTORIES
 from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.models.classes import ClassModel
+from obidog.models.flags import ObidogHook, ObidogHookTrigger
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
@@ -38,6 +39,11 @@ METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY = (
 class ClassConstructors:
     signatures: List[List[str]]
     constructible: bool
+
+
+def generate_hook_calls(ctx: ClassModel, hook: ObidogHook) -> List[str]:
+    if hook.trigger == ObidogHookTrigger.Bind:
+        return f"{ctx.name}::{hook.call}();"
 
 
 def generate_constructors_definitions(constructors: List[FunctionModel]):
@@ -221,6 +227,9 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
                 for source in class_value.flags.helpers
             ]
         ),
+        hooks="\n".join(
+            [generate_hook_calls(class_value, hook) for hook in class_value.flags.hooks]
+        ),
     )
     # TODO: Add shorthand
     shorthand = ""
@@ -349,18 +358,18 @@ def generate_class_template_specialisations(cpp_db: CppDatabase):
         )
 
 
-def copy_parent_bases(cpp_db, classes):
+def copy_parent_bases(cpp_db: CppDatabase, classes: Dict[str, ClassModel]):
     def copy_parent_bases_for_one_class(cpp_db, class_value):
         inheritance_set = []
-        for base in class_value.bases:
+        for base in class_value.get_bases():
             if any(
                 base.startswith(f"{src['namespace']}::") for src in SOURCE_DIRECTORIES
             ):
                 inheritance_set.append(base)
-            base_name = base.split("<")[0]
-            if base_name in cpp_db.classes:
+            strip_template_base = base.split("<")[0]
+            if strip_template_base in cpp_db.classes:
                 parent_bases = copy_parent_bases_for_one_class(
-                    cpp_db, cpp_db.classes[base_name]
+                    cpp_db, cpp_db.classes[strip_template_base]
                 )
                 inheritance_set += parent_bases
         return inheritance_set
@@ -371,12 +380,34 @@ def copy_parent_bases(cpp_db, classes):
         )
 
 
-def copy_parent_bindings(cpp_db, classes):
+def apply_inherit_hook(classes: Dict[str, ClassModel]):
+    for class_value in classes.values():
+        if any(
+            hook.trigger == ObidogHookTrigger.Inherit
+            for hook in class_value.flags.hooks
+        ):
+            full_class_name = make_fqn(
+                name=class_value.name,
+                namespace=class_value.namespace,
+            )
+            child_classes = [
+                child_class
+                for child_class in classes.values()
+                if full_class_name in child_class.get_bases(strip_template_types=True)
+            ]
+            for hook in class_value.flags.hooks:
+                if hook.trigger == ObidogHookTrigger.Inherit:
+                    for child_class in child_classes:
+                        child_class.flags.hooks |= {
+                            ObidogHook(trigger=ObidogHookTrigger.Bind, call=hook.call)
+                        }
+
+
+def copy_parent_bindings(cpp_db, classes: Dict[str, ClassModel]):
     for class_value in classes.values():
         if class_value.flags.copy_parent_items:
-            for base in class_value.bases:
-                non_template_name = base.split("<")[0]
-                base_value = cpp_db.classes[non_template_name]
+            for base in class_value.get_bases(strip_template_types=True):
+                base_value = cpp_db.classes[base]
                 base_methods = copy.deepcopy(base_value.methods)
                 for base_method in base_methods.values():
                     base_method.from_class = class_value.name
@@ -387,7 +418,7 @@ def copy_parent_bindings(cpp_db, classes):
 
 def flag_abstract_classes(cpp_db, classes):
     for class_value in classes.values():
-        class_bases = class_value.get_non_templated_bases()
+        class_bases = class_value.get_bases(discard_template_types=True)
         if not class_value.abstract and any(
             cpp_db.classes[base].abstract for base in class_bases
         ):
