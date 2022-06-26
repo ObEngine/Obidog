@@ -111,7 +111,7 @@ def generate_templated_method_bindings(
                 )
                 specialized_method.flags.rename = bind_name
                 specialized_method.force_cast = True
-                store_in = f"bind{lua_name}"
+                store_in = f"bind_{format_name(lua_name)}"
                 body.append(
                     create_function_bindings(cpp_db, store_in, specialized_method)
                 )
@@ -136,7 +136,7 @@ def generate_methods_bindings(
                 cpp_db, body, class_name, lua_name, method
             )
         else:
-            store_in = f"bind{lua_name}"
+            store_in = f"bind_{format_name(lua_name)}"
             method_bindings = create_function_bindings(cpp_db, store_in, method)
             if method_bindings:
                 body.append(method_bindings)
@@ -207,7 +207,9 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
                 )
             else:
                 attribute_bind = f"&{full_name}::{attribute_name}"
-        body.append(f'bind{lua_name}["{attribute_name}"] = {attribute_bind};')
+        body.append(
+            f'bind_{format_name(lua_name)}["{attribute_name}"] = {attribute_bind};'
+        )
 
     class_definition = constructors_signatures_str
     if class_value.bases:
@@ -217,6 +219,7 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
     _, namespace_access = fetch_table("::".join(full_name.split("::")[:-1]))
     class_body = flavour.CLASS_BODY.format(
         cpp_class=f"{class_value.namespace}::{class_value.name}",
+        lua_formatted_name=format_name(lua_name),
         lua_short_name=lua_name,
         namespace=namespace,
         class_definition=class_definition,
@@ -251,7 +254,7 @@ def generate_classes_bindings(cpp_db: CppDatabase, classes: Dict[str, ClassModel
         real_class_name = format_name(real_class_name)
         objects.append(
             {
-                "bindings": f"Class{real_class_name}",
+                "bindings": f"class_{real_class_name}",
                 "identifier": f"{class_value.namespace}::{class_value.name}",
                 "load_priority": class_value.flags.load_priority,
             }
@@ -263,7 +266,7 @@ def generate_classes_bindings(cpp_db: CppDatabase, classes: Dict[str, ClassModel
 
         state_view = flavour.STATE_VIEW
         binding_function_signature = (
-            f"void LoadClass{real_class_name}({state_view} state)"
+            f"void load_class_{real_class_name}({state_view} state)"
         )
         binding_function = (
             f"{binding_function_signature}\n{{\n"

@@ -7,4 +7,8 @@ def clean_capitalize(string):
 
 
 def format_name(name):
+    return inflection.underscore(name)
+
+
+def format_filename(name):
     return inflection.camelize(name)

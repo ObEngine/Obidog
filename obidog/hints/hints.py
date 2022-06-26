@@ -9,6 +9,7 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 from obidog.bindings.generator import discard_placeholders
 
+from obidog.config import PATH_TO_OBENGINE
 from obidog.converters.lua.types import LuaType, convert_all_types
 from obidog.databases import CppDatabase
 from obidog.logger import log
@@ -23,12 +24,14 @@ from obidog.converters.lua.types import DYNAMIC_TYPES, DynamicTupleType
 
 BindableElement = Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]
 
+EVENT_NAMESPACE = "events"
+
 
 def write_hints(
     elements_by_namespace: Dict[str, List[BindableElement]],
 ):
     lookup = TemplateLookup(["templates/hints"])
-    export_directory = os.path.join("export", "hints")
+    export_directory = os.path.join(PATH_TO_OBENGINE, "engine", "Hints")
 
     # Load hints templates
     templates = {}
@@ -167,7 +170,7 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
     result = {}
     events = []
     for class_value in classes.values():
-        if class_value.namespace.startswith("obe::Events::"):
+        if class_value.namespace.startswith(f"obe::{EVENT_NAMESPACE}::"):
             events.append(class_value)
     events_grouped_by_section = defaultdict(list)
     for event in events:
@@ -181,23 +184,23 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
             .removeprefix('"')
             .removesuffix('"')
         )
-        events_grouped_by_section[event.namespace.removeprefix("obe::Events::")].append(
-            (event_id, event)
-        )
+        events_grouped_by_section[
+            event.namespace.removeprefix(f"obe::{EVENT_NAMESPACE}::")
+        ].append((event_id, event))
 
     event_groups = {}
     for event_group_name, events in events_grouped_by_section.items():
         event_group_attributes = {
             event_id: AttributeModel(
                 name=event_id,
-                type=LuaType(f"fun(evt:obe.Events.{event_group_name}.{event.name})"),
+                type=LuaType(f"fun(evt:obe.events.{event_group_name}.{event.name})"),
                 namespace=event.namespace,
             )
             for event_id, event in events
         }
         event_groups[event_group_name] = ClassModel(
             name=event_group_name,
-            namespace="obe::Events::_EventTableGroups",
+            namespace=f"obe::{EVENT_NAMESPACE}::_EventTableGroups",
             attributes=event_group_attributes,
             constructors=[],
             methods={},
@@ -208,12 +211,12 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
         event_groups_as_attributes[event_group_name] = AttributeModel(
             name=event_group.name,
             namespace=event_group.namespace,
-            type=LuaType(f"obe.Events._EventTableGroups.{event_group_name}"),
+            type=LuaType(f"obe.{EVENT_NAMESPACE}._EventTableGroups.{event_group_name}"),
         )
 
     event_namespace = ClassModel(
         name="_EventTable",
-        namespace="obe::Events",
+        namespace=f"obe::{EVENT_NAMESPACE}",
         attributes=event_groups_as_attributes,
         constructors=[],
         methods={},
@@ -221,7 +224,7 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
 
     for event_group_name, event_group in event_groups.items():
         result[f"{event_group.namespace}::{event_group.name}"] = event_group
-    result["obe::Events::_EventTable"] = event_namespace
+    result[f"obe::{EVENT_NAMESPACE}::_EventTable"] = event_namespace
 
     return result
 

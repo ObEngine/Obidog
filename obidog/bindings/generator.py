@@ -36,6 +36,7 @@ from obidog.models.functions import (
 from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
+from obidog.utils.string_utils import format_filename, format_name
 from obidog.wrappers.clangformat_wrapper import clang_format_files
 
 GENERATE_BINDINGS = False
@@ -113,7 +114,7 @@ def make_bindings_header(path, namespace, objects):
     inc_out = os.path.join(OUTPUT_DIRECTORY, location, path)
     state_view = flavour.STATE_VIEW
     bindings_functions = [
-        f"void Load{object_name['bindings']}({state_view} state);"
+        f"void load_{object_name['bindings']}({state_view} state);"
         for object_name in objects
     ]
     with open(inc_out, "w") as class_binding:
@@ -176,7 +177,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
                 os.path.dirname(element_path),
             )
             src_filename = os.path.basename(element_path)
-            src_out = os.path.join(src_out_base, f"{src_filename}.cpp")
+            src_out = os.path.join(src_out_base, f"{format_filename(src_filename)}.cpp")
             os.makedirs(src_out_base, exist_ok=True)
             with open(src_out, "w") as bindings_source:
                 bindings_source.write(
@@ -220,7 +221,7 @@ def generate_bindings_for_namespace(cpp_db: CppDatabase, namespace_name, namespa
     )
 
     bindings_header = os.path.join(
-        split_name, f"{namespace_name.split('::')[-1]}.hpp"
+        split_name, f"{format_filename(namespace_name.split('::')[-1])}.hpp"
     ).replace(os.path.sep, "/")
     if GENERATE_BINDINGS:
         make_bindings_header(bindings_header, namespace_name, generated_objects)
@@ -231,7 +232,7 @@ def generate_bindings_for_namespace(cpp_db: CppDatabase, namespace_name, namespa
         "bindings_functions": [],
     }
     bindings_source = os.path.join(
-        split_name, f"{namespace_name.split('::')[-1]}.cpp"
+        split_name, f"{format_filename(namespace_name.split('::')[-1])}.cpp"
     ).replace(os.path.sep, "/")
     FILES_TO_FORMAT.append(os.path.join(location["headers"], bindings_header))
     FILES_TO_FORMAT.append(os.path.join(location["sources"], bindings_source))
@@ -312,7 +313,7 @@ def generated_bindings_index(source_name, generated_objects):
     body += [
         f"#include <{flavour.INCLUDE_FILE}>",
         "namespace obe::bindings {",
-        f"void Index{source_name}Bindings({flavour.STATE_VIEW} state)\n{{",
+        f"void index_{format_name(source_name)}_bindings({flavour.STATE_VIEW} state)\n{{",
     ]
 
     tables = []
@@ -328,7 +329,7 @@ def generated_bindings_index(source_name, generated_objects):
         for generated_object in objects["objects"]:
             bindings.append(
                 BindingIndexEntry(
-                    code=f"{namespace_name}::Bindings::Load{generated_object['bindings']}(state);",
+                    code=f"{namespace_name}::bindings::load_{generated_object['bindings']}(state);",
                     priority=generated_object["load_priority"],
                 )
             )

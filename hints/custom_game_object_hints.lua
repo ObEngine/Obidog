@@ -1,16 +1,13 @@
 ---@meta
 
----@type obe.Engine.Engine
+---@type obe.engine.Engine
 Engine = {};
 
----@type obe.Script.GameObject
+---@type obe.script.GameObject
 This = {};
 
----@type obe.Events._EventTable
+---@type obe.events._EventTable
 Event = {};
-
----@type table<string, any>
-Object = {};
 
 ---@type table<string, any>
 Global = {};
@@ -18,37 +15,38 @@ Global = {};
 ---@type table<string, function>
 Task = {};
 
-Local = {};
-
---- GameObject constructor
-function Local.Init()
-end
-
---- GameObject destructor
-function Local.Delete()
-end
-
 ---@alias _EventHook userdata
 
---- Listen to an EventNamespace / EventGroup / Event
----
----@param listen_target string #ID of the EventNamespace / EventGroup / Event to listen to (eg. "Event.Game.Update")
----@param callback? function #Event Callback (only used if the target is an Event)
----@param listener_id? string #Optional Event listener id (defaults to __ENV_ID)
----@return _EventHook
-function listen(listen_target, callback, listener_id)
+---@class GameObjectCls
+---@field components table<string, userdata> #GameObject components
+local GameObjectHandle = {};
+
+---Listens to an engine Event
+---@param listen_target string#ID of the EventNamespace / EventGroup / Event to listen to (eg. "Event.Game.Update")
+---@param callback function#Event Callback (only used if the target is an Event)
+---@param listener_id string#Optional Event listener id (defaults to __ENV_ID)
+---@return _EventHook #Hook to manager EventNamespace / EventGroup / Event
+function GameObjectHandle:listen(listen_target, callback, listener_id)
 end
 
---- Disables hook created with "listen" function
----
----@param hook _EventHook #Hook previously returned by "listen" function
-function unlisten(hook)
+---Deletes an existing listener
+---@param listener _EventHook #Hook previously returned by "listen" function
+function GameObjectHandle:unlisten(listener)
 end
 
---- Creates a new callback scheduler managed by the GameObject
----
----@return obe.Event.CallbackScheduler
-function schedule()
+---Creates a new CallbackScheduler attached to the current GameObject
+---@return obe.event.CallbackScheduler
+function GameObjectHandle:schedule()
 end
 
-return {Engine, This, Event, Object, Global, Task, Local, listen, unlisten, schedule}
+---Returns GameObject storage (contains all public attributes and methods)
+---@return table#GameObject storage
+function GameObjectHandle:get_storage()
+end
+
+---Gets the current GameObject instance
+---@return GameObjectCls
+function GameObject()
+end
+
+return {Engine, This, Event, Global, Task, GameObjectHandle}

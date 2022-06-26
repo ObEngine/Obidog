@@ -7,12 +7,12 @@ from obidog.config import BINDINGS_SOURCES_LOCATION, PATH_TO_OBENGINE
 def CLASS_BINDING_REG(identifier, class_name, namespace):
     return (
         rf"sol::usertype<{identifier}>\s*bind{class_name}"
-        rf"\s*=\s*{namespace}Namespace\s*.new_usertype<\s*{identifier}\s*>"
+        rf"\s*=\s*{namespace}_namespace\s*.new_usertype<\s*{identifier}\s*>"
     )
 
 
 def FUNCTION_BINDING_REG(function_name, namespace):
-    return rf'{namespace}Namespace\s*.set_function\(\s*"{function_name}"\s*,'
+    return rf'{namespace}_namespace\s*.set_function\(\s*"{function_name}"\s*,'
 
 
 def METHOD_BINDING_REG(method_name, class_name):
@@ -24,11 +24,11 @@ def ATTRIBUTE_BINDING_REG(attribute_name, class_name):
 
 
 def GLOBAL_BINDING_REG(identifier, global_name, namespace):
-    return rf'{namespace}Namespace\s*\[\s*"{global_name}"\s*\]\s*=\s*{identifier}\s*;'
+    return rf'{namespace}_namespace\s*\[\s*"{global_name}"\s*\]\s*=\s*{identifier}\s*;'
 
 
 def ENUM_BINDING_REG(identifier, namespace):
-    return rf"{namespace}Namespace.new_enum<{identifier}>"
+    return rf"{namespace}_namespace.new_enum<{identifier}>"
 
 
 def find_binding_location(location: str, element):

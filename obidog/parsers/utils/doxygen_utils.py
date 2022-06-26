@@ -20,7 +20,7 @@ def doxygen_namespace_to_cpp_namespace(name):
         return m.group()[-1].upper()
 
     # Inner classes identifier ?
-    name = re.sub(r"_1a", "::", name)
+    # name = re.sub(r"_1a", "::", name)
     name = re.sub(r"_1_1", "::", name)
     name = re.sub(r"([:0-9a-zA-Z]_[0-9a-zA-Z])", capitalize_name, name)
     name = re.sub(r"^_([0-9a-zA-Z])", capitalize_and_strip_leading_underscore, name)

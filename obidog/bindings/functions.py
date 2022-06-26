@@ -104,12 +104,12 @@ def get_real_function_name(
                 type_after = clean_capitalize(
                     normalize_cpp_type(function.parameters[1].type)
                 )
-            return "Operator", f"{type_before}{operator_name}{type_after}"
+            return "operator", f"{type_before}{operator_name}{type_after}"
         else:
             if isinstance(function, FunctionOverloadModel):
                 function = function.overloads[0]
             raise NotImplementedError()
-    return "Function", function_name
+    return "function", function_name
 
 
 PRIMITIVE_TYPES = [
@@ -389,7 +389,7 @@ def generate_functions_bindings(
 
         objects.append(
             {
-                "bindings": f"{func_type}{real_function_name}",
+                "bindings": f"{func_type}_{real_function_name}",
                 "identifier": identifier,
                 "load_priority": function_value.flags.load_priority,
             }
@@ -397,7 +397,7 @@ def generate_functions_bindings(
 
         state_view = flavour.STATE_VIEW
         binding_function_signature = (
-            f"void LoadFunction{real_function_name}({state_view} state)"
+            f"void load_function_{real_function_name}({state_view} state)"
         )
 
         namespace_split = function_name.split("::")[:-1]

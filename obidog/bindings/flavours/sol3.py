@@ -2,7 +2,7 @@ STATE_VIEW = "sol::state_view"
 INCLUDE_FILE = "sol/sol.hpp"
 CALL_CONSTRUCTOR = "sol::call_constructor"
 CLASS_BODY = """
-sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usertype<{cpp_class}>(
+sol::usertype<{cpp_class}> bind_{lua_formatted_name} = {namespace}_namespace.new_usertype<{cpp_class}>(
 "{lua_short_name}"{class_definition});
 {body}
 {helpers}
@@ -53,18 +53,18 @@ sol::table {store_in} = state{namespace_path}.get<sol::table>();
     "\n"
 )
 ENUM_BODY = """
-{namespace}Namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
+{namespace}_namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
 """.strip(
     "\n"
 )
 FUNCTION_BODY = """
-{namespace}Namespace.set_function("{function_name}", {function_ptr});
+{namespace}_namespace.set_function("{function_name}", {function_ptr});
 """.strip(
     "\n"
 )
 FUNCTION_OVERLOAD = "sol::overload({overloads})"
 GLOBAL_BODY = """
-{namespace}Namespace["{global_name}"] = {global_ptr};
+{namespace}_namespace["{global_name}"] = {global_ptr};
 """.strip(
     "\n"
 )
