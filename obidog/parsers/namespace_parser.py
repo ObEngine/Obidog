@@ -138,13 +138,18 @@ def parse_namespace_from_xml(xml_path, cpp_db, doxygen_index):
     namespace_description = extract_xml_value(namespace, "briefdescription")
     # TODO: Parse namespace description
 
+    flags = parse_obidog_flags(namespace, symbol_name=namespace_name)
+
     cpp_db.namespaces[namespace_name] = NamespaceModel(
         name=namespace_name.split("::")[-1],
         path=namespace_name,
         namespace="::".join(namespace_name.split("::")[:-1:]),
         description=namespace_description,
-        flags=parse_obidog_flags(namespace),
+        flags=flags,
     )
+
+    if flags.nobind:
+        return
 
     parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index)
     parse_typedefs_from_xml(namespace_name, namespace, cpp_db, doxygen_index)
