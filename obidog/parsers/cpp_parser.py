@@ -2,9 +2,11 @@ import os
 
 from lxml import etree
 from obidog.config import SOURCE_DIRECTORIES
+from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.parsers.class_parser import parse_class_from_xml
 from obidog.parsers.doxygen_index_parser import parse_doxygen_index
+from obidog.parsers.obidog_parser import apply_flags_surrogates
 from obidog.parsers.namespace_parser import (
     parse_enums_from_xml,
     parse_namespace_from_xml,
@@ -12,7 +14,7 @@ from obidog.parsers.namespace_parser import (
 from obidog.utils.cpp_utils import make_fqn
 
 
-def parse_doxygen_files(path_to_doc, cpp_db):
+def parse_doxygen_files(path_to_doc, cpp_db: CppDatabase):
     doxygen_index = parse_doxygen_index(
         os.path.join(path_to_doc, "docbuild", "xml", "index.xml")
     )
@@ -62,3 +64,13 @@ def parse_doxygen_files(path_to_doc, cpp_db):
             class_xml,
             cpp_db,
         )
+
+    for element in [
+        *cpp_db.classes.values(),
+        *cpp_db.enums.values(),
+        *cpp_db.functions.values(),
+        *cpp_db.globals.values(),
+    ]:
+        if hasattr(element, "flags"):
+            element_fqn = make_fqn(name=element.name, namespace=element.namespace)
+            apply_flags_surrogates(element_fqn, element.flags)

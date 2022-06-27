@@ -185,8 +185,16 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     hooks = find_obidog_flag(tree, "hook")
     for hook in hooks:
         hook_trigger_parameter, hook_call_parameter = hook.split(",")
-        hook_trigger_parameter, hook_call_parameter = hook_trigger_parameter.strip(), hook_call_parameter.strip()
-        flags.hooks.add(ObidogHook(trigger=ObidogHookTrigger(hook_trigger_parameter), call=hook_call_parameter))
+        hook_trigger_parameter, hook_call_parameter = (
+            hook_trigger_parameter.strip(),
+            hook_call_parameter.strip(),
+        )
+        flags.hooks.add(
+            ObidogHook(
+                trigger=ObidogHookTrigger(hook_trigger_parameter),
+                call=hook_call_parameter,
+            )
+        )
 
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
@@ -198,10 +206,13 @@ def parse_obidog_flags(tree, symbol_name: str = None):
         else:
             FLAG_SURROGATES[flag_surrogate_target].combine(flags_copy)
         flags.nobind = True
-    elif symbol_name and symbol_name in FLAG_SURROGATES:
-        flags.combine(FLAG_SURROGATES[symbol_name])
 
     return flags
+
+
+def apply_flags_surrogates(symbol_name: str, flags: ObidogFlagsModel):
+    if symbol_name in FLAG_SURROGATES:
+        flags.combine(FLAG_SURROGATES[symbol_name])
 
 
 class ConflictsManager:
