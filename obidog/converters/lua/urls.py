@@ -2,6 +2,7 @@ from obidog.config import OBENGINE_GIT_URL, BINDINGS_SOURCES_LOCATION
 from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.bindings_parser import find_binding_location
+from obidog.parsers.doxygen_index_parser import DoxygenIndex
 
 
 def get_documentation_url(element):
@@ -39,15 +40,15 @@ def get_bindings_url(bindings_results, element):
         return ""
 
 
-def get_doxygen_url(doxygen_index, element):
+def get_doxygen_url(doxygen_index: DoxygenIndex, element):
     if getattr(element, "from_class", False):
         identifier = f"{element.namespace}::{element.from_class}::{element.name}"
     elif not element.namespace:
         identifier = element.name
     else:
         identifier = f"{element.namespace}::{element.name}"
-    if identifier in doxygen_index:
-        doxygen_ref = doxygen_index[identifier]["refid"]
+    if identifier in doxygen_index.by_fqn:
+        doxygen_ref = doxygen_index.by_fqn[identifier].refid
         if element._type in ["namespace", "class"]:
             return f"https://{WEBSITE_URL}/{DOXYGEN_PATH}/{doxygen_ref}.html"
         else:
@@ -59,7 +60,9 @@ def get_doxygen_url(doxygen_index, element):
         return None
 
 
-def fill_element_urls(element, doxygen_index: dict = {}, bindings_results: dict = {}):
+def fill_element_urls(
+    element, doxygen_index: DoxygenIndex = None, bindings_results: dict = {}
+):
     if not hasattr(element, "overloads"):
         element.urls.documentation = get_documentation_url(element)
         if doxygen_index:

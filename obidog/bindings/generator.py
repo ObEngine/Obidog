@@ -33,6 +33,7 @@ from obidog.models.functions import (
     FunctionOverloadModel,
     PlaceholderFunctionModel,
 )
+from obidog.models.namespace import NamespaceModel
 from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
@@ -83,8 +84,8 @@ def match_namespace_with_source(namespace):
     )[0]
 
 
-def group_bindings_by_namespace(cpp_db):
-    group_by_namespace = defaultdict(CppDatabase)
+def group_bindings_by_namespace(cpp_db: CppDatabase):
+    group_by_namespace = defaultdict(NamespaceModel)
     for item_type in [
         "classes",
         "enums",
