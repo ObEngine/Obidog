@@ -7,7 +7,7 @@ def replace_template_type(value, search, replace):
     return " ".join(elem if elem != search else replace for elem in value.split())
 
 
-def generate_template_specialization(function: FunctionModel, bind_name, hints):
+def generate_template_specialization(function: FunctionModel, hints):
     function = deepcopy(function)
     function.template = False
     if function.flags.template_hints:

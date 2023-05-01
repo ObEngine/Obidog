@@ -1,18 +1,22 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Union
+from obidog.parsers.doxygen_index_parser import DoxygenIndex
 
 from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
 from obidog.parsers.utils.xml_utils import get_content
 
 
-def parse_real_type(element, doxygen_index):
+def parse_real_type(element, doxygen_index: DoxygenIndex):
     if element.find("type").find("ref") is not None:
         param_refs = element.find("type").findall("ref")
         final_type = list(element.find("type").itertext())
         for param_ref in param_refs:
             param_refid = param_ref.attrib.get("refid")
             if param_refid:
-                real_ref_type = doxygen_index[param_refid]["full_name"]
+                if doxygen_index.by_refid[param_refid].kind == "define":
+                    real_ref_type = ""
+                else:
+                    real_ref_type = doxygen_index.by_refid[param_refid].fqn
             else:
                 real_ref_type = doxygen_refid_to_cpp_name(param_ref)
             repl_index = final_type.index(get_content(param_ref))
@@ -120,6 +124,7 @@ class CppType(ABC):
     def __init__(self, qualifiers: CppQualifiers) -> None:
         super().__init__()
         self.qualifiers = qualifiers
+        self.type: Optional[Union[str, CppType]] = None
 
     @abstractmethod
     def __str__(self) -> str:
@@ -262,6 +267,8 @@ def parse_cpp_type(cpp_type: str) -> CppType:
         return parse_function_type(cpp_type)
     elif "(" not in cpp_type:
         return parse_templated_type(cpp_type)
+    elif "decltype(" in cpp_type:
+        return CppBaseType(*strip_qualifiers(cpp_type))
     elif cpp_type.strip().endswith(")"):
         return parse_function_type(cpp_type)
     elif cpp_type.index("<") < cpp_type.index("("):
@@ -271,7 +278,7 @@ def parse_cpp_type(cpp_type: str) -> CppType:
     raise RuntimeError("shouldn't reach this branch")
 
 
-def patch_incomplete_type(parent: str, doxygen_index):
+def patch_incomplete_type(parent: str, doxygen_index: DoxygenIndex):
     def patch_incomplete_type_inner(incomplete_type: Union[str, CppType]):
         incomplete_type = (
             incomplete_type.type
@@ -285,13 +292,13 @@ def patch_incomplete_type(parent: str, doxygen_index):
                 full_name_attempt = (
                     f"{'::'.join(parent_path_segment)}::{incomplete_type}"
                 )
-                if full_name_attempt in doxygen_index and doxygen_index[
+                if full_name_attempt in doxygen_index.by_fqn and doxygen_index.by_fqn[
                     full_name_attempt
-                ]["kind"] in ["class", "typedef", "enum"]:
+                ].kind in ["class", "typedef", "enum"]:
                     return full_name_attempt
         possible_types = []
         incomplete_type_segments = str(incomplete_type).split("::")
-        for elem_name in doxygen_index:
+        for elem_name in doxygen_index.by_fqn:
             if (
                 elem_name.split("::")[-len(incomplete_type_segments) : :]
                 == incomplete_type_segments
@@ -309,13 +316,9 @@ def patch_incomplete_type(parent: str, doxygen_index):
     return patch_incomplete_type_inner
 
 
-def rebuild_incomplete_type(incomplete_type: str, parent: str, doxygen_index):
-    # TODO: do that only once
-    doxygen_index_using_full_name_as_key = {
-        elem["full_name"]: elem for elem in doxygen_index.values()
-    }
+def rebuild_incomplete_type(
+    incomplete_type: str, parent: str, doxygen_index: DoxygenIndex
+):
     parsed_type = parse_cpp_type(incomplete_type)
-    parsed_type.traverse(
-        patch_incomplete_type(parent, doxygen_index_using_full_name_as_key)
-    )
+    parsed_type.traverse(patch_incomplete_type(parent, doxygen_index))
     return str(parsed_type)

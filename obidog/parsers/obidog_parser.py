@@ -2,7 +2,7 @@ from copy import copy
 from typing import Dict
 from itertools import product
 
-from obidog.models.flags import ObidogFlagsModel
+from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
 
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
@@ -119,10 +119,12 @@ def parse_obidog_flags(tree, symbol_name: str = None):
                 )
         flags.template_hints = thints
 
-    # force_abstract
-    force_abstract = find_obidog_flag(tree, "force_abstract", 1)
-    if force_abstract:
-        flags.abstract = True
+    # merge_template_specialisations_as
+    merge_template_specialisations_as = find_obidog_flag(
+        tree, "mergetemplatespecialisations"
+    )
+    if merge_template_specialisations_as:
+        flags.merge_template_specialisations_as = merge_template_specialisations_as[0]
 
     # nobind
     nobind = find_obidog_flag(tree, "nobind", 1)
@@ -179,6 +181,21 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     for meta_tag in meta_tags:
         flags.meta.add(meta_tag.strip())
 
+    # hooks
+    hooks = find_obidog_flag(tree, "hook")
+    for hook in hooks:
+        hook_trigger_parameter, hook_call_parameter = hook.split(",")
+        hook_trigger_parameter, hook_call_parameter = (
+            hook_trigger_parameter.strip(),
+            hook_call_parameter.strip(),
+        )
+        flags.hooks.add(
+            ObidogHook(
+                trigger=ObidogHookTrigger(hook_trigger_parameter),
+                call=hook_call_parameter,
+            )
+        )
+
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
     if flag_surrogate:
@@ -189,10 +206,13 @@ def parse_obidog_flags(tree, symbol_name: str = None):
         else:
             FLAG_SURROGATES[flag_surrogate_target].combine(flags_copy)
         flags.nobind = True
-    elif symbol_name and symbol_name in FLAG_SURROGATES:
-        flags.combine(FLAG_SURROGATES[symbol_name])
 
     return flags
+
+
+def apply_flags_surrogates(symbol_name: str, flags: ObidogFlagsModel):
+    if symbol_name in FLAG_SURROGATES:
+        flags.combine(FLAG_SURROGATES[symbol_name])
 
 
 class ConflictsManager:

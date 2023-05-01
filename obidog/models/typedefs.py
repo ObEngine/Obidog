@@ -13,9 +13,9 @@ class TypedefModel(BaseModel):
     namespace: str
     definition: str
     type: str
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     description: str = ""
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
-    urls: URLs = field(default_factory=lambda: URLs())
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)
+    urls: URLs = field(default_factory=URLs)
     _type: str = "typedef"

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Any
+from typing import List, Any, Optional
 
 from obidog.models.base import BaseModel, ItemVisibility
 from obidog.models.bindings import Export
@@ -15,7 +15,7 @@ class ParameterModel(BaseModel):
     type: str
     description: str = ""
     default: Any = None
-    export: Export = Export()
+    export: Export = field(default_factory=Export)
     ref: Any = None
     _type: str = "parameter"
 
@@ -23,6 +23,7 @@ class ParameterModel(BaseModel):
 @dataclass
 class FunctionBaseModel(BaseModel):
     name: str
+    namespace: str
 
 
 @dataclass
@@ -32,31 +33,45 @@ class PlaceholderFunctionModel(FunctionBaseModel):
 
 @dataclass
 class FunctionModel(FunctionBaseModel):
-    namespace: str
     definition: str
     parameters: List[ParameterModel]
     return_type: str
     template: bool = False
-    qualifiers: QualifiersModel = QualifiersModel()
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    qualifiers: QualifiersModel = field(default_factory=QualifiersModel)
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     force_cast: bool = False
     description: str = ""
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)
     deleted: bool = False
     abstract: bool = False
     visibility: ItemVisibility = ItemVisibility.Public
+    # FQN of proxy function
+    replacement: Optional[str] = None
+    from_class: Optional[str] = None
+    constructor: bool = False
     _type: str = "function"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)
 
 
 @dataclass
 class FunctionOverloadModel(FunctionBaseModel):
     overloads: List[FunctionModel]
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     force_cast: bool = False
-    export: Export = Export()
+    from_class: Optional[str] = None
+    export: Export = field(default_factory=Export)
     _type: str = "overload"
+
+    def to_function_model(self) -> FunctionModel:
+        return FunctionModel(
+            name=self.name,
+            namespace=self.namespace,
+            definition=None,
+            parameters=[],
+            from_class=self.from_class,
+            return_type=None,
+        )
 
 
 @dataclass
@@ -65,5 +80,5 @@ class FunctionPatchModel(FunctionBaseModel):
     parameters: List[ParameterModel]
     return_type: str
     replacement: str
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)

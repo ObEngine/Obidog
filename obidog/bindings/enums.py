@@ -25,8 +25,8 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
         includes.append(f"#include <{enum_path}>")
         state_view = flavour.STATE_VIEW
         export_name = format_name(enum.name)
-        binding_function_signature = f"void LoadEnum{export_name}({state_view} state)"
-        table_access = fetch_table(name) + "\n"
+        binding_function_signature = f"void load_enum_{export_name}({state_view} state)"
+        _, table_access = fetch_table(name)
         binding_function_body = table_access + flavour.ENUM_BODY.format(
             namespace=name.split("::")[-1],
             enum_type=enum_name,
@@ -38,7 +38,7 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
         )
         objects.append(
             {
-                "bindings": f"Enum{export_name}",
+                "bindings": f"enum_{export_name}",
                 "identifier": f"{enum.namespace}::{enum.name}",
                 "load_priority": enum.flags.load_priority,
             }

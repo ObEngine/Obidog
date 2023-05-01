@@ -16,14 +16,16 @@ def generate_globals_bindings(name, cpp_globals):
         includes.append(get_include_file(cpp_global))
         objects.append(
             {
-                "bindings": f"Global{export_name}",
+                "bindings": f"global_{export_name}",
                 "identifier": f"{cpp_global.namespace}::{cpp_global.name}",
                 "load_priority": cpp_global.flags.load_priority,
             }
         )
         state_view = flavour.STATE_VIEW
-        binding_function_signature = f"void LoadGlobal{export_name}({state_view} state)"
-        namespace_access = fetch_table(name) + "\n"
+        binding_function_signature = (
+            f"void load_global_{export_name}({state_view} state)"
+        )
+        _, namespace_access = fetch_table(name)
         binding_function_body = namespace_access + flavour.GLOBAL_BODY.format(
             namespace=name.split("::")[-1],
             global_name=cpp_global.name,

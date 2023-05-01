@@ -1,11 +1,14 @@
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Dict, List, Union
 
 import obidog.bindings.flavours.sol3 as flavour
+from obidog.bindings.functions_v2 import create_function_bindings
 from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, get_include_file
+from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
+from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import clean_capitalize, format_name
 
 FUNCTION_CAST_TEMPLATE = (
@@ -101,12 +104,12 @@ def get_real_function_name(
                 type_after = clean_capitalize(
                     normalize_cpp_type(function.parameters[1].type)
                 )
-            return "Operator", f"{type_before}{operator_name}{type_after}"
+            return "operator", f"{type_before}{operator_name}{type_after}"
         else:
             if isinstance(function, FunctionOverloadModel):
                 function = function.overloads[0]
             raise NotImplementedError()
-    return "Function", function_name
+    return "function", function_name
 
 
 PRIMITIVE_TYPES = [
@@ -193,12 +196,17 @@ def does_requires_proxy_function(function: FunctionModel) -> bool:
 
 
 @dataclass
-class DefaultOverloadModel:
+class MaybeDefaultParameter:
     definition: str
     name: str
 
 
-def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloadModel]:
+@dataclass
+class FunctionWithDefaultParameter:
+    parameters: List[MaybeDefaultParameter]
+
+
+"""def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloadModel]:
     function_definitions = []
     static_part_index = 0
     for parameter in function.parameters:
@@ -220,10 +228,10 @@ def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloa
                 for parameter in function.parameters[static_part_index : i + 1]
             ]
         )
-    return function_definitions
+    return function_definitions"""
 
 
-def generate_function_default_value_wrapper(
+"""def generate_function_default_value_wrapper(
     function_name: str, return_type: str, overload: DefaultOverloadModel
 ):
     return FUNCTION_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER.format(
@@ -231,7 +239,7 @@ def generate_function_default_value_wrapper(
         return_type=return_type,
         function_call=function_name,
         parameters_names=",".join(parameter.name for parameter in overload),
-    )
+    )"""
 
 
 def generate_function_definitions(function_name: str, function: FunctionModel):
@@ -284,17 +292,19 @@ def generate_function_bindings(
                     )
                 if len(template_hints) == 1:
                     new_func = generate_template_specialization(
-                        function_value, bind_name, template_hints[0]
+                        function_value, template_hints[0]
                     )
                     full_body += generate_function_bindings(new_name, new_func)
                 else:
                     overloads = [
-                        generate_template_specialization(
-                            function_value, bind_name, template_hint
-                        )
+                        generate_template_specialization(function_value, template_hint)
                         for template_hint in template_hints
                     ]
-                    funcs = FunctionOverloadModel(new_name, overloads)
+                    funcs = FunctionOverloadModel(
+                        name=new_name,
+                        namespace=function_value.namespace,
+                        overloads=overloads,
+                    )
                     full_body += generate_function_bindings(new_name, funcs)
             return full_body
         else:
@@ -347,7 +357,10 @@ def generate_function_bindings(
 
 
 # LATER: Catch operator function and assign them to correct classes metafunctions
-def generate_functions_bindings(functions):
+def generate_functions_bindings(
+    cpp_db: CppDatabase,
+    functions: Dict[str, Union[FunctionModel, FunctionOverloadModel]],
+):
     objects = []
     includes = []
     bindings_functions = []
@@ -364,27 +377,35 @@ def generate_functions_bindings(functions):
         else:
             identifier = f"{function_value.namespace}::{function_value.name}"
 
-        objects.append(
-            {
-                "bindings": f"{func_type}{real_function_name}",
-                "identifier": identifier,
-                "load_priority": function_value.flags.load_priority,
-            }
-        )
         if isinstance(function_value, FunctionOverloadModel):
             for overload in function_value.overloads:
                 includes.append(get_include_file(overload))
         else:
             includes.append(get_include_file(function_value))
 
-        state_view = flavour.STATE_VIEW
-        binding_function_signature = (
-            f"void LoadFunction{real_function_name}({state_view} state)"
+        # Do not bind proxy functions but still append related includes
+        if function_value.flags.proxy:
+            continue
+
+        objects.append(
+            {
+                "bindings": f"{func_type}_{real_function_name}",
+                "identifier": identifier,
+                "load_priority": function_value.flags.load_priority,
+            }
         )
 
+        state_view = flavour.STATE_VIEW
+        binding_function_signature = (
+            f"void load_function_{real_function_name}({state_view} state)"
+        )
+
+        namespace_split = function_name.split("::")[:-1]
+        store_in, fetch_instruction = fetch_table("::".join(namespace_split))
         binding_function = (
             f"{binding_function_signature}\n{{\n"
-            f"{generate_function_bindings(function_name, function_value)}}}"
+            f"{fetch_instruction}"
+            f"{create_function_bindings(cpp_db, store_in, function_value)}}}"
         )
         bindings_functions.append(binding_function)
     return {

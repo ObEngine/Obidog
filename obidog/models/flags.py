@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from obidog.models.base import BaseModel
 
@@ -9,11 +9,21 @@ class MetaTag(Enum):
     NonCopyable = "NonCopyable"
 
 
+class ObidogHookTrigger(Enum):
+    Inherit = "Inherit"
+    Bind = "Bind"
+
+
+@dataclass(unsafe_hash=True)
+class ObidogHook:
+    trigger: ObidogHookTrigger
+    call: str
+
+
 @dataclass
 class ObidogFlagsModel(BaseModel):
     helpers: List[str] = field(default_factory=lambda: [])
-    template_hints: List[str] = field(default_factory=lambda: [])
-    abstract: bool = False
+    template_hints: Dict[str, List[str]] = field(default_factory=lambda: {})
     nobind: bool = False
     additional_includes: List[str] = field(default_factory=lambda: [])
     as_property: bool = False
@@ -25,11 +35,12 @@ class ObidogFlagsModel(BaseModel):
     rename_parameters: List[Tuple[str, str]] = field(default_factory=lambda: [])
     bind_code: str = None
     meta: Set[str] = field(default_factory=lambda: set())
+    merge_template_specialisations_as: Optional[str] = None
+    hooks: Set[ObidogHook] = field(default_factory=lambda: set())
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.helpers += flags.helpers
-        self.template_hints += flags.template_hints
-        self.abstract = self.abstract or flags.abstract
+        self.template_hints = {**flags.template_hints, **self.template_hints}
         self.nobind = self.nobind or flags.nobind
         self.additional_includes += flags.additional_includes
         self.as_property = self.as_property or flags.as_property
@@ -41,3 +52,8 @@ class ObidogFlagsModel(BaseModel):
         self.rename_parameters = self.rename_parameters or flags.rename_parameters
         self.bind_code = self.bind_code or flags.bind_code
         self.meta = self.meta | flags.meta
+        self.merge_template_specialisations_as = (
+            self.merge_template_specialisations_as
+            or flags.merge_template_specialisations_as
+        )
+        self.hooks = self.hooks | flags.hooks

@@ -2,10 +2,11 @@ STATE_VIEW = "sol::state_view"
 INCLUDE_FILE = "sol/sol.hpp"
 CALL_CONSTRUCTOR = "sol::call_constructor"
 CLASS_BODY = """
-sol::usertype<{cpp_class}> bind{lua_short_name} = {namespace}Namespace.new_usertype<{cpp_class}>(
+sol::usertype<{cpp_class}> bind_{lua_formatted_name} = {namespace}_namespace.new_usertype<{cpp_class}>(
 "{lua_short_name}"{class_definition});
 {body}
 {helpers}
+{hooks}
 """.strip(
     "\n"
 )
@@ -20,9 +21,17 @@ BASE_CLASSES = "sol::base_classes, sol::bases<{bases}>()"
 SCRIPT_FILE = 'state.script_file("{source}"_fs);'
 METHOD = "{address}"
 # LATER: Add missing elements, even the ones not in sol::meta_function
-TRANSLATION_TABLE = {
+OPERATOR_TRANSLATION_TABLE = {
     "operator+": "sol::meta_function::addition",
-    "operator-": "sol::meta_function::subtraction",
+    "operator-": {
+        "sol::meta_function::subtraction": lambda f: (
+            f.from_class and len(f.parameters) == 1
+        )
+        or (len(f.parameters) > 1),
+        "sol::meta_function::unary_minus": lambda f: (
+            f.from_class and len(f.parameters) == 0
+        ),
+    },
     "operator*": "sol::meta_function::multiplication",
     "operator/": "sol::meta_function::division",
     "operator==": "sol::meta_function::equal_to",
@@ -35,25 +44,27 @@ TRANSLATION_TABLE = {
     "operator*=": None,
     "operator/=": None,
     "operator[]": "sol::meta_function::index",
+    "operator%": "sol::meta_function::modulus",
+    "operator=": None,
 }
 FETCH_TABLE = """
-sol::table {namespace}Namespace = state{namespace_path}.get<sol::table>();
+sol::table {store_in} = state{namespace_path}.get<sol::table>();
 """.strip(
     "\n"
 )
 ENUM_BODY = """
-{namespace}Namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
+{namespace}_namespace.new_enum<{enum_type}>("{enum_name}", {enum_fields});
 """.strip(
     "\n"
 )
 FUNCTION_BODY = """
-{namespace}Namespace.set_function("{function_name}", {function_ptr});
+{namespace}_namespace.set_function("{function_name}", {function_ptr});
 """.strip(
     "\n"
 )
 FUNCTION_OVERLOAD = "sol::overload({overloads})"
 GLOBAL_BODY = """
-{namespace}Namespace["{global_name}"] = {global_ptr};
+{namespace}_namespace["{global_name}"] = {global_ptr};
 """.strip(
     "\n"
 )

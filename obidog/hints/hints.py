@@ -1,12 +1,15 @@
 from collections import defaultdict
+import glob
 import os
 import re
+import shutil
 from typing import Dict, List, Union
 
 from mako.template import Template
 from mako.lookup import TemplateLookup
 from obidog.bindings.generator import discard_placeholders
 
+from obidog.config import PATH_TO_OBENGINE
 from obidog.converters.lua.types import LuaType, convert_all_types
 from obidog.databases import CppDatabase
 from obidog.logger import log
@@ -18,54 +21,65 @@ from obidog.converters.lua.types import DYNAMIC_TYPES, DynamicTupleType
 
 # TODO: rename p0, p1, p2 to proper parameter names
 
-MANUAL_TYPES = {
-    "Engine": "obe.Engine.Engine",
-    "This": "obe.Script.GameObject",
-    "Event": "obe.Events._EventTable",
-    "Object": "table<string, any>",
-}
+
+BindableElement = Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]
+
+EVENT_NAMESPACE = "events"
 
 
 def write_hints(
-    tables: List[str],
-    elements: List[Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]],
+    elements_by_namespace: Dict[str, List[BindableElement]],
 ):
     lookup = TemplateLookup(["templates/hints"])
-    with open("templates/hints/lua_class.mako", "r", encoding="utf-8") as tpl:
-        class_tpl = Template(tpl.read(), lookup=lookup)
-    with open("templates/hints/lua_function.mako", "r", encoding="utf-8") as tpl:
-        function_tpl = Template(tpl.read(), lookup=lookup)
-    with open("templates/hints/lua_enum.mako", "r", encoding="utf-8") as tpl:
-        enum_tpl = Template(tpl.read(), lookup=lookup)
-    with open("templates/hints/lua_global.mako", "r", encoding="utf-8") as tpl:
-        global_tpl = Template(tpl.read(), lookup=lookup)
-    with open("templates/hints/lua_typedef.mako", "r", encoding="utf-8") as tpl:
-        typedef_tpl = Template(tpl.read(), lookup=lookup)
-    hints = [f"{table} = {{}};\n" for table in tables]
-    hints += ["\n"]
+    export_directory = os.path.join(PATH_TO_OBENGINE, "engine", "Hints")
 
-    for element in elements:
-        if element._type == "class":
-            hints.append(class_tpl.get_def("lua_class").render(klass=element))
-        elif element._type == "function":
-            hints.append(function_tpl.get_def("lua_function").render(function=element))
-        elif element._type == "enum":
-            hints.append(enum_tpl.get_def("lua_enum").render(enum=element))
-        elif element._type == "global":
-            hints.append(global_tpl.get_def("lua_global").render(glob=element))
-        elif element._type == "typedef":
-            hints.append(typedef_tpl.get_def("lua_typedef").render(typedef=element))
-    hints += ["\n\n"]
-    hints += [
-        f"---@type {manual_type_value}\n{manual_type_name} = {{}};\n\n"
-        for manual_type_name, manual_type_value in MANUAL_TYPES.items()
-    ]
-    with open(
-        os.path.join("export", "hints.lua"),
-        "w",
-        encoding="utf-8",
-    ) as export:
-        export.write("".join(hints))
+    # Load hints templates
+    templates = {}
+    with open("templates/hints/lua_class.mako", "r", encoding="utf-8") as tpl:
+        templates["class"] = Template(tpl.read(), lookup=lookup)
+    with open("templates/hints/lua_function.mako", "r", encoding="utf-8") as tpl:
+        templates["function"] = Template(tpl.read(), lookup=lookup)
+    with open("templates/hints/lua_enum.mako", "r", encoding="utf-8") as tpl:
+        templates["enum"] = Template(tpl.read(), lookup=lookup)
+    with open("templates/hints/lua_global.mako", "r", encoding="utf-8") as tpl:
+        templates["global"] = Template(tpl.read(), lookup=lookup)
+    with open("templates/hints/lua_typedef.mako", "r", encoding="utf-8") as tpl:
+        templates["typedef"] = Template(tpl.read(), lookup=lookup)
+
+    # Build hint list for each namespace
+    hints_by_namespace = {namespace: [] for namespace in elements_by_namespace}
+
+    # Add initial table declaration on top of each namespace
+    for namespace, hints in hints_by_namespace.items():
+        hints.append("---@meta\n\n")
+        if namespace:
+            hints.append(f"{namespace} = {{}};\n")
+
+    # Render all hints
+    for namespace, elements in elements_by_namespace.items():
+        for element in elements:
+            if element._type in templates:
+                element_tpl = templates[element._type]
+                rendered_element = element_tpl.get_def("render").render(element=element)
+                hints_by_namespace[namespace].append(rendered_element)
+
+    # Add "return" statement at end of module
+    for namespace, hints in hints_by_namespace.items():
+        if namespace:
+            hints.append(f"return {namespace};")
+
+    # Copy custom hints to export folder
+    for custom_hint_filename in glob.glob(os.path.join("hints", "*.*")):
+        shutil.copy(custom_hint_filename, export_directory)
+
+    for namespace, hints in hints_by_namespace.items():
+        namespace_name = namespace if namespace else "_root"
+        with open(
+            os.path.join(export_directory, f"{namespace_name}.lua"),
+            "w",
+            encoding="utf-8",
+        ) as export:
+            export.write("".join(hints))
 
 
 def _add_return_type_to_constructors(cpp_db: CppDatabase):
@@ -102,6 +116,21 @@ def _get_namespace_tables(elements):
         ),
         key=lambda s: s.count("."),
     )
+
+
+def _group_elements_by_namespace(elements):
+    elements_by_namespace = {
+        namespace: [] for namespace in _get_namespace_tables(elements)
+    }
+    # Elements without namespace
+    elements_by_namespace[""] = []
+    for element in elements:
+        dotted_namespace = ""
+        if hasattr(element, "namespace") and element.namespace:
+            dotted_namespace = element.namespace.replace("::", ".")
+        elements_by_namespace[dotted_namespace].append(element)
+
+    return elements_by_namespace
 
 
 def _fix_bind_as(elements: List[Union[FunctionModel, ClassModel, AttributeModel]]):
@@ -141,7 +170,7 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
     result = {}
     events = []
     for class_value in classes.values():
-        if class_value.namespace.startswith("obe::Events::"):
+        if class_value.namespace.startswith(f"obe::{EVENT_NAMESPACE}::"):
             events.append(class_value)
     events_grouped_by_section = defaultdict(list)
     for event in events:
@@ -155,23 +184,23 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
             .removeprefix('"')
             .removesuffix('"')
         )
-        events_grouped_by_section[event.namespace.removeprefix("obe::Events::")].append(
-            (event_id, event)
-        )
+        events_grouped_by_section[
+            event.namespace.removeprefix(f"obe::{EVENT_NAMESPACE}::")
+        ].append((event_id, event))
 
     event_groups = {}
     for event_group_name, events in events_grouped_by_section.items():
         event_group_attributes = {
             event_id: AttributeModel(
                 name=event_id,
-                type=LuaType(f"fun(evt:obe.Events.{event_group_name}.{event.name})"),
+                type=LuaType(f"fun(evt:obe.events.{event_group_name}.{event.name})"),
                 namespace=event.namespace,
             )
             for event_id, event in events
         }
         event_groups[event_group_name] = ClassModel(
             name=event_group_name,
-            namespace="obe::Events::_EventTableGroups",
+            namespace=f"obe::{EVENT_NAMESPACE}::_EventTableGroups",
             attributes=event_group_attributes,
             constructors=[],
             methods={},
@@ -182,12 +211,12 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
         event_groups_as_attributes[event_group_name] = AttributeModel(
             name=event_group.name,
             namespace=event_group.namespace,
-            type=LuaType(f"obe.Events._EventTableGroups.{event_group_name}"),
+            type=LuaType(f"obe.{EVENT_NAMESPACE}._EventTableGroups.{event_group_name}"),
         )
 
     event_namespace = ClassModel(
         name="_EventTable",
-        namespace="obe::Events",
+        namespace=f"obe::{EVENT_NAMESPACE}",
         attributes=event_groups_as_attributes,
         constructors=[],
         methods={},
@@ -195,7 +224,7 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
 
     for event_group_name, event_group in event_groups.items():
         result[f"{event_group.namespace}::{event_group.name}"] = event_group
-    result["obe::Events::_EventTable"] = event_namespace
+    result[f"obe::{EVENT_NAMESPACE}::_EventTable"] = event_namespace
 
     return result
 
@@ -252,4 +281,4 @@ def generate_hints(cpp_db: CppDatabase, path_to_doc: str):
     _setup_methods_as_attributes(cpp_db.classes)
 
     log.info("Generating hints")
-    write_hints(_get_namespace_tables(all_elements), all_elements)
+    write_hints(_group_elements_by_namespace(all_elements))

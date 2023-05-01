@@ -13,10 +13,11 @@ def strip_include(path):
 
 
 def fetch_table(full_namespace):
-    namespace_splitted = full_namespace.split("::")
-    return flavour.FETCH_TABLE.format(
-        namespace=namespace_splitted[-1],
-        namespace_path="".join(f'["{path_elem}"]' for path_elem in namespace_splitted),
+    namespace_split = full_namespace.split("::")
+    store_in = f"{namespace_split[-1]}_namespace"
+    return store_in, flavour.FETCH_TABLE.format(
+        store_in=store_in,
+        namespace_path="".join(f'["{path_elem}"]' for path_elem in namespace_split),
     )
 
 
