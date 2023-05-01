@@ -231,7 +231,16 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
             ]
         ),
         hooks="\n".join(
-            [generate_hook_calls(class_value, hook) for hook in class_value.flags.hooks]
+            # Generate hook calls and filter out None values
+            [
+                hook_call
+                for hook_call in [
+                    hook.call
+                    for hook in class_value.flags.hooks
+                    if hook.trigger == ObidogHookTrigger.Bind
+                ]
+                if hook_call
+            ]
         ),
     )
     # TODO: Add shorthand
@@ -401,8 +410,15 @@ def apply_inherit_hook(classes: Dict[str, ClassModel]):
             for hook in class_value.flags.hooks:
                 if hook.trigger == ObidogHookTrigger.Inherit:
                     for child_class in child_classes:
+                        child_class_fqn = make_fqn(
+                            name=child_class.name,
+                            namespace=child_class.namespace,
+                        )
                         child_class.flags.hooks |= {
-                            ObidogHook(trigger=ObidogHookTrigger.Bind, call=hook.call)
+                            ObidogHook(
+                                trigger=ObidogHookTrigger.Bind,
+                                call=hook.call.replace("%childclass%", child_class_fqn),
+                            )
                         }
 
 
