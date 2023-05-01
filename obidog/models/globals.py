@@ -14,9 +14,9 @@ class GlobalModel(BaseModel):
     type: str
     namespace: str = ""
     initializer: str = ""
-    location: Location = field(default_factory=lambda: Location())
+    location: Location = field(default_factory=Location)
     description: str = ""
-    flags: ObidogFlagsModel = ObidogFlagsModel()
-    export: Export = Export()
-    urls: URLs = field(default_factory=lambda: URLs())
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
+    export: Export = field(default_factory=Export)
+    urls: URLs = field(default_factory=URLs)
     _type: str = "global"

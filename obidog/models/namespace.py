@@ -17,14 +17,14 @@ class NamespaceModel(BaseModel):
     path: str = ""
     namespace: str = ""
     description: str = ""
-    classes: Dict[str, ClassModel] = field(default_factory=lambda: {})
+    classes: Dict[str, ClassModel] = field(default_factory=dict)
     functions: Dict[str, Union[FunctionModel, FunctionOverloadModel]] = field(
-        default_factory=lambda: {}
+        default_factory=dict
     )
-    enums: Dict[str, EnumModel] = field(default_factory=lambda: {})
-    globals: Dict[str, GlobalModel] = field(default_factory=lambda: {})
-    namespaces: Dict[str, "NamespaceModel"] = field(default_factory=lambda: {})
-    typedefs: Dict[str, TypedefModel] = field(default_factory=lambda: {})
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    enums: Dict[str, EnumModel] = field(default_factory=dict)
+    globals: Dict[str, GlobalModel] = field(default_factory=dict)
+    namespaces: Dict[str, "NamespaceModel"] = field(default_factory=dict)
+    typedefs: Dict[str, TypedefModel] = field(default_factory=dict)
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     _type: str = "namespace"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)

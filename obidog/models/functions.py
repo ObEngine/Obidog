@@ -15,7 +15,7 @@ class ParameterModel(BaseModel):
     type: str
     description: str = ""
     default: Any = None
-    export: Export = Export()
+    export: Export = field(default_factory=Export)
     ref: Any = None
     _type: str = "parameter"
 
@@ -37,12 +37,12 @@ class FunctionModel(FunctionBaseModel):
     parameters: List[ParameterModel]
     return_type: str
     template: bool = False
-    qualifiers: QualifiersModel = QualifiersModel()
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    qualifiers: QualifiersModel = field(default_factory=QualifiersModel)
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     force_cast: bool = False
     description: str = ""
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)
     deleted: bool = False
     abstract: bool = False
     visibility: ItemVisibility = ItemVisibility.Public
@@ -51,16 +51,16 @@ class FunctionModel(FunctionBaseModel):
     from_class: Optional[str] = None
     constructor: bool = False
     _type: str = "function"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)
 
 
 @dataclass
 class FunctionOverloadModel(FunctionBaseModel):
     overloads: List[FunctionModel]
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     force_cast: bool = False
     from_class: Optional[str] = None
-    export: Export = Export()
+    export: Export = field(default_factory=Export)
     _type: str = "overload"
 
     def to_function_model(self) -> FunctionModel:
@@ -80,5 +80,5 @@ class FunctionPatchModel(FunctionBaseModel):
     parameters: List[ParameterModel]
     return_type: str
     replacement: str
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)

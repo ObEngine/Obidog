@@ -15,15 +15,15 @@ class AttributeModel(BaseModel):
     name: str
     namespace: str
     type: str
-    qualifiers: QualifiersModel = QualifiersModel()
+    qualifiers: QualifiersModel = field(default_factory=QualifiersModel)
     description: str = ""
     initializer: str = ""
-    flags: ObidogFlagsModel = ObidogFlagsModel()
-    export: Export = Export()
-    location: Location = field(default_factory=lambda: Location())
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
+    export: Export = field(default_factory=Export)
+    location: Location = field(default_factory=Location)
     visibility: ItemVisibility = ItemVisibility.Public
     _type: str = "attribute"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)
 
 
 @dataclass
@@ -47,13 +47,13 @@ class ClassModel(ClassBaseModel):
     methods: Dict[str, FunctionModel] = None
     private_methods: Dict[str, FunctionModel] = None
     private_attributes: Dict[str, AttributeModel] = None
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     template: bool = False
     description: str = ""
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)
     _type: str = "class"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)
 
     def get_bases(
         self, discard_template_types: bool = False, strip_template_types: bool = False
