@@ -402,10 +402,25 @@ def generate_functions_bindings(
 
         namespace_split = function_name.split("::")[:-1]
         store_in, fetch_instruction = fetch_table("::".join(namespace_split))
+        helpers = "\n".join(
+            [
+                flavour.SCRIPT_FILE.format(source=source)
+                for source in function_value.flags.helpers
+            ]
+            if not isinstance(function_value, FunctionOverloadModel)
+            else [
+                flavour.SCRIPT_FILE.format(source=source)
+                for overload in function_value.overloads
+                for source in overload.flags.helpers
+            ]
+        )
         binding_function = (
-            f"{binding_function_signature}\n{{\n"
+            f"{binding_function_signature}\n"
+            "{\n"
             f"{fetch_instruction}"
-            f"{create_function_bindings(cpp_db, store_in, function_value)}}}"
+            f"{create_function_bindings(cpp_db, store_in, function_value)}"
+            f"{helpers}"
+            "}"
         )
         bindings_functions.append(binding_function)
     return {

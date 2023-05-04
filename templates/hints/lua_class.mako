@@ -16,6 +16,10 @@ ${function_template.render(constructor)}\
 % for method in element.methods.values():
 % if method._type == "function":
 ${function_template.render(method)}\
+% elif method._type == "overload":
+% for overload in method.overloads:
+${function_template.render(overload)}\
+% endfor
 % endif
 % endfor
 

@@ -3,6 +3,7 @@ from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.bindings_parser import find_binding_location
 from obidog.parsers.doxygen_index_parser import DoxygenIndex
+from obidog.wrappers.git_wrapper import get_current_branch
 
 
 def get_documentation_url(element):
@@ -20,12 +21,12 @@ def get_documentation_url(element):
         return f"https://{WEBSITE_URL}/{DOC_PATH}/{element_path}#doc_{element.name}"
 
 
-def get_source_url(element):
+def get_source_url(element, branch):
     if hasattr(element, "location") and element.location.file:
-        return f"{OBENGINE_GIT_URL}/blob/master/{element.location.file}#L{element.location.line}"
+        return f"{OBENGINE_GIT_URL}/blob/{branch}/{element.location.file}#L{element.location.line}"
 
 
-def get_bindings_url(bindings_results, element):
+def get_bindings_url(bindings_results, element, branch):
     if isinstance(element, NamespaceModel):
         namespace = element.path
     else:
@@ -34,7 +35,7 @@ def get_bindings_url(bindings_results, element):
         bindings_source = bindings_results[namespace]["source"]
         bindings_line = find_binding_location(bindings_source, element)
         # TODO: Take Location parameter into account
-        return f"{OBENGINE_GIT_URL}/blob/master/{BINDINGS_SOURCES_LOCATION}/{bindings_source}#L{bindings_line}"
+        return f"{OBENGINE_GIT_URL}/blob/{branch}/{BINDINGS_SOURCES_LOCATION}/{bindings_source}#L{bindings_line}"
     else:
         print(f"Namespace '{namespace}' not found in bindings generation results")
         return ""
@@ -61,18 +62,22 @@ def get_doxygen_url(doxygen_index: DoxygenIndex, element):
 
 
 def fill_element_urls(
-    element, doxygen_index: DoxygenIndex = None, bindings_results: dict = {}
+    element,
+    doxygen_index: DoxygenIndex = None,
+    bindings_results: dict = {},
+    branch="master",
 ):
     if not hasattr(element, "overloads"):
         element.urls.documentation = get_documentation_url(element)
         if doxygen_index:
             element.urls.doxygen = get_doxygen_url(doxygen_index, element)
-        element.urls.source = get_source_url(element)
-        element.urls.bindings = get_bindings_url(bindings_results, element)
+        element.urls.source = get_source_url(element, branch)
+        element.urls.bindings = get_bindings_url(bindings_results, element, branch)
     else:
         for overload in element.overloads:
             fill_element_urls(
                 overload,
                 doxygen_index=doxygen_index,
                 bindings_results=bindings_results,
+                branch=branch,
             )

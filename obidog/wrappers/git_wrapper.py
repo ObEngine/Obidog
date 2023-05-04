@@ -42,3 +42,7 @@ def check_obengine_repo(git_dir):
         OBENGINE_GIT_URL in repo.remote().urls,
         OBENGINE_GIT_SSH in repo.remote().urls,
     )
+
+
+def get_current_branch():
+    return git.Repo(PATH_TO_OBENGINE).active_branch.name
