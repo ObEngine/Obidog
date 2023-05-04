@@ -12,7 +12,7 @@ from obidog.models.urls import URLs
 class EnumValueModel(BaseModel):
     name: str
     description: str
-    export: Export = Export()
+    export: Export = field(default_factory=Export)
     _type: str = "enum_value"
 
 
@@ -20,10 +20,10 @@ class EnumValueModel(BaseModel):
 class EnumModel(BaseModel):
     name: str
     values: List[EnumValueModel]
-    flags: ObidogFlagsModel = ObidogFlagsModel()
+    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
     namespace: str = ""
     description: str = ""
-    location: Location = field(default_factory=lambda: Location())
-    export: Export = Export()
+    location: Location = field(default_factory=Location)
+    export: Export = field(default_factory=Export)
     _type: str = "enum"
-    urls: URLs = field(default_factory=lambda: URLs())
+    urls: URLs = field(default_factory=URLs)
