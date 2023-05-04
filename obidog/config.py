@@ -29,6 +29,12 @@ SOURCE_DIRECTORIES = [
         "structure_policy": "namespaces",
     },
     {
+        "path": "extlibs/vili-msgpack/include",
+        "namespace": "vili",
+        "output_location": "Core",
+        "structure_policy": "namespaces",
+    },
+    {
         "path": "extlibs/tgui/include",
         "namespace": "tgui",
         "exclude_paths": ["TGUI/Backends/**", "TGUI/extlibs/**"],

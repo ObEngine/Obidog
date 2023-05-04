@@ -12,7 +12,7 @@ sol::usertype<{cpp_class}> bind_{lua_formatted_name} = {namespace}_namespace.new
 )
 STATIC_ATTRIB = "sol::var(&{name})"
 PROPERTY = "sol::property({address})"
-PROPERTY_REF = "sol::property([]({class_name}* self) -> {property_type} {{ return self->{attribute_name}; }})"
+PROPERTY_REF = "sol::property([]({class_name}* self) -> {property_type}* {{ return &self->{attribute_name}; }})"
 PROPERTY_READONLY = "sol::readonly({address})"
 DEFAULT_CONSTRUCTOR = "sol::default_constructor"
 DESTRUCTOR = "sol::destructor({destructor})"

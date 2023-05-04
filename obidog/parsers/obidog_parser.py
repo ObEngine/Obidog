@@ -3,6 +3,7 @@ from typing import Dict
 from itertools import product
 
 from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
+from obidog.utils.string_utils import replace_delimiters
 
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
@@ -34,6 +35,23 @@ TEMPLATE_HINTS_VARIABLES = {
         "bool",
     ],
     "numerics": ["int", "double"],
+    "integers": [
+        "uint8_t",
+        "uint16_t",
+        "uint32_t",
+        "uint64_t",
+        "int8_t",
+        "int16_t",
+        "int32_t",
+        "int64_t",
+    ],
+    "signed_integers": [
+        "int8_t",
+        "int16_t",
+        "int32_t",
+        "int64_t",
+    ],
+    "unsigned_integers": ["uint8_t", "uint16_t", "uint32_t", "uint64_t"],
 }
 
 
@@ -184,15 +202,15 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     # hooks
     hooks = find_obidog_flag(tree, "hook")
     for hook in hooks:
-        hook_trigger_parameter, hook_call_parameter = hook.split(",")
-        hook_trigger_parameter, hook_call_parameter = (
+        hook_trigger_parameter, hook_code_parameter = hook.split(",")
+        hook_trigger_parameter, hook_code_parameter = (
             hook_trigger_parameter.strip(),
-            hook_call_parameter.strip(),
+            hook_code_parameter.strip(),
         )
         flags.hooks.add(
             ObidogHook(
                 trigger=ObidogHookTrigger(hook_trigger_parameter),
-                call=hook_call_parameter,
+                code=replace_delimiters(hook_code_parameter, "%", "{", "}"),
             )
         )
 

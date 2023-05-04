@@ -16,6 +16,7 @@ from obidog.logger import log
 from obidog.models.classes import ClassModel
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.doxygen_index_parser import parse_doxygen_index
+from obidog.wrappers.git_wrapper import get_current_branch
 
 DB_FILENAME = "search.json"
 CURRENT_VERSION = "0.5"  # TODO: Fetch version from ObEngine repo
@@ -89,8 +90,14 @@ def generate_documentation(cpp_db: CppDatabase, path_to_doc: str):
             element,
             doxygen_index=doxygen_index,
             bindings_results=bindings_results,
+            branch=get_current_branch(),
         )
 
+    # Injecting root namespace for main index generation
+    if not "" in cpp_db.namespaces:
+        cpp_db.namespaces[""] = NamespaceModel(
+            name="", path="", namespace="", description=""
+        )
     log.info("Grouping namespace")
     namespaces = group_bindings_by_namespace(cpp_db)
     log.info("Generate namespaces documentation")
@@ -100,6 +107,8 @@ def generate_documentation(cpp_db: CppDatabase, path_to_doc: str):
 
     log.info("Generate classes documentation")
     for class_value in cpp_db.classes.values():
+        if "<" in class_value.name:
+            continue  # TODO: handle better templated elements
         if not class_value.flags.nobind:
             document_item(class_value)
 

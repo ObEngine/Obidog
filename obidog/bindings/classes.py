@@ -19,7 +19,7 @@ from obidog.models.functions import (
 )
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
-from obidog.utils.string_utils import format_name
+from obidog.utils.string_utils import format_name, partial_format
 
 METHOD_CAST_TEMPLATE = (
     "static_cast<{return_type} ({class_name}::*)"
@@ -131,6 +131,14 @@ def generate_methods_bindings(
     methods: Dict[str, FunctionModel],
 ):
     for method in methods.values():
+        if isinstance(method, FunctionOverloadModel):
+            for overload in method.overloads:
+                if overload.template:
+                    generate_templated_method_bindings(
+                        cpp_db, body, class_name, lua_name, overload
+                    )
+                    # Faking deletion of the method overload to avoid it being generated twice
+                    overload.deleted = True
         if isinstance(method, FunctionModel) and method.template:
             generate_templated_method_bindings(
                 cpp_db, body, class_name, lua_name, method
@@ -198,7 +206,7 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
             attribute_bind = flavour.PROPERTY_REF.format(
                 class_name=full_name,
                 attribute_name=attribute_name,
-                property_type=attribute.type,
+                property_type=attribute.type.removesuffix("&"),
             )
         else:
             if attribute.qualifiers.static:
@@ -231,7 +239,11 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
             ]
         ),
         hooks="\n".join(
-            [generate_hook_calls(class_value, hook) for hook in class_value.flags.hooks]
+            [
+                partial_format(hook.code, childclass=real_name)
+                for hook in class_value.flags.hooks
+                if hook.trigger == ObidogHookTrigger.Bind
+            ]
         ),
     )
     # TODO: Add shorthand
@@ -402,7 +414,12 @@ def apply_inherit_hook(classes: Dict[str, ClassModel]):
                 if hook.trigger == ObidogHookTrigger.Inherit:
                     for child_class in child_classes:
                         child_class.flags.hooks |= {
-                            ObidogHook(trigger=ObidogHookTrigger.Bind, call=hook.call)
+                            ObidogHook(
+                                trigger=ObidogHookTrigger.Bind,
+                                code=partial_format(
+                                    hook.code, parentclass=full_class_name
+                                ),
+                            )
                         }
 
 

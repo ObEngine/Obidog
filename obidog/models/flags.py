@@ -17,7 +17,7 @@ class ObidogHookTrigger(Enum):
 @dataclass(unsafe_hash=True)
 class ObidogHook:
     trigger: ObidogHookTrigger
-    call: str
+    code: str
 
 
 @dataclass
