@@ -178,7 +178,7 @@ def parse_obidog_flag_rename_parameters(tree):
 
 def parse_obidog_flag_hooks(tree):
     def parse_hook_instruction(instruction):
-        hook_trigger_parameter, hook_code_parameter = hook.split(",")
+        hook_trigger_parameter, hook_code_parameter = instruction.split(",")
         hook_trigger_parameter, hook_code_parameter = (
             hook_trigger_parameter.strip(),
             hook_code_parameter.strip(),

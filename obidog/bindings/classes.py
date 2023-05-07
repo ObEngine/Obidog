@@ -43,7 +43,7 @@ class ClassConstructors:
 
 def generate_hook_call(ctx: ClassModel, hook: ObidogHook) -> Optional[str]:
     if hook.trigger == ObidogHookTrigger.Bind:
-        return f"{ctx.name}::{hook.call}();"
+        return f"{ctx.name}::{hook.code}();"
 
 
 def generate_constructors_definitions(constructors: List[FunctionModel]):

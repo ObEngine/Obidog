@@ -20,7 +20,7 @@ class ObidogHook(BaseModel):
     code: str
 
     def __hash__(self) -> int:
-        return hash((self.trigger, self.call))
+        return hash((self.trigger, self.code))
 
 
 class ObidogFlagsModel(BaseModel):

@@ -398,6 +398,7 @@ def apply_proxies(cpp_db: CppDatabase, functions):
                 method_value
             )
             return cpp_db.classes[class_fqn].methods[method_value.name]
+        raise RuntimeError(f"Could not find proxied method '{proxy_name}'")
 
     for function_name, function_value in functions.items():
         if function_value.flags.proxy:
