@@ -73,6 +73,8 @@ OUTPUT_DIRECTORY = os.environ.get("OBENGINE_BINDINGS_OUTPUT", PATH_TO_OBENGINE)
 
 
 def match_namespace_with_source(namespace):
+    if namespace == "":
+        return "root.cpp"
     return sorted(
         [
             source
@@ -93,11 +95,14 @@ def group_bindings_by_namespace(cpp_db: CppDatabase):
         "functions",
         "globals",
         "typedefs",
+        "namespaces",
     ]:
         for item_name, item_value in getattr(cpp_db, item_type).items():
             strip_template = item_name.split("<")[0]
             last_namespace = "::".join(strip_template.split("::")[:-1:])
-            while last_namespace:
+            run_once_for_root_namespace = item_name != ""  # ignore root namespace
+            while last_namespace or run_once_for_root_namespace:
+                run_once_for_root_namespace = False
                 if last_namespace in cpp_db.namespaces:
                     getattr(group_by_namespace[last_namespace], item_type)[
                         item_name
@@ -106,7 +111,13 @@ def group_bindings_by_namespace(cpp_db: CppDatabase):
                 else:
                     last_namespace = "::".join(last_namespace.split("::")[:-1:])
     for namespace_name, namespace in group_by_namespace.items():
-        namespace.namespaces = cpp_db.namespaces[namespace_name]
+        # Filling missing information
+        namespace.description = cpp_db.namespaces[namespace_name].description
+        namespace.name = cpp_db.namespaces[namespace_name].name
+        namespace.namespace = cpp_db.namespaces[namespace_name].namespace
+        namespace.path = cpp_db.namespaces[namespace_name].path
+        namespace.urls = cpp_db.namespaces[namespace_name].urls
+        namespace.flags = cpp_db.namespaces[namespace_name].flags
     return group_by_namespace
 
 
@@ -196,7 +207,9 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
             FILES_TO_FORMAT.append(src_out)
 
 
-def generate_bindings_for_namespace(cpp_db: CppDatabase, namespace_name, namespace):
+def generate_bindings_for_namespace(
+    cpp_db: CppDatabase, namespace_name: str, namespace: NamespaceModel
+):
     log.info(f"Generating bindings for namespace {namespace_name}")
     split_name = "/".join(namespace_name.split("::"))
     source = match_namespace_with_source(namespace_name)
@@ -228,8 +241,8 @@ def generate_bindings_for_namespace(cpp_db: CppDatabase, namespace_name, namespa
     if GENERATE_BINDINGS:
         make_bindings_header(bindings_header, namespace_name, generated_objects)
     namespace_data = {
-        "includes": namespace.namespaces.flags.additional_includes
-        if namespace.namespaces.flags.additional_includes
+        "includes": namespace.flags.additional_includes
+        if namespace.flags.additional_includes
         else [],
         "bindings_functions": [],
     }

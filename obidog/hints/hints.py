@@ -137,6 +137,9 @@ def _fix_bind_as(elements: List[Union[FunctionModel, ClassModel, AttributeModel]
     for element in elements:
         if element.flags.rename:
             element.name = element.flags.rename
+            if element._type == "overload":
+                for overload in element.overloads:
+                    overload.name = element.flags.rename
         if isinstance(element, ClassModel):
             _fix_bind_as(element.methods.values())
             _fix_bind_as(element.attributes.values())

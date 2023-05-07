@@ -17,7 +17,7 @@ class ObidogHookTrigger(Enum):
 # note: used to be unsafe_hash
 class ObidogHook(BaseModel):
     trigger: ObidogHookTrigger
-    call: str
+    code: str
 
     def __hash__(self) -> int:
         return hash((self.trigger, self.call))

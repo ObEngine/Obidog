@@ -6,6 +6,7 @@ from lxml import etree
 
 from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
 from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
+from obidog.utils.string_utils import replace_delimiters
 
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
@@ -37,6 +38,23 @@ TEMPLATE_HINTS_VARIABLES = {
         "bool",
     ],
     "numerics": ["int", "double"],
+    "integers": [
+        "uint8_t",
+        "uint16_t",
+        "uint32_t",
+        "uint64_t",
+        "int8_t",
+        "int16_t",
+        "int32_t",
+        "int64_t",
+    ],
+    "signed_integers": [
+        "int8_t",
+        "int16_t",
+        "int32_t",
+        "int64_t",
+    ],
+    "unsigned_integers": ["uint8_t", "uint16_t", "uint32_t", "uint64_t"],
 }
 
 
@@ -160,11 +178,14 @@ def parse_obidog_flag_rename_parameters(tree):
 
 def parse_obidog_flag_hooks(tree):
     def parse_hook_instruction(instruction):
-        trigger, call = instruction.split(",")
-        trigger, call = trigger.strip(), call.strip()
+        hook_trigger_parameter, hook_code_parameter = hook.split(",")
+        hook_trigger_parameter, hook_code_parameter = (
+            hook_trigger_parameter.strip(),
+            hook_code_parameter.strip(),
+        )
         return ObidogHook(
-            trigger=ObidogHookTrigger(trigger),
-            call=call,
+            trigger=ObidogHookTrigger(hook_trigger_parameter),
+            code=replace_delimiters(hook_code_parameter, "%", "{", "}"),
         )
 
     return [
