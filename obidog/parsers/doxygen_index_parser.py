@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
+
 from typing import Dict
 from lxml import etree
 
@@ -9,18 +10,16 @@ def _get_element_identifier(element):
     return get_content(element.xpath("name")[0]).strip()
 
 
-@dataclass
-class DoxygenElement:
+class DoxygenElement(BaseModel):
     kind: str
     name: str
     fqn: str
     refid: str
 
 
-@dataclass
-class DoxygenIndex:
-    by_refid: Dict[str, DoxygenElement] = field(default_factory=lambda: {})
-    by_fqn: Dict[str, DoxygenElement] = field(default_factory=lambda: {})
+class DoxygenIndex(BaseModel):
+    by_refid: Dict[str, DoxygenElement] = Field(default_factory=dict)
+    by_fqn: Dict[str, DoxygenElement] = Field(default_factory=dict)
 
     def register_element(
         self,
@@ -36,7 +35,8 @@ class DoxygenIndex:
 
     def __or__(self, other: "DoxygenIndex"):
         return DoxygenIndex(
-            by_refid=self.by_refid | other.by_refid, by_fqn=self.by_fqn | other.by_fqn
+            by_refid=self.by_refid | other.by_refid,
+            by_fqn=self.by_fqn | other.by_fqn,
         )
 
 
@@ -140,8 +140,10 @@ def parse_doxygen_index(xml_path):
     classes += index.xpath("compound[@kind='struct']")
     namespaces = index.xpath("compound[@kind='namespace']")
     non_namespaces_elements = index.xpath("compound[@kind='file']")
+    pages = index.xpath("compound[@kind='page']")
 
     index_db = DoxygenIndex()
+
     for class_value in classes:
         index_db |= parse_class(class_value)
 

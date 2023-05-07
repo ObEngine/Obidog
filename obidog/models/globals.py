@@ -1,22 +1,22 @@
-from dataclasses import dataclass, field
+from typing import Optional
+from pydantic import Field
 
-from obidog.models.base import BaseModel
+from obidog.models.base import CppElement
 from obidog.models.bindings import Export
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.location import Location
 from obidog.models.urls import URLs
 
 
-@dataclass
-class GlobalModel(BaseModel):
+class GlobalModel(CppElement):
     name: str
     definition: str
     type: str
     namespace: str = ""
-    initializer: str = ""
-    location: Location = field(default_factory=Location)
+    initializer: Optional[str]
+    location: Location = Field(default_factory=Location)
     description: str = ""
-    flags: ObidogFlagsModel = field(default_factory=ObidogFlagsModel)
-    export: Export = field(default_factory=Export)
-    urls: URLs = field(default_factory=URLs)
+    flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)
+    export: Export = Field(default_factory=Export)
+    urls: URLs = Field(default_factory=URLs)
     _type: str = "global"

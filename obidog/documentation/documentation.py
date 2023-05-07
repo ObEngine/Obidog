@@ -15,7 +15,7 @@ from obidog.documentation.search import generate_search_db
 from obidog.logger import log
 from obidog.models.classes import ClassModel
 from obidog.models.namespace import NamespaceModel
-from obidog.parsers.doxygen_index_parser import parse_doxygen_index
+from obidog.parsers.doxygen_index_parser import DoxygenIndex
 
 DB_FILENAME = "search.json"
 CURRENT_VERSION = "0.5"  # TODO: Fetch version from ObEngine repo
@@ -51,10 +51,9 @@ def document_item(item: Union[ClassModel, NamespaceModel]):
                 export.write(exceptions.html_error_template().render().decode("utf-8"))
 
 
-def generate_documentation(cpp_db: CppDatabase, path_to_doc: str):
-    doxygen_index = parse_doxygen_index(
-        os.path.join(path_to_doc, "docbuild", "xml", "index.xml")
-    )
+def generate_documentation(
+    cpp_db: CppDatabase, doxygen_index: DoxygenIndex, path_to_doc: str
+):
     log.info("Preparing database")
     bindings_results = generate_bindings(
         cpp_db, False

@@ -1,8 +1,11 @@
 from copy import copy
-from typing import Dict
+from typing import Dict, List, Optional
 from itertools import product
 
+from lxml import etree
+
 from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
+from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 
 TEMPLATE_HINTS_VARIABLES = {
     "lists": [
@@ -69,13 +72,11 @@ def inject_template_variables(template_combination):
         return generated_combinations
 
 
-def find_obidog_flag(tree, flag_name, amount=None):
+def find_obidog_flag(tree, flag_name, amount=None) -> List[str]:
     search_for = f"obidog.{flag_name}"
     flags = [
         elem.attrib["url"][len(search_for) : :]
-        for elem in tree.xpath(
-            f"detaileddescription//ulink[starts-with(@url, '{search_for}')]"
-        )
+        for elem in tree.xpath(f"*/ulink[starts-with(@url, '{search_for}')]")
     ]
     flags = [flag[1::] if flag.startswith(":") else flag for flag in flags]
     if amount:
@@ -90,14 +91,38 @@ def find_obidog_flag(tree, flag_name, amount=None):
 FLAG_SURROGATES: Dict[str, ObidogFlagsModel] = {}
 
 
-def parse_obidog_flags(tree, symbol_name: str = None):
-    flags = ObidogFlagsModel()
-    # helpers
-    helpers = find_obidog_flag(tree, "helper")
-    if helpers:
-        flags.helpers = helpers
+# Simple flag parsers
+def parse_obidog_boolean_flag(flag_name: str):
+    def parse_obidog_flag(tree) -> bool:
+        return bool(find_obidog_flag(tree, flag_name, 1))
 
-    # template_hints
+    return parse_obidog_flag
+
+
+def parse_obidog_single_value_flag(flag_name: str, transformer=lambda x: x):
+    def parse_obidog_flag(tree) -> Optional[str]:
+        values = find_obidog_flag(tree, flag_name, 1)
+        if values:
+            return transformer(values[0].strip())
+        return None
+
+    return parse_obidog_flag
+
+
+def parse_obidog_many_values_flag(
+    flag_name: str, transformer=lambda x: x, set_transformer=lambda x: list(x)
+):
+    def parse_obidog_flag(tree) -> Optional[str]:
+        values = find_obidog_flag(tree, flag_name)
+        if values:
+            return set_transformer(transformer(value.strip()) for value in values)
+        return None
+
+    return parse_obidog_flag
+
+
+# Custom flag parsers
+def parse_obidog_flag_template_hint(tree):
     template_hints = find_obidog_flag(tree, "template_hint")
     if template_hints:
         thints = {}
@@ -117,84 +142,68 @@ def parse_obidog_flags(tree, symbol_name: str = None):
                         for template_association in template_combination
                     }
                 )
-        flags.template_hints = thints
+        return thints
+    return None
 
-    # merge_template_specialisations_as
-    merge_template_specialisations_as = find_obidog_flag(
-        tree, "mergetemplatespecialisations"
-    )
-    if merge_template_specialisations_as:
-        flags.merge_template_specialisations_as = merge_template_specialisations_as[0]
 
-    # nobind
-    nobind = find_obidog_flag(tree, "nobind", 1)
-    if nobind:
-        flags.nobind = True
-
-    # additional_includes
-    additional_includes = find_obidog_flag(tree, "additional_include")
-    if additional_includes:
-        flags.additional_includes = [
-            f"#include <{additional_include}>"
-            for additional_include in additional_includes
-        ]
-
-    # as_property
-    as_property = find_obidog_flag(tree, "as_property", 1)
-    if as_property:
-        flags.as_property = True
-
-    # copy_parent_items
-    copy_parent_items = find_obidog_flag(tree, "copy_parent_items", 1)
-    if copy_parent_items:
-        flags.copy_parent_items = True
-
-    # proxy
-    proxy = find_obidog_flag(tree, "proxy", 1)
-    if proxy:
-        flags.proxy = proxy[0]
-
-    # noconstructor
-    noconstructor = find_obidog_flag(tree, "noconstructor", 1)
-    if noconstructor:
-        flags.noconstructor = True
-
-    # load_priority
-    load_priority = find_obidog_flag(tree, "loadpriority", 1)
-    if load_priority:
-        flags.load_priority = int(load_priority[0])
-
-    # rename
-    rename = find_obidog_flag(tree, "rename", 1)
-    if rename:
-        flags.rename = rename[0].strip()
-
-    # rename_parameter
-    rename_parameters = find_obidog_flag(tree, "paramrename")
-    for rename_parameter in rename_parameters:
-        from_parameter, to_parameter = rename_parameter.split(",")
+def parse_obidog_flag_rename_parameters(tree):
+    def parse_rename_parameters_instruction(instruction):
+        from_parameter, to_parameter = instruction.split(",")
         from_parameter, to_parameter = from_parameter.strip(), to_parameter.strip()
-        flags.rename_parameters.append((from_parameter, to_parameter))
+        return from_parameter, to_parameter
 
-    # meta
-    meta_tags = find_obidog_flag(tree, "meta")
-    for meta_tag in meta_tags:
-        flags.meta.add(meta_tag.strip())
+    return [
+        parse_rename_parameters_instruction(instruction)
+        for instruction in find_obidog_flag(tree, "paramrename")
+    ]
 
-    # hooks
-    hooks = find_obidog_flag(tree, "hook")
-    for hook in hooks:
-        hook_trigger_parameter, hook_call_parameter = hook.split(",")
-        hook_trigger_parameter, hook_call_parameter = (
-            hook_trigger_parameter.strip(),
-            hook_call_parameter.strip(),
+
+def parse_obidog_flag_hooks(tree):
+    def parse_hook_instruction(instruction):
+        trigger, call = instruction.split(",")
+        trigger, call = trigger.strip(), call.strip()
+        return ObidogHook(
+            trigger=ObidogHookTrigger(trigger),
+            call=call,
         )
-        flags.hooks.add(
-            ObidogHook(
-                trigger=ObidogHookTrigger(hook_trigger_parameter),
-                call=hook_call_parameter,
-            )
-        )
+
+    return [
+        parse_hook_instruction(instruction)
+        for instruction in find_obidog_flag(tree, "hook")
+    ]
+
+
+# All flags
+OBIDOG_FLAGS_PARSERS = {
+    "helpers": parse_obidog_many_values_flag("helper"),
+    "template_hints": parse_obidog_flag_template_hint,
+    "merge_template_specialisations_as": parse_obidog_single_value_flag(
+        "mergetemplatespecialisations"
+    ),
+    "nobind": parse_obidog_boolean_flag("nobind"),
+    "additional_includes": parse_obidog_many_values_flag(
+        "additional_include",
+        transformer=lambda additional_include: f"#include <{additional_include}>",
+    ),
+    "as_property": parse_obidog_boolean_flag("as_property"),
+    "copy_parent_items": parse_obidog_boolean_flag("copy_parent_items"),
+    "proxy": parse_obidog_single_value_flag("proxy"),
+    "noconstructor": parse_obidog_boolean_flag("noconstructor"),
+    "load_priority": parse_obidog_single_value_flag("loadpriority", transformer=int),
+    "rename": parse_obidog_single_value_flag("rename"),
+    "rename_parameters": parse_obidog_flag_rename_parameters,
+    "meta": parse_obidog_many_values_flag("meta", set_transformer=set),
+    "hooks": parse_obidog_flag_hooks,
+}
+
+
+def parse_element_obidog_flags(tree):
+    flags = ObidogFlagsModel()
+
+    for flag_name, flag_parser in OBIDOG_FLAGS_PARSERS.items():
+        flag_value = flag_parser(tree)
+        if flag_value:
+            setattr(flags, flag_name, flag_value)
 
     # flag_surrogate (must be kept last)
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
@@ -210,7 +219,31 @@ def parse_obidog_flags(tree, symbol_name: str = None):
     return flags
 
 
-def apply_flags_surrogates(symbol_name: str, flags: ObidogFlagsModel):
+OBIDOG_FLAGS_DB = {}
+
+
+def parse_all_obidog_flags_from_xml(flags_filepath: str):
+    flags_tree = etree.parse(flags_filepath)
+    elements_and_flags = flags_tree.xpath("*/detaileddescription/para/variablelist/*")
+    OBIDOG_FLAGS_DB.update(
+        {
+            # Warning: There doesn't seem to be a problem with this yet but
+            # note that some "term" have more than one ref in it
+            # Usually the case is when we have a function with some referenced
+            # parameters
+            doxygen_id_to_cpp_id(
+                element.xpath("term/ref")[0].attrib["refid"]
+            ): parse_element_obidog_flags(flags)
+            for element, flags in zip(elements_and_flags[::2], elements_and_flags[1::2])
+        }
+    )
+
+
+def get_cpp_element_obidog_flags(cpp_element_id: str):
+    return OBIDOG_FLAGS_DB.get(cpp_element_id, ObidogFlagsModel())
+
+
+def apply_obidog_flags_surrogates(symbol_name: str, flags: ObidogFlagsModel):
     if symbol_name in FLAG_SURROGATES:
         flags.combine(FLAG_SURROGATES[symbol_name])
 

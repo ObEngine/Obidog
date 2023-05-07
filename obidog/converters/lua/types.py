@@ -3,7 +3,11 @@ import re
 from typing import List, Union
 
 from obidog.databases import CppDatabase
-from obidog.models.functions import FunctionModel, FunctionOverloadModel
+from obidog.models.functions import (
+    FunctionModel,
+    FunctionOverloadModel,
+    FunctionUniformModel,
+)
 from obidog.parsers.type_parser import split_root_types
 
 
@@ -276,9 +280,7 @@ def cpp_type_to_lua_type(cpp_db, cpp_type):
     return LuaType(type=lua_type)
 
 
-def convert_function_types(
-    cpp_db: CppDatabase, function: Union[FunctionModel, FunctionOverloadModel]
-):
+def convert_function_types(cpp_db: CppDatabase, function: FunctionUniformModel):
     if isinstance(function, FunctionOverloadModel):
         for overload in function.overloads:
             convert_function_types(cpp_db, overload)

@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Union
 from obidog.parsers.doxygen_index_parser import DoxygenIndex
 
-from obidog.parsers.utils.doxygen_utils import doxygen_refid_to_cpp_name
+from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 from obidog.parsers.utils.xml_utils import get_content
 
 
-def parse_real_type(element, doxygen_index: DoxygenIndex):
-    if element.find("type").find("ref") is not None:
-        param_refs = element.find("type").findall("ref")
-        final_type = list(element.find("type").itertext())
+def parse_real_type(element, doxygen_index: DoxygenIndex, type_tag: str = "type"):
+    if element.find(type_tag).find("ref") is not None:
+        param_refs = element.find(type_tag).findall("ref")
+        final_type = list(element.find(type_tag).itertext())
         for param_ref in param_refs:
             param_refid = param_ref.attrib.get("refid")
             if param_refid:
@@ -18,12 +18,12 @@ def parse_real_type(element, doxygen_index: DoxygenIndex):
                 else:
                     real_ref_type = doxygen_index.by_refid[param_refid].fqn
             else:
-                real_ref_type = doxygen_refid_to_cpp_name(param_ref)
+                real_ref_type = doxygen_id_to_cpp_id(param_ref)
             repl_index = final_type.index(get_content(param_ref))
             final_type[repl_index] = real_ref_type
         return "".join(final_type).strip()
     else:
-        return get_content(element.find("type")).strip()
+        return get_content(element.find(type_tag)).strip()
 
 
 # TODO: remove this ? (replace with split_unembedded)

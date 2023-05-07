@@ -1,7 +1,7 @@
 import copy
 from dataclasses import dataclass
 import os
-from typing import List, Dict, Set
+from typing import List, Dict, Optional, Set
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions import does_requires_proxy_function
@@ -41,7 +41,7 @@ class ClassConstructors:
     constructible: bool
 
 
-def generate_hook_calls(ctx: ClassModel, hook: ObidogHook) -> List[str]:
+def generate_hook_call(ctx: ClassModel, hook: ObidogHook) -> Optional[str]:
     if hook.trigger == ObidogHookTrigger.Bind:
         return f"{ctx.name}::{hook.call}();"
 
@@ -149,7 +149,6 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
     )
     real_name = make_fqn(name=class_value.name, namespace=class_value.namespace)
     namespace, lua_name = full_name.split("::")[-2::]
-    class_value.lua_name = ".".join(full_name.split("::"))
 
     constructors_signatures_str = ""
     if not class_value.abstract and not class_value.flags.noconstructor:

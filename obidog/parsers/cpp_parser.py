@@ -5,8 +5,11 @@ from obidog.config import SOURCE_DIRECTORIES
 from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.parsers.class_parser import parse_class_from_xml
-from obidog.parsers.doxygen_index_parser import parse_doxygen_index
-from obidog.parsers.obidog_parser import apply_flags_surrogates
+from obidog.parsers.doxygen_index_parser import parse_doxygen_index, DoxygenIndex
+from obidog.parsers.obidog_parser import (
+    apply_obidog_flags_surrogates,
+    parse_all_obidog_flags_from_xml,
+)
 from obidog.parsers.namespace_parser import (
     parse_enums_from_xml,
     parse_namespace_from_xml,
@@ -14,11 +17,15 @@ from obidog.parsers.namespace_parser import (
 from obidog.utils.cpp_utils import make_fqn
 
 
-def parse_doxygen_files(path_to_doc, cpp_db: CppDatabase):
+def parse_doxygen_files(path_to_doc: str, cpp_db: CppDatabase) -> DoxygenIndex:
+    log.info("Parsing Doxygen files...")
     doxygen_index = parse_doxygen_index(
         os.path.join(path_to_doc, "docbuild", "xml", "index.xml")
     )
-    log.info("Loading classes info...")
+
+    obidog_flags_filepath = os.path.join(path_to_doc, "docbuild", "xml", "obidog.xml")
+    parse_all_obidog_flags_from_xml(obidog_flags_filepath)
+
     namespaces_files = []
     classes_files = []
     for currentDir, _, files in os.walk(os.path.join(path_to_doc, "docbuild/xml/")):
@@ -65,6 +72,7 @@ def parse_doxygen_files(path_to_doc, cpp_db: CppDatabase):
             cpp_db,
         )
 
+    # Keep last
     for element in [
         *cpp_db.classes.values(),
         *cpp_db.enums.values(),
@@ -73,4 +81,6 @@ def parse_doxygen_files(path_to_doc, cpp_db: CppDatabase):
     ]:
         if hasattr(element, "flags"):
             element_fqn = make_fqn(name=element.name, namespace=element.namespace)
-            apply_flags_surrogates(element_fqn, element.flags)
+            apply_obidog_flags_surrogates(element_fqn, element.flags)
+
+    return doxygen_index

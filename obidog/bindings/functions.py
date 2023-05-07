@@ -7,7 +7,12 @@ from obidog.bindings.template import generate_template_specialization
 from obidog.bindings.utils import fetch_table, get_include_file
 from obidog.databases import CppDatabase
 from obidog.logger import log
-from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
+from obidog.models.functions import (
+    FunctionModel,
+    FunctionOverloadModel,
+    ParameterModel,
+    FunctionUniformModel,
+)
 from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import clean_capitalize, format_name
 
@@ -84,9 +89,7 @@ OPERATOR_TABLE = {
 }
 
 
-def get_real_function_name(
-    function_name, function: Union[FunctionModel, FunctionOverloadModel]
-):
+def get_real_function_name(function_name, function: FunctionUniformModel):
     if function_name.startswith("operator"):
         short_operator = function_name.split("operator")[1]
         if isinstance(OPERATOR_TABLE[short_operator], str):
@@ -274,7 +277,7 @@ def get_overload_static_cast(function_name: str, function_value: FunctionModel):
 
 
 def generate_function_bindings(
-    function_name: str, function_value: Union[FunctionModel, FunctionOverloadModel]
+    function_name: str, function_value: FunctionUniformModel
 ):
     namespace_splitted = function_name.split("::")[:-1]
     function_ptr = function_name
@@ -359,7 +362,7 @@ def generate_function_bindings(
 # LATER: Catch operator function and assign them to correct classes metafunctions
 def generate_functions_bindings(
     cpp_db: CppDatabase,
-    functions: Dict[str, Union[FunctionModel, FunctionOverloadModel]],
+    functions: Dict[str, FunctionUniformModel],
 ):
     objects = []
     includes = []

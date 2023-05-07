@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from pydantic import BaseModel
 
-@dataclass
-class BaseModel:
-    pass
+
+class CppElement(BaseModel):
+    id: str = ""
 
 
 class ItemVisibility(Enum):

@@ -27,7 +27,7 @@ def main():
     path_to_doc = build_doxygen_documentation(path_to_obengine)
 
     # Processing all files in Doxygen documentation
-    parse_doxygen_files(path_to_doc, cpp_db)
+    doxygen_index = parse_doxygen_files(path_to_doc, cpp_db)
 
     cwd = tempfile.mkdtemp()
     log.info(f"Working directory : {cwd}")
@@ -40,7 +40,7 @@ def main():
     args = parser.parse_args()
 
     if args.mode == "documentation":
-        generate_documentation(cpp_db, path_to_doc)
+        generate_documentation(cpp_db, doxygen_index, path_to_doc)
 
     elif args.mode == "bindings":
         generate_bindings(cpp_db)

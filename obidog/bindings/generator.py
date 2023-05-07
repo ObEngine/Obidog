@@ -31,7 +31,8 @@ from obidog.models.flags import MetaTag
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
-    PlaceholderFunctionModel,
+    FunctionPlaceholderModel,
+    FunctionUniformModel,
 )
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.utils.cpp_utils import parse_definition
@@ -345,12 +346,19 @@ def generated_bindings_index(source_name, generated_objects):
 
 
 def apply_proxies(cpp_db: CppDatabase, functions):
-    def find_and_requalify_if_needed(proxy_name: str) -> FunctionModel:
-        def requalify_if_needed(
-            proxy_func: Union[FunctionModel, FunctionOverloadModel]
-        ) -> FunctionModel:
+    def find_and_requalify_if_needed(
+        proxy_name: str, base_function_model: FunctionModel
+    ) -> FunctionModel:
+        def requalify_if_needed(proxy_func: FunctionUniformModel) -> FunctionModel:
             if isinstance(proxy_func, FunctionOverloadModel):
-                return proxy_func.to_function_model()
+                return FunctionModel(
+                    name=proxy_func.name,
+                    namespace=proxy_func.namespace,
+                    definition=base_function_model.return_type,
+                    parameters=[],
+                    from_class=proxy_func.from_class,
+                    return_type=base_function_model.return_type,
+                )
             return proxy_func
 
         if proxy_name in cpp_db.functions:
@@ -389,7 +397,9 @@ def apply_proxies(cpp_db: CppDatabase, functions):
                     from_class=function_value.from_class,
                 )
                 function_value = functions[function_name]
-            patch = find_and_requalify_if_needed(function_value.flags.proxy)
+            patch = find_and_requalify_if_needed(
+                function_value.flags.proxy, function_value
+            )
             patch.definition = function_value.definition
             patch.parameters = function_value.parameters
             patch.return_type = function_value.return_type
@@ -402,12 +412,12 @@ def discard_placeholders(cpp_db):
         class_value.methods = {
             method_name: method
             for method_name, method in class_value.methods.items()
-            if not isinstance(method, PlaceholderFunctionModel)
+            if not isinstance(method, FunctionPlaceholderModel)
         }
     cpp_db.functions = {
         function_name: function
         for function_name, function in cpp_db.functions.items()
-        if not isinstance(function, PlaceholderFunctionModel)
+        if not isinstance(function, FunctionPlaceholderModel)
     }
 
 
@@ -420,9 +430,7 @@ def inject_ref_in_function_parameters(cpp_db: CppDatabase):
     def find_ref_from_type(typename: str):
         return cpp_db.classes.get(strip_qualifiers_from_type(typename), None)
 
-    def fill_parameters_refs_for_function(
-        function: Union[FunctionModel, FunctionOverloadModel]
-    ):
+    def fill_parameters_refs_for_function(function: FunctionUniformModel):
         if isinstance(function, FunctionModel):
             for parameter in function.parameters:
                 parameter.ref = find_ref_from_type(parameter.type)

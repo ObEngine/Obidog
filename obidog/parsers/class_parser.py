@@ -4,24 +4,28 @@ from obidog.models.flags import MetaTag, ObidogFlagsModel
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
-    PlaceholderFunctionModel,
+    FunctionPlaceholderModel,
 )
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.obidog_parser import CONFLICTS, parse_obidog_flags
+from obidog.parsers.obidog_parser import CONFLICTS, get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import (
     parse_cpp_type,
     parse_real_type,
     rebuild_incomplete_type,
 )
 from obidog.parsers.utils.cpp_utils import parse_definition
+from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 from obidog.parsers.utils.xml_utils import (
     extract_xml_value,
     get_content,
     get_content_if,
 )
 from obidog.utils.cpp_utils import make_fqn
+
+
+UNUSABLE_METHODS_IDS = set()
 
 
 def parse_methods(class_name, class_value, doxygen_index):
@@ -47,6 +51,15 @@ def parse_methods(class_name, class_value, doxygen_index):
     for xml_method in all_methods:
         method = parse_function_from_xml(xml_method, doxygen_index, is_method=True)
         method.from_class = class_name
+        # Found a placeholder method, if we encounter another method with the same name
+        # we will force cast the previous "valid" occurence (and store it for future occurences)
+        if isinstance(method, FunctionPlaceholderModel):
+            UNUSABLE_METHODS_IDS.add(method.name)
+            for method_container in (methods, private_methods, constructors):
+                if method.name in method_container:
+                    methods[method.name].force_cast = True
+                    break
+            continue
         if method.visibility == ItemVisibility.Public:
             # Method has class name => Constructor
             if method.name == class_name and isinstance(method, FunctionModel):
@@ -69,33 +82,29 @@ def parse_methods(class_name, class_value, doxygen_index):
         # Method not already in methods dict
         if method.name not in function_dest:
             function_dest[method.name] = method
-        else:
-            # Replace unusable method with usable overload and force casting
-            if isinstance(function_dest[method.name], PlaceholderFunctionModel):
+            if method.name in UNUSABLE_METHODS_IDS:
                 method.force_cast = True
-                function_dest[method.name] = method
-            # Create a function overload
+        else:
+            overload = function_dest[method.name]
+            if isinstance(overload, FunctionOverloadModel):
+                overload.overloads.append(method)
+                if method.flags.rename:
+                    overload.flags.rename = method.rename
             else:
-                overload = function_dest[method.name]
-                if isinstance(overload, FunctionOverloadModel):
-                    overload.overloads.append(method)
-                    if method.flags.rename:
-                        overload.flags.rename = method.rename
-                else:
-                    function_dest[method.name] = FunctionOverloadModel(
-                        name=method.name,
-                        namespace=overload.namespace,
-                        from_class=overload.from_class,
-                        overloads=[overload, method],
-                        flags=ObidogFlagsModel(
-                            rename=overload.flags.rename or method.flags.rename
-                        ),
-                    )
+                function_dest[method.name] = FunctionOverloadModel(
+                    name=method.name,
+                    namespace=overload.namespace,
+                    from_class=overload.from_class,
+                    overloads=[overload, method],
+                    flags=ObidogFlagsModel(
+                        rename=overload.flags.rename or method.flags.rename
+                    ),
+                )
 
     return methods, constructors, destructor, private_methods
 
 
-def parse_attributes(class_value, doxygen_index):
+def parse_attributes(class_name, class_value, doxygen_index):
     attributes = {}
     private_attributes = {}
     all_xml_attributes = {
@@ -112,11 +121,12 @@ def parse_attributes(class_value, doxygen_index):
             # Ignore unions
             if attribute_name.startswith("@"):
                 continue
+            attribute_id = doxygen_id_to_cpp_id(xml_attribute.attrib["id"])
             attribute_type = parse_real_type(xml_attribute, doxygen_index)
             attribute_desc = get_content(xml_attribute.find("briefdescription"))
             initializer = get_content_if(xml_attribute.find("initializer"))
             qualifiers = QualifiersModel(static=is_static)
-            flags = parse_obidog_flags(xml_attribute)
+            flags = get_cpp_element_obidog_flags(attribute_id)
             templated = False
             visibility = ItemVisibility(xml_attribute.attrib["prot"])
             attribute_dest = attributes
@@ -131,8 +141,10 @@ def parse_attributes(class_value, doxygen_index):
             namespace = "::".join(identifier.split("::")[:-2])
             if not templated:
                 attribute_dest[attribute_name] = AttributeModel(
+                    id=attribute_id,
                     name=attribute_name,
                     namespace=namespace,
+                    from_class=class_name,
                     type=attribute_type,
                     qualifiers=qualifiers,
                     initializer=initializer,
@@ -157,6 +169,7 @@ def is_class_non_copyable(class_model: ClassModel):
 
 def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     nobind = False
+    class_id = doxygen_id_to_cpp_id(class_value.attrib["id"])
     class_name = extract_xml_value(class_value, "compoundname")
     namespace_name, class_name = (
         "::".join(class_name.split("::")[:-1:]),
@@ -191,12 +204,10 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
     methods, constructors, destructor, private_methods = parse_methods(
         class_name, class_value, doxygen_index
     )
-    attributes, private_attributes = parse_attributes(class_value, doxygen_index)
-    for attribute in list(attributes.values()) + list(private_attributes.values()):
-        attribute.from_class = class_name
-    flags = parse_obidog_flags(
-        class_value, symbol_name="::".join([namespace_name, class_name])
+    attributes, private_attributes = parse_attributes(
+        class_name, class_value, doxygen_index
     )
+    flags = get_cpp_element_obidog_flags(class_id)
 
     templated = False
     if class_value.xpath("templateparamlist"):
@@ -209,6 +220,7 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
 
     CONFLICTS.append(class_name, class_value)
     class_model = ClassModel(
+        id=class_id,
         name=class_name,
         namespace=namespace_name,
         abstract=abstract,
@@ -221,7 +233,7 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
         private_attributes=private_attributes,
         flags=flags,
         template=templated,
-        description=description,
+        description=description or "",
         location=parse_doxygen_location(class_value),
     )
     if is_class_non_copyable(class_model):

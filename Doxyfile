@@ -20,7 +20,7 @@ ABBREVIATE_BRIEF       = "The $name class" \
                          a \
                          an \
                          the
-ALWAYS_DETAILED_SEC    = NO
+ALWAYS_DETAILED_SEC    = YES
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
 SHORT_NAMES            = NO
@@ -149,7 +149,7 @@ VERBATIM_HEADERS       = YES
 CLANG_ASSISTED_PARSING = NO
 ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 5
-GENERATE_HTML          = YES
+GENERATE_HTML          = NO
 GENERATE_DOCSET        = NO
 DOCSET_FEEDNAME        = "Doxygen generated docs"
 DOCSET_BUNDLE_ID       = org.doxygen.Project
@@ -236,18 +236,18 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = "TGUI_DEPRECATED(x)="
 
-ALIASES += nobind="\xrefitem nobind \"\" \"\" <a href=\"obidog.nobind\"></a>"
-ALIASES += thint{2}="\xrefitem template_hints \"\" \"\" <a href=\"obidog.template_hint:\1,\2\"></a>"
-ALIASES += helper{1}="\xrefitem helpers \"\" \"\" <a href=\"obidog.helper:\1\"></a>"
-ALIASES += additionalinclude{1}="\xrefitem additionalincludes \"\" \"\" <a href=\"obidog.additional_include:\1\"></a>"
-ALIASES += asproperty="\xrefitem asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"
-ALIASES += copyparentitems="\xrefitem copyparentitems \"\" \"\" <a href=\"obidog.copy_parent_items\"></a>"
-ALIASES += proxy{1}="\xrefitem proxy \"\" \"\" <a href=\"obidog.proxy:\1\"></a>"
-ALIASES += noconstructor="\xrefitem noconstructor \"\" \"\" <a href=\"obidog.noconstructor\"></a>"
-ALIASES += flagsurrogate{1}="\xrefitem flagsurrogate \"\" \"\" <a href=\"obidog.flagsurrogate:\1\"></a>"
-ALIASES += loadpriority{1}="\xrefitem loadpriority \"\" \"\" <a href=\"obidog.loadpriority:\1\"></a>"
-ALIASES += rename{1}="\xrefitem rename \"\" \"\" <a href=\"obidog.rename:\1\"></a>"
-ALIASES += paramrename{2}="\xrefitem paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"
-ALIASES += meta{1}="\xrefitem meta \"\" \"\" <a href=\"obidog.meta:\1\"></a>"
-ALIASES += mergetemplatespecialisations{1}="\xrefitem mergetemplatespecialisations \"\" \"\" <a href=\"obidog.mergetemplatespecialisations:\1\"></a>"
-ALIASES += hook{2}="\xrefitem hook \"\" \"\" <a href=\"obidog.hook:\1,\2\"></a>"
+ALIASES += nobind="\xrefitem obidog.nobind \"abcd\" \"\" <a href=\"obidog.nobind\"></a>"
+ALIASES += thint{2}="\xrefitem obidog.template_hints \"\" \"\" <a href=\"obidog.template_hint:\1,\2\"></a>"
+ALIASES += helper{1}="\xrefitem obidog.helpers \"\" \"\" <a href=\"obidog.helper:\1\"></a>"
+ALIASES += additionalinclude{1}="\xrefitem obidog.additionalincludes \"\" \"\" <a href=\"obidog.additional_include:\1\"></a>"
+ALIASES += asproperty="\xrefitem obidog.asproperty \"\" \"\" <a href=\"obidog.as_property\"></a>"
+ALIASES += copyparentitems="\xrefitem obidog.copyparentitems \"\" \"\" <a href=\"obidog.copy_parent_items\"></a>"
+ALIASES += proxy{1}="\xrefitem obidog.proxy \"\" \"\" <a href=\"obidog.proxy:\1\"></a>"
+ALIASES += noconstructor="\xrefitem obidog.noconstructor \"\" \"\" <a href=\"obidog.noconstructor\"></a>"
+ALIASES += flagsurrogate{1}="\xrefitem obidog.flagsurrogate \"\" \"\" <a href=\"obidog.flagsurrogate:\1\"></a>"
+ALIASES += loadpriority{1}="\xrefitem obidog.loadpriority \"\" \"\" <a href=\"obidog.loadpriority:\1\"></a>"
+ALIASES += rename{1}="\xrefitem obidog.rename \"\" \"\" <a href=\"obidog.rename:\1\"></a>"
+ALIASES += paramrename{2}="\xrefitem obidog.paramrename \"\" \"\" <a href=\"obidog.paramrename:\1,\2\"></a>"
+ALIASES += meta{1}="\xrefitem obidog.meta \"\" \"\" <a href=\"obidog.meta:\1\"></a>"
+ALIASES += mergetemplatespecialisations{1}="\xrefitem obidog.mergetemplatespecialisations \"\" \"\" <a href=\"obidog.mergetemplatespecialisations:\1\"></a>"
+ALIASES += hook{2}="\xrefitem obidog.hook \"\" \"\" <a href=\"obidog.hook:\1,\2\"></a>"

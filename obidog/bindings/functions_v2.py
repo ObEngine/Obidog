@@ -10,7 +10,11 @@ from obidog.bindings.template import generate_template_specialization
 from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.models.flags import MetaTag
-from obidog.models.functions import FunctionModel, FunctionOverloadModel, ParameterModel
+from obidog.models.functions import (
+    FunctionOverloadModel,
+    ParameterModel,
+    FunctionUniformModel,
+)
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
 
@@ -122,9 +126,7 @@ class FunctionBindingGenerationOptions:
     is_overload: bool = False
 
 
-def make_bindable_function_model(
-    function_value: Union[FunctionModel, FunctionOverloadModel]
-):
+def make_bindable_function_model(function_value: FunctionUniformModel):
     is_method = bool(function_value.from_class)
 
     # Get fully qualified name
@@ -178,7 +180,7 @@ def make_bindable_function_model(
 
 def generate_function_specialisations(
     cpp_db: CppDatabase,
-    function_value: Union[FunctionModel, FunctionOverloadModel],
+    function_value: FunctionUniformModel,
     options: Optional[FunctionBindingGenerationOptions] = None,
 ) -> List[BindableFunctionModel]:
     options = options or FunctionBindingGenerationOptions()
@@ -312,7 +314,7 @@ def make_bind_instruction(
 def create_function_bindings(
     cpp_db: CppDatabase,
     store_in: str,
-    function_value: Union[FunctionModel, FunctionOverloadModel],
+    function_value: FunctionUniformModel,
 ) -> List[BindingsSourceCode]:
     specialisations = generate_function_specialisations(cpp_db, function_value)
 

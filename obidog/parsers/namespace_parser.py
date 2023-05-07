@@ -8,16 +8,18 @@ from obidog.parsers.utils.xml_utils import (
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.globals_parser import parse_global_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.obidog_parser import parse_obidog_flags, CONFLICTS
+from obidog.parsers.obidog_parser import CONFLICTS, get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
 from obidog.models.functions import (
-    PlaceholderFunctionModel,
     FunctionOverloadModel,
     FunctionModel,
 )
 from obidog.models.enums import EnumModel, EnumValueModel
 from obidog.models.typedefs import TypedefModel
 from obidog.models.namespace import NamespaceModel
+from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
+
+UNUSABLE_FUNCTIONS_IDS = set()
 
 
 def parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
@@ -28,32 +30,28 @@ def parse_functions_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
         real_name = "::".join((namespace_name, function.name))
         if isinstance(function, FunctionModel):
             if real_name in cpp_db.functions:
-                # Replace unusable existing function with usable function and force casting
-                if isinstance(cpp_db.functions[real_name], PlaceholderFunctionModel):
-                    function.force_cast = True
-                    cpp_db.functions[real_name] = function
+                existing_function = cpp_db.functions[real_name]
+                if isinstance(existing_function, FunctionOverloadModel):
+                    existing_function.overloads.append(function)
                 else:
-                    existing_function = cpp_db.functions[real_name]
-                    if isinstance(existing_function, FunctionOverloadModel):
-                        existing_function.overloads.append(function)
-                    else:
-                        cpp_db.functions[real_name] = FunctionOverloadModel(
-                            name=existing_function.name,
-                            namespace=existing_function.namespace,
-                            overloads=[existing_function, function],
-                        )
+                    cpp_db.functions[real_name] = FunctionOverloadModel(
+                        name=existing_function.name,
+                        namespace=existing_function.namespace,
+                        overloads=[existing_function, function],
+                    )
             else:
                 cpp_db.functions[real_name] = function
+            if real_name in UNUSABLE_FUNCTIONS_IDS:
+                cpp_db.functions[real_name].force_cast = True
         else:
             # Force cast as unusable function exists
+            UNUSABLE_FUNCTIONS_IDS.add(real_name)
             if real_name in cpp_db.functions:
                 cpp_db.functions[real_name].force_cast = True
-            # Add unusable function in db for later check
-            else:
-                cpp_db.functions[real_name] = function
 
 
 def parse_typedef_from_xml(namespace_name, xml_typedef, doxygen_index):
+    typedef_id = doxygen_id_to_cpp_id(xml_typedef.attrib["id"])
     typedef_name = get_content(xml_typedef.find("name"))
     typedef_type = parse_real_type(xml_typedef, doxygen_index)
     typedef_type = rebuild_incomplete_type(typedef_type, namespace_name, doxygen_index)
@@ -65,12 +63,13 @@ def parse_typedef_from_xml(namespace_name, xml_typedef, doxygen_index):
     CONFLICTS.append(typedef_name, xml_typedef)
 
     return TypedefModel(
+        id=typedef_id,
         name=typedef_name,
         namespace=namespace_name,
         definition=typedef_definition,
         type=typedef_type,
-        flags=parse_obidog_flags(xml_typedef),
-        description=typedef_description,
+        flags=get_cpp_element_obidog_flags(typedef_id),
+        description=typedef_description or "",
         location=parse_doxygen_location(xml_typedef),
     )
 
@@ -86,6 +85,7 @@ def parse_typedefs_from_xml(namespace_name, namespace, cpp_db, doxygen_index):
 
 
 def parse_enum_from_xml(xml_enum):
+    enum_id = doxygen_id_to_cpp_id(xml_enum.attrib["id"])
     enum_name = get_content(xml_enum.find("name"))
     enum_description = get_content(xml_enum.find("briefdescription"))
 
@@ -99,9 +99,10 @@ def parse_enum_from_xml(xml_enum):
         )
     CONFLICTS.append(enum_name, xml_enum)
     return EnumModel(
+        id=enum_id,
         name=enum_name,
         values=enum_values,
-        flags=parse_obidog_flags(xml_enum),
+        flags=get_cpp_element_obidog_flags(enum_id),
         description=enum_description,
         location=parse_doxygen_location(xml_enum),
     )
@@ -134,13 +135,15 @@ def parse_namespace_from_xml(xml_path, cpp_db, doxygen_index):
     tree = etree.parse(xml_path)
 
     namespace = tree.xpath("/doxygen/compounddef")[0]
+    namespace_id = doxygen_id_to_cpp_id(namespace.attrib["id"])
     namespace_name = extract_xml_value(namespace, "compoundname")
     namespace_description = extract_xml_value(namespace, "briefdescription")
     # TODO: Parse namespace description
 
-    flags = parse_obidog_flags(namespace, symbol_name=namespace_name)
+    flags = get_cpp_element_obidog_flags(namespace_id)
 
     cpp_db.namespaces[namespace_name] = NamespaceModel(
+        id=namespace_id,
         name=namespace_name.split("::")[-1],
         path=namespace_name,
         namespace="::".join(namespace_name.split("::")[:-1:]),

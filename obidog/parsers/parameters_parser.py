@@ -18,7 +18,7 @@ def parse_parameters_from_xml(xml_function, doxygen_index):
 
         parameter_return_type = parse_real_type(xml_parameter, doxygen_index)
 
-        parameter = ParameterModel(parameter_name, parameter_return_type)
+        parameter = ParameterModel(name=parameter_name, type=parameter_return_type)
         if get_content_if(xml_parameter.find("defval")):
             parameter.default = get_content_if(xml_parameter.find("defval"))
         parameter_description = get_content_if(xml_parameter.find("briefdescription"))

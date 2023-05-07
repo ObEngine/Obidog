@@ -155,7 +155,7 @@ def _setup_methods_as_attributes(classes: Dict[str, ClassModel]):
                     qualifiers=QualifiersModel(
                         method.qualifiers.const, method.qualifiers.static
                     ),
-                    description=method.description,
+                    description=method.description or "",
                     flags=method.flags,
                     export=method.export,
                     location=method.location,
@@ -176,9 +176,9 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
     for event in events:
         if "id" not in event.attributes:
             continue
+        event_initializer = event.attributes["id"].initializer or ""
         event_id = (
-            event.attributes["id"]
-            .initializer.strip()
+            event_initializer.strip()
             .removeprefix("=")
             .strip()
             .removeprefix('"')

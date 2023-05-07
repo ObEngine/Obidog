@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -14,29 +14,31 @@ class ObidogHookTrigger(Enum):
     Bind = "Bind"
 
 
-@dataclass(unsafe_hash=True)
-class ObidogHook:
+# note: used to be unsafe_hash
+class ObidogHook(BaseModel):
     trigger: ObidogHookTrigger
     call: str
 
+    def __hash__(self) -> int:
+        return hash((self.trigger, self.call))
 
-@dataclass
+
 class ObidogFlagsModel(BaseModel):
-    helpers: List[str] = field(default_factory=lambda: [])
-    template_hints: Dict[str, List[str]] = field(default_factory=lambda: {})
+    helpers: List[str] = Field(default_factory=list)
+    template_hints: Dict[str, List[str]] = Field(default_factory=dict)
     nobind: bool = False
-    additional_includes: List[str] = field(default_factory=lambda: [])
+    additional_includes: List[str] = Field(default_factory=list)
     as_property: bool = False
     copy_parent_items: bool = False
     proxy: bool = False
     noconstructor: bool = False
     load_priority: int = 0
     rename: str = None
-    rename_parameters: List[Tuple[str, str]] = field(default_factory=lambda: [])
+    rename_parameters: List[Tuple[str, str]] = Field(default_factory=list)
     bind_code: str = None
-    meta: Set[str] = field(default_factory=lambda: set())
+    meta: Set[str] = Field(default_factory=set)
     merge_template_specialisations_as: Optional[str] = None
-    hooks: Set[ObidogHook] = field(default_factory=lambda: set())
+    hooks: Set[ObidogHook] = Field(default_factory=set)
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.helpers += flags.helpers
