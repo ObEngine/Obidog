@@ -230,7 +230,7 @@ def parse_element_obidog_flags(tree):
     flag_surrogate = find_obidog_flag(tree, "flagsurrogate", 1)
     if flag_surrogate:
         flag_surrogate_target = flag_surrogate[0]
-        flags_copy = copy(flags)
+        flags_copy = flags.copy()
         if flag_surrogate_target not in FLAG_SURROGATES:
             FLAG_SURROGATES[flag_surrogate_target] = flags_copy
         else:

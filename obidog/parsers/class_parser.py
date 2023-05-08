@@ -51,10 +51,13 @@ def parse_methods(class_name, class_value, doxygen_index):
     for xml_method in all_methods:
         method = parse_function_from_xml(xml_method, doxygen_index, is_method=True)
         method.from_class = class_name
+        method_fqn = make_fqn(
+            name=method.name, namespace=method.namespace, from_class=method.from_class
+        )
         # Found a placeholder method, if we encounter another method with the same name
         # we will force cast the previous "valid" occurence (and store it for future occurences)
         if isinstance(method, FunctionPlaceholderModel):
-            UNUSABLE_METHODS_IDS.add(method.name)
+            UNUSABLE_METHODS_IDS.add(method_fqn)
             for method_container in (methods, private_methods, constructors):
                 if method.name in method_container:
                     methods[method.name].force_cast = True
@@ -82,7 +85,7 @@ def parse_methods(class_name, class_value, doxygen_index):
         # Method not already in methods dict
         if method.name not in function_dest:
             function_dest[method.name] = method
-            if method.name in UNUSABLE_METHODS_IDS:
+            if method_fqn in UNUSABLE_METHODS_IDS:
                 method.force_cast = True
         else:
             overload = function_dest[method.name]
