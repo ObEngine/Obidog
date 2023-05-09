@@ -35,6 +35,7 @@ setup(
         "inflection",
         "bs4",
         "semver",
+        "pydantic"
     ],
     extras_require={
         "lint": ["flake8"],
