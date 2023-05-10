@@ -46,7 +46,7 @@ def main():
         generate_bindings(cpp_db)
 
     if args.mode == "hints":
-        generate_hints(cpp_db, path_to_doc)
+        generate_hints(cpp_db)
 
 
 if __name__ == "__main__":

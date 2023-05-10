@@ -311,7 +311,7 @@ def generate_function_bindings(
                     full_body += generate_function_bindings(new_name, funcs)
             return full_body
         else:
-            print(f"[WARNING] No template hints found for function {function_name}")
+            log.warn(f"No template hints found for function {function_name}")
             return ""
     if isinstance(function_value, FunctionOverloadModel):
         all_overloads = []
@@ -368,7 +368,7 @@ def generate_functions_bindings(
     includes = []
     bindings_functions = []
     for function_name, function_value in functions.items():
-        log.info(f"  Generating bindings for function {function_name}")
+        log.debug(f"  Generating bindings for function {function_name}")
         func_type, short_name = get_real_function_name(
             function_name.split("::")[-1], function_value
         )

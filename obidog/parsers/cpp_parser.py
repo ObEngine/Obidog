@@ -47,7 +47,7 @@ def parse_doxygen_files(path_to_doc: str, cpp_db: CppDatabase) -> DoxygenIndex:
                 namespace_filepath = os.path.join(currentDir, f)
                 namespaces_files.append(namespace_filepath)
             else:
-                log.warning(f"Ignoring file {f}")
+                log.debug(f"Ignoring file {f}")
 
     for namespace_filepath in namespaces_files:
         log.debug(f"  Parsing namespace {namespace_filepath}")

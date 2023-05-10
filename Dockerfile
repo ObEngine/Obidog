@@ -14,6 +14,7 @@ COPY obidog ./obidog
 COPY static ./static
 COPY templates ./templates
 
-ENV GIT_DISCOVERY_ACROSS_FILESYSTEM=true
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
 
-CMD [ "python", "obidog/main.py" ]
+ENTRYPOINT [ "/entrypoint.sh" ]

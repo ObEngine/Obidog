@@ -210,7 +210,7 @@ def make_bindings_sources(namespace, path, bindings_header, *datasets):
 def generate_bindings_for_namespace(
     cpp_db: CppDatabase, namespace_name: str, namespace: NamespaceModel
 ):
-    log.info(f"Generating bindings for namespace {namespace_name}")
+    log.debug(f"Generating bindings for namespace {namespace_name}")
     split_name = "/".join(namespace_name.split("::"))
     source = match_namespace_with_source(namespace_name)
     location = LOCATIONS[source["output_location"]]
@@ -289,7 +289,7 @@ def fix_index_tables(tables):
         for i, elem in enumerate(table_path):
             if elem not in fetch_sub_dict(table_tree, table_path[:i]):
                 if i != len(table_path) - 1:
-                    print("Add missing intermediate table", ".".join(table_path))
+                    log.debug("Add missing intermediate table", ".".join(table_path))
                     namespace_full_path = "".join(
                         [f'["{item}"]' for item in table_path[: i + 1]]
                     )
@@ -309,7 +309,7 @@ class BindingIndexEntry:
 
 # LATER: Generate bindings shorthands
 def generated_bindings_index(source_name, generated_objects):
-    print("Generating Bindings Index...")
+    log.info("Generating Bindings Index...")
     body = []
     include_list = []
     bindings_headers_location = LOCATIONS[source_name]["headers"]
@@ -340,7 +340,6 @@ def generated_bindings_index(source_name, generated_objects):
         )
         tables.append(f"state{namespace_full_path}.get_or_create<sol::table>();")
 
-        print(objects)
         for generated_object in objects["objects"]:
             bindings.append(
                 BindingIndexEntry(

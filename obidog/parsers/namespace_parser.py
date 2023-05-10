@@ -8,7 +8,7 @@ from obidog.parsers.utils.xml_utils import (
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.globals_parser import parse_global_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.obidog_parser import CONFLICTS, get_cpp_element_obidog_flags
+from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
 from obidog.models.functions import (
     FunctionOverloadModel,
@@ -60,7 +60,6 @@ def parse_typedef_from_xml(namespace_name, xml_typedef, doxygen_index):
         xml_typedef.find("briefdescription").find("para")
     )
     typedef_definition = get_content(xml_typedef.find("definition"))
-    CONFLICTS.append(typedef_name, xml_typedef)
 
     return TypedefModel(
         id=typedef_id,
@@ -97,7 +96,6 @@ def parse_enum_from_xml(xml_enum):
                 description=get_content(enum_value.find("briefdescription")),
             )
         )
-    CONFLICTS.append(enum_name, xml_enum)
     return EnumModel(
         id=enum_id,
         name=enum_name,

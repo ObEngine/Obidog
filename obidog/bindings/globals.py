@@ -12,7 +12,7 @@ def generate_globals_bindings(name, cpp_globals):
         if cpp_global.flags.nobind:
             continue
         export_name = format_name(cpp_global.name)
-        log.info(f"  Generating bindings for global {global_name}")
+        log.debug(f"  Generating bindings for global {global_name}")
         includes.append(get_include_file(cpp_global))
         objects.append(
             {

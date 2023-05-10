@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 import re
-from typing import List, Union
+from typing import List
 
 from obidog.databases import CppDatabase
+from obidog.logger import log
 from obidog.models.functions import (
-    FunctionModel,
     FunctionOverloadModel,
     FunctionUniformModel,
 )
@@ -271,7 +271,7 @@ def cpp_type_to_lua_type(cpp_db, cpp_type):
                 ]
             )
         else:
-            print("[Warning] Unable to determine proper templated type")
+            log.warn("Unable to determine proper templated type")
             lua_type = f"{cpp_type_to_lua_type(cpp_db, cpp_type)}[{cpp_type_to_lua_type(cpp_db, templated_type)}]"
     elif cpp_type in ALL_TYPES_MATCH:
         lua_type = ALL_TYPES_MATCH[cpp_type]

@@ -20,7 +20,7 @@ def generate_enums_bindings(name: str, enums: List[EnumModel]):
     bindings_functions = []
     objects = []
     for enum_name, enum in enums.items():
-        log.info(f"  Generating bindings for enum {enum_name}")
+        log.debug(f"  Generating bindings for enum {enum_name}")
         enum_path = strip_include(enum.location.file).replace(os.path.sep, "/")
         includes.append(f"#include <{enum_path}>")
         state_view = flavour.STATE_VIEW

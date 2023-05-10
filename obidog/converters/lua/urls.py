@@ -1,9 +1,9 @@
 from obidog.config import OBENGINE_GIT_URL, BINDINGS_SOURCES_LOCATION
 from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
+from obidog.logger import log
 from obidog.models.namespace import NamespaceModel
 from obidog.parsers.bindings_parser import find_binding_location
 from obidog.parsers.doxygen_index_parser import DoxygenIndex
-from obidog.wrappers.git_wrapper import get_current_branch
 
 
 def get_documentation_url(element):
@@ -37,7 +37,7 @@ def get_bindings_url(bindings_results, element, branch):
         # TODO: Take Location parameter into account
         return f"{OBENGINE_GIT_URL}/blob/{branch}/{BINDINGS_SOURCES_LOCATION}/{bindings_source}#L{bindings_line}"
     else:
-        print(f"Namespace '{namespace}' not found in bindings generation results")
+        log.warn(f"Namespace '{namespace}' not found in bindings generation results")
         return ""
 
 
@@ -57,7 +57,7 @@ def get_doxygen_url(doxygen_index: DoxygenIndex, element):
             basepath = "_1".join(doxygen_ref.split("_1")[:-1])
             return f"https://{WEBSITE_URL}/{DOXYGEN_PATH}/{basepath}.html#{uid}"
     else:
-        print(f"Failed to find identifier '{identifier}' in index_db")
+        log.warn(f"Failed to find identifier '{identifier}' in index_db")
         return None
 
 

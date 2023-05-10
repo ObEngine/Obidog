@@ -9,7 +9,7 @@ from obidog.models.functions import (
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.obidog_parser import CONFLICTS, get_cpp_element_obidog_flags
+from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import (
     parse_cpp_type,
     parse_real_type,
@@ -221,7 +221,6 @@ def parse_class_from_xml(class_value, doxygen_index) -> ClassModel:
 
     flags.nobind = flags.nobind or nobind
 
-    CONFLICTS.append(class_name, class_value)
     class_model = ClassModel(
         id=class_id,
         name=class_name,

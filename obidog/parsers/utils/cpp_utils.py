@@ -71,10 +71,8 @@ def parse_definition(definition: str):
 res = parse_definition(
     "std::vector < std::pair < std::string, std::tuple<std::string, std::unique_ptr<int>, float> > > obe::Component::Component< T >::remove"
 )
-print(res)
 res = parse_definition(
     "std::vector < std::pair < std::string, std::tuple<std::string, std::unique_ptr<int>, float> > > obe::Component::Component::remove"
 )
-print(res)
 res = parse_definition("std::vector <std::string> obe::Component::Component::remove")
-print(res)"""
+"""

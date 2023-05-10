@@ -4,6 +4,7 @@ from itertools import product
 
 from lxml import etree
 
+from obidog.logger import log
 from obidog.models.flags import ObidogFlagsModel, ObidogHook, ObidogHookTrigger
 from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 from obidog.utils.string_utils import replace_delimiters
@@ -267,18 +268,3 @@ def get_cpp_element_obidog_flags(cpp_element_id: str):
 def apply_obidog_flags_surrogates(symbol_name: str, flags: ObidogFlagsModel):
     if symbol_name in FLAG_SURROGATES:
         flags.combine(FLAG_SURROGATES[symbol_name])
-
-
-class ConflictsManager:
-    def __init__(self):
-        self.conflicts = {}
-
-    def append(self, conflict, xml):
-        if conflict not in self.conflicts:
-            self.conflicts[conflict] = []
-        else:
-            print("Conflict detected")
-        self.conflicts[conflict].append(xml)
-
-
-CONFLICTS = ConflictsManager()

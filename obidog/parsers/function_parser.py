@@ -6,10 +6,9 @@ from obidog.models.functions import (
     FunctionModel,
     FunctionPlaceholderModel,
 )
-from obidog.models.location import Location
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.location_parser import parse_doxygen_location
-from obidog.parsers.obidog_parser import CONFLICTS, get_cpp_element_obidog_flags
+from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
 from obidog.parsers.utils.doxygen_utils import (
     doxygen_id_to_cpp_id,
@@ -75,9 +74,6 @@ def parse_function_from_xml(xml_function, doxygen_index, is_method: bool = False
     abstract = False
     if xml_function.attrib["virt"] == "pure-virtual":
         abstract = True
-
-    if not is_method:
-        CONFLICTS.append(name, xml_function)
 
     identifier = parse_definition(definition)[1]
     if is_method:

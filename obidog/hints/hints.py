@@ -261,7 +261,7 @@ def _generate_dynamic_types() -> Dict[str, ClassModel]:
     return result
 
 
-def generate_hints(cpp_db: CppDatabase, path_to_doc: str):
+def generate_hints(cpp_db: CppDatabase):
     log.info("Discarding placeholders")
     discard_placeholders(cpp_db)
 

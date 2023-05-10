@@ -16,6 +16,7 @@ from obidog.models.flags import ObidogHook, ObidogHookTrigger
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
+    FunctionUniformModel,
 )
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
@@ -117,10 +118,8 @@ def generate_templated_method_bindings(
                 )
                 body.append(";")
 
-    else:
-        print(
-            f"[WARNING] Template hints not implemented for {class_name} -> {method.name}"
-        )
+    elif not method.flags.nobind:
+        log.warn(f"Template hints not implemented for {class_name}::{method.name}")
 
 
 def generate_methods_bindings(
@@ -128,11 +127,13 @@ def generate_methods_bindings(
     body: List[str],
     class_name: str,
     lua_name: str,
-    methods: Dict[str, FunctionModel],
+    methods: Dict[str, FunctionUniformModel],
 ):
     for method in methods.values():
         if isinstance(method, FunctionOverloadModel):
             for overload in method.overloads:
+                if overload.flags.nobind:
+                    continue
                 if overload.template:
                     generate_templated_method_bindings(
                         cpp_db, body, class_name, lua_name, overload
@@ -260,7 +261,7 @@ def generate_classes_bindings(cpp_db: CppDatabase, classes: Dict[str, ClassModel
         includes_for_class = []
         if class_value.flags.nobind:
             continue
-        log.info(f"  Generating bindings for class {class_name}")
+        log.debug(f"  Generating bindings for class {class_name}")
         real_class_name = class_name.split("::")[-1]
         real_class_name = format_name(real_class_name)
         objects.append(

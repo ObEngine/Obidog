@@ -12,9 +12,10 @@ def _check_clang_format():
         with subprocess.Popen(
             [CLANG_FORMAT_PATH, "--version"], stdout=subprocess.PIPE
         ) as clang_format_exec:
-            version = clang_format_exec.stdout.read().decode("utf-8").strip()
+            version_string = clang_format_exec.stdout.read().decode("utf-8").strip()
+            version_components = version_string.split()
             try:
-                version = version.split()[2]
+                version = version_components[version_components.index("version") + 1]
                 if int(version.split(".")[0]) >= 10:
                     return True
                 else:
