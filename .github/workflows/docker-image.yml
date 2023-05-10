@@ -1,0 +1,17 @@
+name: Docker Image CI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag ghcr.io/obengine/obidog:${{ github.event.release.tag_name }}
+    - name: Login to GHCR
+      run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u AngryAubergine --password-stdin
+    - name: Upload to GHCR
+      run: docker push ghcr.io/obengine/obidog:${{ github.event.release.tag_name }}
