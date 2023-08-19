@@ -1,21 +1,17 @@
-import os
-
 from obidog.logger import log
 from obidog.models.base import ItemVisibility
-from obidog.models.functions import (
-    FunctionModel,
-    FunctionPlaceholderModel,
-)
+from obidog.models.functions import FunctionModel, FunctionPlaceholderModel
 from obidog.models.qualifiers import QualifiersModel
 from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.parameters_parser import parse_parameters_from_xml
+from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.utils.doxygen_utils import (
     doxygen_id_to_cpp_id,
     doxygen_ref_to_cpp_name,
 )
 from obidog.parsers.utils.xml_utils import get_content, get_content_if
-from obidog.parsers.utils.cpp_utils import parse_definition
+from obidog.utils.cpp_utils import sanitize_cpp_definition
 
 
 def make_return_type(return_type):
@@ -24,14 +20,14 @@ def make_return_type(return_type):
         if return_type_part.tag == "ref":
             full_return_type += doxygen_ref_to_cpp_name(return_type_part)
         elif return_type_part.text:
-            full_return_type += return_type_part.text.strip()
+            full_return_type += return_type_part.text
         if return_type_part.tail:
             tail = return_type_part.tail
             if tail and tail.strip() == "":
                 full_return_type += " "
             else:
-                full_return_type += return_type_part.tail.strip()
-    return full_return_type.strip()
+                full_return_type += return_type_part.tail
+    return sanitize_cpp_definition(full_return_type)
 
 
 def parse_function_from_xml(xml_function, doxygen_index, is_method: bool = False):

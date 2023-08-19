@@ -1,34 +1,38 @@
-from collections import defaultdict
 import glob
 import os
 import re
 import shutil
-from typing import Dict, List, Union
+from collections import defaultdict
 
-from mako.template import Template
 from mako.lookup import TemplateLookup
-from obidog.bindings.generator import discard_placeholders
+from mako.template import Template
 
+from obidog.bindings.generator import discard_placeholders
 from obidog.config import PATH_TO_OBENGINE
-from obidog.converters.lua.types import LuaType, convert_all_types
+from obidog.converters.lua.types import (
+    DYNAMIC_TYPES,
+    DynamicTupleType,
+    convert_all_types,
+)
 from obidog.databases import CppDatabase
 from obidog.logger import log
+from obidog.models.bindings import LuaType
 from obidog.models.classes import AttributeModel, ClassModel
 from obidog.models.functions import FunctionModel
 from obidog.models.namespace import NamespaceModel
 from obidog.models.qualifiers import QualifiersModel
-from obidog.converters.lua.types import DYNAMIC_TYPES, DynamicTupleType
+from obidog.utils.cpp_utils import make_fqn
 
 # TODO: rename p0, p1, p2 to proper parameter names
 
 
-BindableElement = Union[ClassModel, NamespaceModel, FunctionModel, AttributeModel]
+BindableElement = ClassModel | NamespaceModel | FunctionModel | AttributeModel
 
 EVENT_NAMESPACE = "events"
 
 
 def write_hints(
-    elements_by_namespace: Dict[str, List[BindableElement]],
+    elements_by_namespace: dict[str, list[BindableElement]],
 ):
     lookup = TemplateLookup(["templates/hints"])
     export_directory = os.path.join(PATH_TO_OBENGINE, "engine", "Hints")
@@ -133,7 +137,7 @@ def _group_elements_by_namespace(elements):
     return elements_by_namespace
 
 
-def _fix_bind_as(elements: List[Union[FunctionModel, ClassModel, AttributeModel]]):
+def _fix_bind_as(elements: list[FunctionModel | ClassModel | AttributeModel]):
     for element in elements:
         if element.flags.rename:
             element.name = element.flags.rename
@@ -145,7 +149,7 @@ def _fix_bind_as(elements: List[Union[FunctionModel, ClassModel, AttributeModel]
             _fix_bind_as(element.attributes.values())
 
 
-def _setup_methods_as_attributes(classes: Dict[str, ClassModel]):
+def _setup_methods_as_attributes(classes: dict[str, ClassModel]):
     for class_value in classes.values():
         methods_to_pop = []
         for method_name, method in class_value.methods.items():
@@ -154,9 +158,10 @@ def _setup_methods_as_attributes(classes: Dict[str, ClassModel]):
                 class_value.attributes[method.name] = AttributeModel(
                     name=method.name,
                     namespace=method.namespace,
+                    from_class="?",
                     type=method.return_type,
                     qualifiers=QualifiersModel(
-                        method.qualifiers.const, method.qualifiers.static
+                        const=method.qualifiers.const, static=method.qualifiers.static
                     ),
                     description=method.description or "",
                     flags=method.flags,
@@ -168,15 +173,13 @@ def _setup_methods_as_attributes(classes: Dict[str, ClassModel]):
         for method in methods_to_pop:
             class_value.methods.pop(method)
 
-
-def _build_table_for_events(classes: Dict[str, ClassModel]):
-    result = {}
-    events = []
+def _get_events_grouped_by_section(classes: dict[str, ClassModel]) -> dict[str, list[AttributeModel]]:
+    event_classes: list[ClassModel] = []
     for class_value in classes.values():
         if class_value.namespace.startswith(f"obe::{EVENT_NAMESPACE}::"):
-            events.append(class_value)
+            event_classes.append(class_value)
     events_grouped_by_section = defaultdict(list)
-    for event in events:
+    for event in event_classes:
         if "id" not in event.attributes:
             continue
         event_initializer = event.attributes["id"].initializer or ""
@@ -191,19 +194,29 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
             event.namespace.removeprefix(f"obe::{EVENT_NAMESPACE}::")
         ].append((event_id, event))
 
+    return events_grouped_by_section
+
+
+def _build_table_for_events(classes: dict[str, ClassModel], table_target: tuple[str] = ("obe", EVENT_NAMESPACE)):
+    result = {}
+    target_cpp_namespace = "::".join(table_target)
+    target_lua_namespace = ".".join(table_target)
+
+    events_grouped_by_section = _get_events_grouped_by_section(classes)
     event_groups = {}
     for event_group_name, events in events_grouped_by_section.items():
         event_group_attributes = {
             event_id: AttributeModel(
                 name=event_id,
-                type=LuaType(f"fun(evt:obe.events.{event_group_name}.{event.name})"),
+                from_class="?",
+                type=LuaType(type=f"fun(evt:{target_lua_namespace}.{event_group_name}.{event.name})"),
                 namespace=event.namespace,
             )
             for event_id, event in events
         }
         event_groups[event_group_name] = ClassModel(
             name=event_group_name,
-            namespace=f"obe::{EVENT_NAMESPACE}::_EventTableGroups",
+            namespace=f"{target_cpp_namespace}::_EventTableGroups",
             attributes=event_group_attributes,
             constructors=[],
             methods={},
@@ -213,13 +226,14 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
     for event_group_name, event_group in event_groups.items():
         event_groups_as_attributes[event_group_name] = AttributeModel(
             name=event_group.name,
+            from_class="?",
             namespace=event_group.namespace,
-            type=LuaType(f"obe.{EVENT_NAMESPACE}._EventTableGroups.{event_group_name}"),
+            type=LuaType(type=f"{target_lua_namespace}._EventTableGroups.{event_group_name}"),
         )
 
     event_namespace = ClassModel(
         name="_EventTable",
-        namespace=f"obe::{EVENT_NAMESPACE}",
+        namespace=target_cpp_namespace,
         attributes=event_groups_as_attributes,
         constructors=[],
         methods={},
@@ -227,20 +241,69 @@ def _build_table_for_events(classes: Dict[str, ClassModel]):
 
     for event_group_name, event_group in event_groups.items():
         result[f"{event_group.namespace}::{event_group.name}"] = event_group
-    result[f"obe::{EVENT_NAMESPACE}::_EventTable"] = event_namespace
+    result[f"{target_cpp_namespace}::_EventTable"] = event_namespace
 
     return result
 
+# Copy of function above, but inject GameObjectCls as first parameter (so it acts as methods instead of free functions)
+def _build_table_for_gameobject_events(classes: dict[str, ClassModel], table_target: tuple[str] = ("obe", EVENT_NAMESPACE)):
+    result = {}
+    target_cpp_namespace = "::".join(table_target)
+    target_lua_namespace = ".".join(table_target)
+
+    events_grouped_by_section = _get_events_grouped_by_section(classes)
+    event_groups = {}
+    for event_group_name, events in events_grouped_by_section.items():
+        event_group_attributes = {
+            event_id: AttributeModel(
+                name=event_id,
+                from_class="?",
+                type=LuaType(type=f"fun(self: GameObjectCls, evt:{target_lua_namespace}.{event_group_name}.{event.name})"),
+                namespace=event.namespace,
+            )
+            for event_id, event in events
+        }
+        event_groups[event_group_name] = ClassModel(
+            name=event_group_name,
+            namespace=f"{target_cpp_namespace}::_GameObjectEventTableGroups",
+            attributes=event_group_attributes,
+            constructors=[],
+            methods={},
+        )
+
+    event_groups_as_attributes = {}
+    for event_group_name, event_group in event_groups.items():
+        event_groups_as_attributes[event_group_name] = AttributeModel(
+            name=event_group.name,
+            from_class="?",
+            namespace=event_group.namespace,
+            type=LuaType(type=f"{target_lua_namespace}._GameObjectEventTableGroups.{event_group_name}"),
+        )
+
+    event_namespace = ClassModel(
+        name="_GameObjectEventTable",
+        namespace=target_cpp_namespace,
+        attributes=event_groups_as_attributes,
+        constructors=[],
+        methods={},
+    )
+
+    for event_group_name, event_group in event_groups.items():
+        result[f"{event_group.namespace}::{event_group.name}"] = event_group
+    result[f"{target_cpp_namespace}::_GameObjectEventTable"] = event_namespace
+
+    return result
 
 def _generate_dynamic_tuple(
     tuple_name: str, tuple_type: DynamicTupleType
 ) -> ClassModel:
     return ClassModel(
-        tuple_name,
-        "",
+        name=tuple_name,
+        namespace="",
         attributes={
             f"[{i}]": AttributeModel(
                 name=f"[{i}]",
+                from_class="?",
                 type=sub_type,
                 namespace="",
             )
@@ -251,7 +314,7 @@ def _generate_dynamic_tuple(
     )
 
 
-def _generate_dynamic_types() -> Dict[str, ClassModel]:
+def _generate_dynamic_types() -> dict[str, ClassModel]:
     result = {}
     for dynamic_type_name, dynamic_type in DYNAMIC_TYPES.dynamic_types.items():
         if isinstance(dynamic_type, DynamicTupleType):
@@ -269,6 +332,7 @@ def generate_hints(cpp_db: CppDatabase):
     convert_all_types(cpp_db)
 
     cpp_db.classes |= _build_table_for_events(cpp_db.classes)
+    cpp_db.classes |= _build_table_for_gameobject_events(cpp_db.classes)
     cpp_db.classes |= _generate_dynamic_types()
     all_elements = [
         item

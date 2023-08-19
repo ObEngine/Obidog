@@ -1,6 +1,6 @@
-from enum import Enum
 import json
 import os
+from enum import Enum
 
 from obidog.databases import CppDatabase
 

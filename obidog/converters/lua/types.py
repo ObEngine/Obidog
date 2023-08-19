@@ -1,15 +1,10 @@
-from dataclasses import dataclass
 import re
-from typing import List
 
 from obidog.databases import CppDatabase
 from obidog.logger import log
-from obidog.models.functions import (
-    FunctionOverloadModel,
-    FunctionUniformModel,
-)
+from obidog.models.bindings import LuaType
+from obidog.models.functions import FunctionOverloadModel, FunctionUniformModel
 from obidog.parsers.type_parser import split_root_types
-
 
 PRIMITIVE_TYPES = {
     "bool": "boolean",
@@ -126,14 +121,6 @@ def fetch_symbol(cpp_db: CppDatabase, symbol: str):
     return symbols[symbol]
 
 
-@dataclass
-class LuaType:
-    type: str
-
-    def __str__(self):
-        return f"{self.type}".strip(" ")
-
-
 # TODO: open issue on Doxygen
 def horrible_doxygen_parse_error_patch(cpp_type: str) -> str:
     return re.sub(">([a-zA-Z])", r">(\1", cpp_type)
@@ -155,7 +142,7 @@ def prepare_and_strip_type(cpp_type: str) -> str:
 
 
 class DynamicTupleType:
-    def __init__(self, sub_types: List[str]):
+    def __init__(self, sub_types: list[str]):
         self.sub_types = sub_types
 
     def __str__(self):
@@ -185,7 +172,7 @@ class DynamicTypesCollection:
     def __init__(self):
         self.dynamic_types = {}
 
-    def add_tuple_type(self, sub_types: List[str]):
+    def add_tuple_type(self, sub_types: list[str]):
         new_type = DynamicTupleType(sub_types)
         self.dynamic_types[str(new_type)] = new_type
         return str(new_type)

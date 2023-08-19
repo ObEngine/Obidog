@@ -2,7 +2,6 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
 from itertools import groupby
-from typing import List, Optional, Union
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.models import BindableFunctionModel, BindingsSourceCode
@@ -12,8 +11,8 @@ from obidog.logger import log
 from obidog.models.flags import MetaTag
 from obidog.models.functions import (
     FunctionOverloadModel,
-    ParameterModel,
     FunctionUniformModel,
+    ParameterModel,
 )
 from obidog.parsers.type_parser import parse_cpp_type
 from obidog.utils.cpp_utils import make_fqn
@@ -86,7 +85,7 @@ def make_static_cast(function_value: BindableFunctionModel):
 
 def create_all_default_parameter_specialisations(
     function_value: BindableFunctionModel,
-) -> List[BindableFunctionModel]:
+) -> list[BindableFunctionModel]:
     specialisations = []
     static_part_index = 0
     for parameter in function_value.parameters:
@@ -181,8 +180,8 @@ def make_bindable_function_model(function_value: FunctionUniformModel):
 def generate_function_specialisations(
     cpp_db: CppDatabase,
     function_value: FunctionUniformModel,
-    options: Optional[FunctionBindingGenerationOptions] = None,
-) -> List[BindableFunctionModel]:
+    options: FunctionBindingGenerationOptions | None = None,
+) -> list[BindableFunctionModel]:
     options = options or FunctionBindingGenerationOptions()
 
     specialisations = []
@@ -315,7 +314,7 @@ def create_function_bindings(
     cpp_db: CppDatabase,
     store_in: str,
     function_value: FunctionUniformModel,
-) -> List[BindingsSourceCode]:
+) -> list[BindingsSourceCode]:
     specialisations = generate_function_specialisations(cpp_db, function_value)
 
     if len(specialisations) == 1:

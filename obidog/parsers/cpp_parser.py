@@ -1,18 +1,19 @@
 import os
 
 from lxml import etree
+
 from obidog.config import SOURCE_DIRECTORIES
 from obidog.databases import CppDatabase
 from obidog.logger import log
 from obidog.parsers.class_parser import parse_class_from_xml
-from obidog.parsers.doxygen_index_parser import parse_doxygen_index, DoxygenIndex
-from obidog.parsers.obidog_parser import (
-    apply_obidog_flags_surrogates,
-    parse_all_obidog_flags_from_xml,
-)
+from obidog.parsers.doxygen_index_parser import DoxygenIndex, parse_doxygen_index
 from obidog.parsers.namespace_parser import (
     parse_enums_from_xml,
     parse_namespace_from_xml,
+)
+from obidog.parsers.obidog_parser import (
+    apply_obidog_flags_surrogates,
+    parse_all_obidog_flags_from_xml,
 )
 from obidog.utils.cpp_utils import make_fqn
 

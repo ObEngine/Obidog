@@ -1,16 +1,15 @@
 from pydantic import Field
-from typing import List, Optional
 
 from obidog.models.functions import FunctionModel, ParameterModel
 
 
 class BindableFunctionModel(FunctionModel):
-    fqn: Optional[str] = None
-    function_call: Optional[str] = None
-    prefix_call_args: Optional[List[ParameterModel]] = Field(default_factory=list)
-    postfix_call_args: Optional[List[ParameterModel]] = Field(default_factory=list)
-    call_prefix: Optional[str] = None
-    call_suffix: Optional[str] = None
+    fqn: str | None = None
+    function_call: str | None = None
+    prefix_call_args: list[ParameterModel] | None = Field(default_factory=list)
+    postfix_call_args: list[ParameterModel] | None = Field(default_factory=list)
+    call_prefix: str | None = None
+    call_suffix: str | None = None
     requires_static_cast: bool = False
     requires_call_wrapper: bool = False
 

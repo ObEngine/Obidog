@@ -1,7 +1,7 @@
 import obidog.bindings.flavours.sol3 as flavour
-from obidog.utils.string_utils import format_name
 from obidog.bindings.utils import fetch_table, get_include_file
 from obidog.logger import log
+from obidog.utils.string_utils import format_name
 
 
 def generate_globals_bindings(name, cpp_globals):

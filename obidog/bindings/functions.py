@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List, Union
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions_v2 import create_function_bindings
@@ -10,8 +9,8 @@ from obidog.logger import log
 from obidog.models.functions import (
     FunctionModel,
     FunctionOverloadModel,
-    ParameterModel,
     FunctionUniformModel,
+    ParameterModel,
 )
 from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import clean_capitalize, format_name
@@ -206,10 +205,10 @@ class MaybeDefaultParameter:
 
 @dataclass
 class FunctionWithDefaultParameter:
-    parameters: List[MaybeDefaultParameter]
+    parameters: list[MaybeDefaultParameter]
 
 
-"""def create_all_default_overloads(function: FunctionModel) -> List[DefaultOverloadModel]:
+"""def create_all_default_overloads(function: FunctionModel) -> list[DefaultOverloadModel]:
     function_definitions = []
     static_part_index = 0
     for parameter in function.parameters:
@@ -362,7 +361,7 @@ def generate_function_bindings(
 # LATER: Catch operator function and assign them to correct classes metafunctions
 def generate_functions_bindings(
     cpp_db: CppDatabase,
-    functions: Dict[str, FunctionUniformModel],
+    functions: dict[str, FunctionUniformModel],
 ):
     objects = []
     includes = []

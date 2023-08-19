@@ -3,10 +3,10 @@ import tempfile
 import git
 
 from obidog.config import (
+    OBENGINE_GIT_SSH,
+    OBENGINE_GIT_URL,
     PATH_TO_OBENGINE,
     set_obengine_git_directory,
-    OBENGINE_GIT_URL,
-    OBENGINE_GIT_SSH,
 )
 from obidog.exceptions import InvalidObEngineGitRepositoryException
 from obidog.logger import log

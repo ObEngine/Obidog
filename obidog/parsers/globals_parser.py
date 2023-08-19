@@ -1,9 +1,6 @@
-import os
-
-from obidog.config import PATH_TO_OBENGINE
 from obidog.models.globals import GlobalModel
-from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.location_parser import parse_doxygen_location
+from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import parse_real_type
 from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 from obidog.parsers.utils.xml_utils import get_content, get_content_if

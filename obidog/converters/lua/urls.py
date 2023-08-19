@@ -1,4 +1,4 @@
-from obidog.config import OBENGINE_GIT_URL, BINDINGS_SOURCES_LOCATION
+from obidog.config import BINDINGS_SOURCES_LOCATION, OBENGINE_GIT_URL
 from obidog.documentation.config import DOC_PATH, DOXYGEN_PATH, WEBSITE_URL
 from obidog.logger import log
 from obidog.models.namespace import NamespaceModel

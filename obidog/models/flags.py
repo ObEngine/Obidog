@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+
+from pydantic import BaseModel, Field
 
 from obidog.models.base import BaseModel
 
@@ -24,21 +24,21 @@ class ObidogHook(BaseModel):
 
 
 class ObidogFlagsModel(BaseModel):
-    helpers: List[str] = Field(default_factory=list)
-    template_hints: Dict[str, List[str]] = Field(default_factory=dict)
+    helpers: list[str] = Field(default_factory=list)
+    template_hints: dict[str, list[str]] = Field(default_factory=dict)
     nobind: bool = False
-    additional_includes: List[str] = Field(default_factory=list)
+    additional_includes: list[str] = Field(default_factory=list)
     as_property: bool = False
     copy_parent_items: bool = False
     proxy: bool = False
     noconstructor: bool = False
     load_priority: int = 0
     rename: str = None
-    rename_parameters: List[Tuple[str, str]] = Field(default_factory=list)
+    rename_parameters: list[tuple[str, str]] = Field(default_factory=list)
     bind_code: str = None
-    meta: Set[str] = Field(default_factory=set)
-    merge_template_specialisations_as: Optional[str] = None
-    hooks: Set[ObidogHook] = Field(default_factory=set)
+    meta: set[str] = Field(default_factory=set)
+    merge_template_specialisations_as: str | None = None
+    hooks: set[ObidogHook] = Field(default_factory=set)
 
     def combine(self, flags: "ObidogFlagsModel"):
         self.helpers += flags.helpers

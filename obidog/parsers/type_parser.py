@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, Union
-from obidog.parsers.doxygen_index_parser import DoxygenIndex
 
+from obidog.parsers.doxygen_index_parser import DoxygenIndex
 from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
 from obidog.parsers.utils.xml_utils import get_content
 
@@ -51,7 +50,7 @@ def split_root_types(templated_type: str):
 TEMPLATE_AND_FUNCTION_TYPE_EMBED_SYMBOLS = [("<", ">"), ("(", ")")]
 
 
-def split_unembedded(string: str, sep: str, embed_symbols: List[Tuple[str, str]]):
+def split_unembedded(string: str, sep: str, embed_symbols: list[tuple[str, str]]):
     stack = []
     segments = []
     buffer = ""
@@ -77,7 +76,7 @@ def split_unembedded(string: str, sep: str, embed_symbols: List[Tuple[str, str]]
 
 
 class CppQualifiers:
-    def __init__(self, prefix_qualifiers: List[str], postfix_qualifiers: List[str]):
+    def __init__(self, prefix_qualifiers: list[str], postfix_qualifiers: list[str]):
         self.prefix_qualifiers = prefix_qualifiers
         self.postfix_qualifiers = postfix_qualifiers
 
@@ -92,7 +91,7 @@ class CppQualifiers:
         )
 
 
-def strip_qualifiers(type: str) -> Tuple[str, CppQualifiers]:
+def strip_qualifiers(type: str) -> tuple[str, CppQualifiers]:
     valid_prefix_qualifiers = ["const", "constexpr", "consteval", "static"]
     valid_postfix_qualifiers = ["&", "*", "const&", "const*", "const"]
     prefix_qualifiers = []
@@ -124,7 +123,7 @@ class CppType(ABC):
     def __init__(self, qualifiers: CppQualifiers) -> None:
         super().__init__()
         self.qualifiers = qualifiers
-        self.type: Optional[Union[str, CppType]] = None
+        self.type: str | CppType | None = None
 
     @abstractmethod
     def __str__(self) -> str:
@@ -152,7 +151,7 @@ class CppTemplateType(CppType):
         self,
         type: str,
         qualifiers: CppQualifiers,
-        template_types: List["CppTemplateType"],
+        template_types: list["CppTemplateType"],
     ):
         super().__init__(qualifiers)
         self.type = type
@@ -172,7 +171,7 @@ class CppTemplateType(CppType):
 
 class CppFunctionArg(CppType):
     def __init__(
-        self, type: CppType, qualifiers: CppQualifiers, name: Optional[str] = None
+        self, type: CppType, qualifiers: CppQualifiers, name: str | None = None
     ):
         super().__init__(qualifiers)
         self.type = type
@@ -193,7 +192,7 @@ class CppFunctionType(CppType):
         self,
         return_type: CppType,
         qualifiers: CppQualifiers,
-        args: List[CppFunctionArg],
+        args: list[CppFunctionArg],
     ):
         super().__init__(qualifiers)
         self.type = return_type
@@ -279,7 +278,7 @@ def parse_cpp_type(cpp_type: str) -> CppType:
 
 
 def patch_incomplete_type(parent: str, doxygen_index: DoxygenIndex):
-    def patch_incomplete_type_inner(incomplete_type: Union[str, CppType]):
+    def patch_incomplete_type_inner(incomplete_type: str | CppType):
         incomplete_type = (
             incomplete_type.type
             if isinstance(incomplete_type, CppType)

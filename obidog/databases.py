@@ -1,5 +1,3 @@
-from typing import Dict
-
 from obidog.models.classes import ClassModel
 from obidog.models.enums import EnumModel
 from obidog.models.functions import FunctionBaseModel
@@ -10,12 +8,12 @@ from obidog.models.typedefs import TypedefModel
 
 class CppDatabase:
     def __init__(self):
-        self.classes: Dict[str, ClassModel] = {}
-        self.typedefs: Dict[str, TypedefModel] = {}
-        self.functions: Dict[str, FunctionBaseModel] = {}
-        self.globals: Dict[str, GlobalModel] = {}
-        self.enums: Dict[str, EnumModel] = {}
-        self.namespaces: Dict[str, NamespaceModel] = {}
+        self.classes: dict[str, ClassModel] = {}
+        self.typedefs: dict[str, TypedefModel] = {}
+        self.functions: dict[str, FunctionBaseModel] = {}
+        self.globals: dict[str, GlobalModel] = {}
+        self.enums: dict[str, EnumModel] = {}
+        self.namespaces: dict[str, NamespaceModel] = {}
 
 
 class LuaDatabase:

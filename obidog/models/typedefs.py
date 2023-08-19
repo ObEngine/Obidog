@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import Field
 
 from obidog.models.base import CppElement

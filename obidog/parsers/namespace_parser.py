@@ -1,23 +1,20 @@
 from lxml import etree
 
-from obidog.parsers.utils.xml_utils import (
-    get_content,
-    get_content_if,
-    extract_xml_value,
-)
+from obidog.models.enums import EnumModel, EnumValueModel
+from obidog.models.functions import FunctionModel, FunctionOverloadModel
+from obidog.models.namespace import NamespaceModel
+from obidog.models.typedefs import TypedefModel
 from obidog.parsers.function_parser import parse_function_from_xml
 from obidog.parsers.globals_parser import parse_global_from_xml
 from obidog.parsers.location_parser import parse_doxygen_location
 from obidog.parsers.obidog_parser import get_cpp_element_obidog_flags
 from obidog.parsers.type_parser import parse_real_type, rebuild_incomplete_type
-from obidog.models.functions import (
-    FunctionOverloadModel,
-    FunctionModel,
-)
-from obidog.models.enums import EnumModel, EnumValueModel
-from obidog.models.typedefs import TypedefModel
-from obidog.models.namespace import NamespaceModel
 from obidog.parsers.utils.doxygen_utils import doxygen_id_to_cpp_id
+from obidog.parsers.utils.xml_utils import (
+    extract_xml_value,
+    get_content,
+    get_content_if,
+)
 
 UNUSABLE_FUNCTIONS_IDS = set()
 

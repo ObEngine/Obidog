@@ -1,8 +1,7 @@
 from pydantic import Field
-from typing import List, Dict, Optional
 
-from obidog.models.base import BaseModel, CppElement, ItemVisibility
-from obidog.models.bindings import Export
+from obidog.models.base import CppElement, ItemVisibility
+from obidog.models.bindings import Export, LuaType
 from obidog.models.flags import ObidogFlagsModel
 from obidog.models.functions import (
     FunctionBaseModel,
@@ -17,11 +16,11 @@ from obidog.models.urls import URLs
 class AttributeModel(CppElement):
     name: str
     namespace: str
-    type: str
+    type: str | LuaType
     from_class: str
     qualifiers: QualifiersModel = Field(default_factory=QualifiersModel)
     description: str = ""
-    initializer: Optional[str]
+    initializer: str | None
     flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)
     export: Export = Field(default_factory=Export)
     location: Location = Field(default_factory=Location)
@@ -41,13 +40,13 @@ class PlaceholderClassModel(ClassBaseModel):
 class ClassModel(ClassBaseModel):
     namespace: str = ""
     abstract: bool = False
-    bases: List[str] = Field(default_factory=list)
-    attributes: Dict[str, AttributeModel] = Field(default_factory=dict)
-    constructors: List[FunctionModel] = Field(default_factory=list)
-    destructor: Optional[FunctionModel] = None
-    methods: Dict[str, FunctionBaseModel] = Field(default_factory=dict)
-    private_methods: Dict[str, FunctionUniformModel] = Field(default_factory=dict)
-    private_attributes: Dict[str, AttributeModel] = Field(default_factory=dict)
+    bases: list[str] = Field(default_factory=list)
+    attributes: dict[str, AttributeModel] = Field(default_factory=dict)
+    constructors: list[FunctionModel] = Field(default_factory=list)
+    destructor: FunctionModel | None = None
+    methods: dict[str, FunctionBaseModel] = Field(default_factory=dict)
+    private_methods: dict[str, FunctionUniformModel] = Field(default_factory=dict)
+    private_attributes: dict[str, AttributeModel] = Field(default_factory=dict)
     flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)
     template: bool = False
     description: str = ""

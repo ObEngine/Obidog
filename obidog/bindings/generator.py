@@ -1,17 +1,15 @@
-from dataclasses import dataclass
 import os
 import re
 from collections import defaultdict
-from types import FunctionType
-from typing import Union
+from dataclasses import dataclass
 
 from obidog.bindings.classes import (
     apply_inherit_hook,
     copy_parent_bases,
     copy_parent_bindings,
+    flag_abstract_classes,
     generate_class_template_specialisations,
     generate_classes_bindings,
-    flag_abstract_classes,
 )
 from obidog.bindings.enums import generate_enums_bindings
 from obidog.bindings.flavours import sol3 as flavour
@@ -20,10 +18,10 @@ from obidog.bindings.globals import generate_globals_bindings
 from obidog.bindings.utils import strip_include, strip_qualifiers_from_type
 from obidog.config import (
     BINDINGS_CONFIG_FILE,
+    LOCATIONS,
     PATH_TO_OBENGINE,
     SOURCE_DIRECTORIES,
     SOURCE_DIRECTORIES_BY_OUTPUT,
-    LOCATIONS,
 )
 from obidog.databases import CppDatabase
 from obidog.logger import log
@@ -35,8 +33,8 @@ from obidog.models.functions import (
     FunctionUniformModel,
 )
 from obidog.models.namespace import NamespaceModel
-from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.parsers.type_parser import parse_cpp_type
+from obidog.parsers.utils.cpp_utils import parse_definition
 from obidog.utils.cpp_utils import make_fqn
 from obidog.utils.string_utils import format_filename, format_name
 from obidog.wrappers.clangformat_wrapper import clang_format_files

@@ -24,7 +24,6 @@ from obidog.parsers.utils.xml_utils import (
 )
 from obidog.utils.cpp_utils import make_fqn
 
-
 UNUSABLE_METHODS_IDS = set()
 
 

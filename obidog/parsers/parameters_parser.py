@@ -1,6 +1,6 @@
+from obidog.models.functions import ParameterModel
 from obidog.parsers.type_parser import parse_real_type
 from obidog.parsers.utils.xml_utils import get_content, get_content_if
-from obidog.models.functions import ParameterModel
 
 
 def parse_parameters_from_xml(xml_function, doxygen_index):

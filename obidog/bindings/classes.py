@@ -1,7 +1,6 @@
 import copy
-from dataclasses import dataclass
 import os
-from typing import List, Dict, Optional, Set
+from dataclasses import dataclass
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.functions import does_requires_proxy_function
@@ -38,16 +37,16 @@ METHOD_WITH_DEFAULT_VALUES_LAMBDA_WRAPPER_AND_PROXY = (
 
 @dataclass
 class ClassConstructors:
-    signatures: List[List[str]]
+    signatures: list[list[str]]
     constructible: bool
 
 
-def generate_hook_call(ctx: ClassModel, hook: ObidogHook) -> Optional[str]:
+def generate_hook_call(ctx: ClassModel, hook: ObidogHook) -> str | None:
     if hook.trigger == ObidogHookTrigger.Bind:
         return f"{ctx.name}::{hook.code}();"
 
 
-def generate_constructors_definitions(constructors: List[FunctionModel]):
+def generate_constructors_definitions(constructors: list[FunctionModel]):
     """This method generates all possible combinations for all constructors of a class
     If a function has 2 mandatory parameters and 3 default ones, it will generate 4 constructor
     definitions
@@ -97,7 +96,7 @@ METHOD_PROXY_TEMPLATE = """
 
 def generate_templated_method_bindings(
     cpp_db: CppDatabase,
-    body: List[str],
+    body: list[str],
     class_name: str,
     lua_name: str,
     method: FunctionModel,
@@ -124,10 +123,10 @@ def generate_templated_method_bindings(
 
 def generate_methods_bindings(
     cpp_db: CppDatabase,
-    body: List[str],
+    body: list[str],
     class_name: str,
     lua_name: str,
-    methods: Dict[str, FunctionUniformModel],
+    methods: dict[str, FunctionUniformModel],
 ):
     for method in methods.values():
         if isinstance(method, FunctionOverloadModel):
@@ -253,7 +252,7 @@ def generate_class_bindings(cpp_db: CppDatabase, class_value: ClassModel):
     return namespace_access + class_body
 
 
-def generate_classes_bindings(cpp_db: CppDatabase, classes: Dict[str, ClassModel]):
+def generate_classes_bindings(cpp_db: CppDatabase, classes: dict[str, ClassModel]):
     objects = []
     includes = []
     bindings_functions = []
@@ -315,7 +314,7 @@ def generate_class_template_specialisations(cpp_db: CppDatabase):
                     f"{class_value.name}<{', '.join(specialisation_types.values())}>"
                 )
                 specialisation.flags.rename = specialisation_name
-                constructors_and_methods: List[
+                constructors_and_methods: list[
                     FunctionModel
                 ] = specialisation.constructors + list(specialisation.methods.values())
                 for method in constructors_and_methods:
@@ -373,7 +372,7 @@ def generate_class_template_specialisations(cpp_db: CppDatabase):
         )
 
 
-def copy_parent_bases(cpp_db: CppDatabase, classes: Dict[str, ClassModel]):
+def copy_parent_bases(cpp_db: CppDatabase, classes: dict[str, ClassModel]):
     def copy_parent_bases_for_one_class(cpp_db, class_value):
         inheritance_set = []
         for base in class_value.get_bases():
@@ -395,7 +394,7 @@ def copy_parent_bases(cpp_db: CppDatabase, classes: Dict[str, ClassModel]):
         )
 
 
-def apply_inherit_hook(classes: Dict[str, ClassModel]):
+def apply_inherit_hook(classes: dict[str, ClassModel]):
     for class_value in classes.values():
         if any(
             hook.trigger == ObidogHookTrigger.Inherit
@@ -427,7 +426,7 @@ def apply_inherit_hook(classes: Dict[str, ClassModel]):
                         }
 
 
-def copy_parent_bindings(cpp_db, classes: Dict[str, ClassModel]):
+def copy_parent_bindings(cpp_db, classes: dict[str, ClassModel]):
     for class_value in classes.values():
         if class_value.flags.copy_parent_items:
             for base in class_value.get_bases(strip_template_types=True):

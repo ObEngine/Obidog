@@ -1,5 +1,3 @@
-from copy import copy
-from typing import Dict, List, Optional
 from itertools import product
 
 from lxml import etree
@@ -91,7 +89,7 @@ def inject_template_variables(template_combination):
         return generated_combinations
 
 
-def find_obidog_flag(tree, flag_name, amount=None) -> List[str]:
+def find_obidog_flag(tree, flag_name, amount=None) -> list[str]:
     search_for = f"obidog.{flag_name}"
     flags = [
         elem.attrib["url"][len(search_for) : :]
@@ -107,7 +105,7 @@ def find_obidog_flag(tree, flag_name, amount=None) -> List[str]:
     return flags
 
 
-FLAG_SURROGATES: Dict[str, ObidogFlagsModel] = {}
+FLAG_SURROGATES: dict[str, ObidogFlagsModel] = {}
 
 
 # Simple flag parsers
@@ -119,7 +117,7 @@ def parse_obidog_boolean_flag(flag_name: str):
 
 
 def parse_obidog_single_value_flag(flag_name: str, transformer=lambda x: x):
-    def parse_obidog_flag(tree) -> Optional[str]:
+    def parse_obidog_flag(tree) -> str | None:
         values = find_obidog_flag(tree, flag_name, 1)
         if values:
             return transformer(values[0].strip())
@@ -131,7 +129,7 @@ def parse_obidog_single_value_flag(flag_name: str, transformer=lambda x: x):
 def parse_obidog_many_values_flag(
     flag_name: str, transformer=lambda x: x, set_transformer=lambda x: list(x)
 ):
-    def parse_obidog_flag(tree) -> Optional[str]:
+    def parse_obidog_flag(tree) -> str | None:
         values = find_obidog_flag(tree, flag_name)
         if values:
             return set_transformer(transformer(value.strip()) for value in values)

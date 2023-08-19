@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.bindings.utils import fetch_table, strip_include
@@ -15,7 +14,7 @@ def generate_enum_fields(enum_type: str, enum: EnumModel):
     return "{" + ",".join(body) + "}"
 
 
-def generate_enums_bindings(name: str, enums: List[EnumModel]):
+def generate_enums_bindings(name: str, enums: list[EnumModel]):
     includes = []
     bindings_functions = []
     objects = []

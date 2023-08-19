@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 from obidog.config import PATH_TO_OBENGINE
 from obidog.logger import log

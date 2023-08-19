@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import Field
 
 from obidog.models.base import CppElement
@@ -13,7 +12,7 @@ class GlobalModel(CppElement):
     definition: str
     type: str
     namespace: str = ""
-    initializer: Optional[str]
+    initializer: str | None
     location: Location = Field(default_factory=Location)
     description: str = ""
     flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)

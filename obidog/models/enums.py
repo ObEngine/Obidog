@@ -1,5 +1,4 @@
 from pydantic import Field
-from typing import List
 
 from obidog.models.base import CppElement
 from obidog.models.bindings import Export
@@ -17,7 +16,7 @@ class EnumValueModel(CppElement):
 
 class EnumModel(CppElement):
     name: str
-    values: List[EnumValueModel]
+    values: list[EnumValueModel]
     flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)
     namespace: str = ""
     description: str = ""

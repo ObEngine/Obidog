@@ -1,5 +1,6 @@
+from typing import Any
+
 from pydantic import Field
-from typing import List, Any, Optional, Union
 
 from obidog.models.base import BaseModel, CppElement, ItemVisibility
 from obidog.models.bindings import Export
@@ -22,7 +23,7 @@ class ParameterModel(BaseModel):
 class FunctionBaseModel(CppElement):
     name: str
     namespace: str
-    from_class: Optional[str] = None
+    from_class: str | None = None
 
 
 class FunctionPlaceholderModel(FunctionBaseModel):
@@ -31,7 +32,7 @@ class FunctionPlaceholderModel(FunctionBaseModel):
 
 class FunctionModel(FunctionBaseModel):
     definition: str
-    parameters: List[ParameterModel]
+    parameters: list[ParameterModel]
     return_type: str
     template: bool = False
     qualifiers: QualifiersModel = Field(default_factory=QualifiersModel)
@@ -44,14 +45,14 @@ class FunctionModel(FunctionBaseModel):
     abstract: bool = False
     visibility: ItemVisibility = ItemVisibility.Public
     # FQN of proxy function
-    replacement: Optional[str] = None
+    replacement: str | None = None
     constructor: bool = False
     _type: str = "function"
     urls: URLs = Field(default_factory=URLs)
 
 
 class FunctionOverloadModel(FunctionBaseModel):
-    overloads: List[FunctionModel]
+    overloads: list[FunctionModel]
     flags: ObidogFlagsModel = Field(default_factory=ObidogFlagsModel)
     force_cast: bool = False
     export: Export = Field(default_factory=Export)
@@ -68,12 +69,12 @@ class FunctionOverloadModel(FunctionBaseModel):
         )
 
 
-FunctionUniformModel = Union[FunctionModel, FunctionOverloadModel]
+FunctionUniformModel = FunctionModel | FunctionOverloadModel
 
 
 class FunctionPatchModel(FunctionBaseModel):
     definition: str
-    parameters: List[ParameterModel]
+    parameters: list[ParameterModel]
     return_type: str
     replacement: str
     location: Location = Field(default_factory=Location)

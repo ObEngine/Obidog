@@ -1,16 +1,15 @@
 import os
-from typing import Union
 
 from bs4 import BeautifulSoup
-from mako.template import Template
-from mako.lookup import TemplateLookup
 from mako import exceptions
+from mako.lookup import TemplateLookup
+from mako.template import Template
 
 from obidog.bindings.generator import generate_bindings, group_bindings_by_namespace
 from obidog.converters.lua.types import convert_all_types
 from obidog.converters.lua.urls import fill_element_urls
 from obidog.databases import CppDatabase
-from obidog.documentation.config import WEBSITE_URL, DOC_PATH
+from obidog.documentation.config import DOC_PATH, WEBSITE_URL
 from obidog.documentation.search import generate_search_db
 from obidog.logger import log
 from obidog.models.classes import ClassModel
@@ -22,7 +21,7 @@ DB_FILENAME = "search.json"
 CURRENT_VERSION = "0.5"  # TODO: Fetch version from ObEngine repo
 
 
-def document_item(item: Union[ClassModel, NamespaceModel]):
+def document_item(item: ClassModel | NamespaceModel):
     if isinstance(item, ClassModel):
         directory = os.path.join("export", "docs", *item.namespace.split("::"))
     elif isinstance(item, NamespaceModel):

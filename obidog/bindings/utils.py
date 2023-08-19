@@ -1,8 +1,8 @@
-from obidog.models.location import LocalizableModel
-
 import os
+
 import obidog.bindings.flavours.sol3 as flavour
 from obidog.config import SOURCE_DIRECTORIES
+from obidog.models.location import LocalizableModel
 
 
 def strip_include(path):

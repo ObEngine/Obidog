@@ -1,7 +1,5 @@
-from pydantic import BaseModel, Field
-
-from typing import Dict
 from lxml import etree
+from pydantic import BaseModel, Field
 
 from obidog.parsers.utils.xml_utils import get_content
 
@@ -18,8 +16,8 @@ class DoxygenElement(BaseModel):
 
 
 class DoxygenIndex(BaseModel):
-    by_refid: Dict[str, DoxygenElement] = Field(default_factory=dict)
-    by_fqn: Dict[str, DoxygenElement] = Field(default_factory=dict)
+    by_refid: dict[str, DoxygenElement] = Field(default_factory=dict)
+    by_fqn: dict[str, DoxygenElement] = Field(default_factory=dict)
 
     def register_element(
         self,

@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 from obidog.databases import CppDatabase
-
 from obidog.models.namespace import NamespaceModel
 
 

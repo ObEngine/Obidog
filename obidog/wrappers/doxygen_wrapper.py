@@ -7,7 +7,6 @@ import semver
 from obidog.config import SOURCE_DIRECTORIES
 from obidog.logger import log
 
-
 DOXYGEN_PATH = os.environ.get("DOXYGEN_PATH", "doxygen")
 
 
